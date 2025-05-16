@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
+from flask_caching import Cache
 from models import db, Photo, User, UserPhoto
 from config import Config
 from collections import defaultdict
@@ -21,6 +22,9 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/main.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'koito-annbata'
 app.config.from_object(Config)
+
+# Cache設定（シンプルなメモリキャッシュ）
+cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache'})
 
 # DBと連携
 db.init_app(app)
