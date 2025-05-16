@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}生写真一覧{% endblock %}
+
+{% block content %}
+<!-- グループごとの背景色を変更 -->
+<div class="container mt-5 {{ group_color }}">
+  <div class="text-center mb-5">
+    <h1 class="display-4 fw-bold text-black p-3 rounded" style="border-bottom: 3px solid gold;">
+      生写真一覧
+    </h1>
+  </div>
+
+  <div class="row g-4">
+    <!-- 検索フォーム -->
+    <div class="col-md-12">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h3 class="card-title text-black">検索フォーム</h3>
+          <form method="get" action="{{ url_for('index', group_key=group_key) }}">
+            <div class="form-group">
+              <label for="query" style="color: black;">検索</label>
+              <input type="text" id="query" name="query" value="{{ request.args.get('query', '') }}" class="form-control" placeholder="検索...">
+            </div>
+            <div class="form-group">
+              <label for="member" style="color: black;">メンバー</label>
+              <div class="custom-select-container">
+                <select class="form-select" id="member" name="member">
+                  <option value="">選択してください</option>
+                  {% for m in members %}
+                    <option value="{{ m }}" {% if m == request.args.get('member') %}selected{% endif %}>{{ m }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="costume" style="color: black;">衣装</label>
+              <div class="custom-select-container">
+                <select class="form-select" id="costume" name="costume">
+                  <option value="">選択してください</option>
+                  {% for c in costumes %}
+                    <option value="{{ c }}" {% if c == request.args.get('costume') %}selected{% endif %}>{{ c }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="type" style="color: black;">種類</label>
+              <div class="custom-select-container-type">
+                <select id="type" name="type" class="form-control">
+                  <option value="">すべて</option>
+                  {% for type in types %}
+                    <option value="{{ type }}" {% if type == request.args.get('type') %}selected{% endif %}>{{ type }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="form-group mt-3 mb-4">
+              <button type="submit" class="btn {{ group_color }} w-100">検索</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- 生写真一覧テーブル -->
+    <div class="col-md-12">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h3 class="card-title text-black">生写真一覧</h3>
+          <table class="table table-bordered table-sm">
+            <thead>
+              <tr>
+                <th>メンバー</th>
+                <th>衣装</th>
+                <th>種類</th>
+                <th>画像</th>
+                <th>枚数</th>
+                <th>入手日</th>
+                <th>メモ</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for photo in photos %}
+                <tr>
+                  <td>{{ photo.member }}</td>
+                  <td>{{ photo.costume }}</td>
+                  <td>{{ photo.photo_type }}</td>
+                  <td>
+                    {% if photo.image_exists %}
+                      <img src="{{ url_for('static', filename=photo.image_path) }}" width="100">
+                    {% else %}
+                      <img src="{{ url_for('static', filename='member_images/no_photo.jpg') }}" width="100">
+                    {% endif %}
+                  </td>
+                  <td>{{ photo.quantity }}</td>
+                  <td>{{ photo.date or '-' }}</td>
+                  <td>{{ photo.memo or '-' }}</td>
+                  <td>
+                    <form method="POST" action="{{ url_for('delete_user_photo', photo_id=photo.id, group_key=group_key) }}">
+                      <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('本当に削除しますか？')">削除</button>
+                    </form>
+                  </td>               
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div> <!-- row -->
+</div> <!-- container -->
+{% endblock %}

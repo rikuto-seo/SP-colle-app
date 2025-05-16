@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}ダッシュボード{% endblock %}
+
+{% block content %}
+<h1>ダッシュボード</h1>
+
+<!-- ✅ グループ選択 -->
+<div class="mb-4">
+  <label for="groupSelect" class="form-label">グループを選択</label>
+  <select class="form-select" id="groupSelect">
+    <option value="hinatazaka46">日向坂46</option>
+    <option value="nogizaka46">乃木坂46</option>
+    <option value="sakurazaka46">櫻坂46</option>
+  </select>
+</div>
+
+<!-- ✅ ダッシュボードカード -->
+<div class="row">
+  <div class="col-md-6">
+    <div class="card text-bg-light mb-3">
+      <div class="card-header">生写真の管理</div>
+      <div class="card-body">
+        <h5 class="card-title">所持リストを確認</h5>
+        <p class="card-text">あなたが所持している生写真を一覧で確認できます。</p>
+        <a href="{{ url_for('list_photos') }}" class="btn btn-primary">一覧を見る</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card text-bg-light mb-3">
+      <div class="card-header">生写真を追加</div>
+      <div class="card-body">
+        <h5 class="card-title">新しい生写真を登録</h5>
+        <p class="card-text">所持している生写真をアプリに追加登録できます。</p>
+        <a href="{{ url_for('add') }}" class="btn btn-success">追加する</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="card text-bg-light mb-3">
+      <div class="card-header">統計を見る</div>
+      <div class="card-body">
+        <h5 class="card-title">所持率などの統計情報</h5>
+        <p class="card-text">あなたの生写真コレクションの達成率や統計を確認できます。</p>
+        <a href="{{ url_for('stats') }}" class="btn btn-info">統計を見る</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ グループ選択を記憶するJS -->
+<script>
+  const groupSelect = document.getElementById('groupSelect');
+  const savedGroup = localStorage.getItem('selectedGroup');
+
+  // 保存されたグループがあれば選択状態に反映
+  if (savedGroup) {
+    groupSelect.value = savedGroup;
+  }
+
+  // 選択変更時に保存
+  groupSelect.addEventListener('change', function () {
+    localStorage.setItem('selectedGroup', this.value);
+    // 必要に応じてページをリロードしたり、他のUIを更新
+  });
+</script>
+{% endblock %}

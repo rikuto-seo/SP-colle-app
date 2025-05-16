@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}未所持リスト{% endblock %}
+
+{% block content %}
+
+<h1>未所持リスト</h1>
+
+<div class="p-4 rounded {{ group_color }}">
+
+    <!-- 検索フォーム -->
+    <form method="get" action="{{ url_for('missing', group_key=group_key) }}">
+        <div class="form-group">
+            <label for="member">メンバー</label>
+            <div class="custom-select-container">
+                <select id="member" name="member" class="form-control select2">
+                    <option value="">全て</option>
+                    {% for member in grouped_missing.keys()|sort %}
+                        <option value="{{ member }}" {% if search_member.lower() == member.lower() %}selected{% endif %}>{{ member }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="costume">衣装</label>
+            <input type="text" id="costume" name="costume" class="form-control" placeholder="例: ドレミソラシド" value="{{ search_costume }}">
+        </div>
+
+        <div class="form-group mt-3 mb-4">
+            <button type="submit" class="btn btn-primary w-100">検索</button>
+        </div>
+    </form>
+</div>
+<!-- 絞り込まれた結果表示 -->
+{% if not grouped_missing %}
+    <div class="alert alert-success text-center mt-4">
+        🎉 全ての生写真を所持しています！
+    </div>
+{% else %}
+    <div class="accordion" id="accordionMissingList">
+        {% for member, photos in grouped_missing.items() %}
+            {% if photos %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-{{ loop.index }}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ loop.index }}" aria-expanded="false" aria-controls="collapse-{{ loop.index }}">
+                            {{ member }}（{{ photos|length }}件）
+                        </button>
+                    </h2>
+                    <div id="collapse-{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ loop.index }}" data-bs-parent="#accordionMissingList">
+                        <div class="accordion-body">
+                            <table class="table table-bordered table-sm mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>衣装</th>
+                                        <th>種類</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for photo in photos %}
+                                    <tr>
+                                        <td>{{ photo.costume }}</td>
+                                        <td>{{ photo.type }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% endblock %}

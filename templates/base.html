@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}坂道グループ 生写真アプリ{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        body {font-family: 'Noto Serif JP', serif;}
+        /* グループ別背景色 */
+        .bg-hinata { background-color: #d4f4ff !important; }  /* 明るい水色 → 落ち着いた水色 */
+        .bg-sakura { background-color: #f9d6e5 !important; }  /* ピンク → 桜色寄り */
+        .bg-nogi   { background-color: #e4dcf1 !important; }  /* 紫 → 上品なラベンダー */
+        .bg-default { background-color: #eaf4fc !important; }
+
+        .navbar-hinata { background-color: #00bcd4 !important; color: white; }
+        .navbar-sakura { background-color: #880e4f !important; color: white; }
+        .navbar-nogi   { background-color: #6f42c1 !important; color: white; }
+        .navbar-default { background-color: #fffff9 !important; color: black; }
+
+        /* サイドバー */
+        #sidebar {
+            position: fixed;
+            top: 0;
+            left: -250px;
+            width: 250px;
+            height: 100%;
+            background-color: #ffffff;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.3);
+            padding: 20px;
+            transition: left 0.3s ease;
+            z-index: 9999;
+        }
+        #sidebar a {
+            display: block;
+            margin: 10px 0;
+            font-size: 18px;
+            font-family: 'Arial', sans-serif;
+            text-decoration: none;
+            color: #333;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        #sidebar a:hover {
+            background-color: #a3d4f7;
+            color: white;
+        }
+        #sidebar h3 {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        /* 上へ戻るボタン */
+        #back-to-top {
+            position: fixed;
+            bottom: 40px;
+            right: 20px;
+            z-index: 9999;
+            background-color: rgba(163, 212, 247, 0.8);
+            color: #fff;
+            border: none;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            display: none;
+            transition: opacity 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        #back-to-top:hover {
+            background-color: rgba(163, 212, 247, 1.0);
+        }
+
+        .photo-gallery {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        }
+
+        .photo-item {
+        text-align: center;
+        width: 150px;
+        }
+
+        .photo-item img {
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
+        }
+
+        .missing-photo {
+        filter: grayscale(100%) brightness(80%);
+        opacity: 0.7;
+        }
+
+        .photo-info {
+        margin-top: 8px;
+        font-size: 0.9em;
+        color: #555;
+        }
+
+    </style>
+</head>
+
+<body class="{{ group_color }}">
+
+    <!-- ヘッダー -->
+    <div class="{% if group_key == 'hinatazaka' %}navbar-hinata
+            {% elif group_key == 'sakurazaka' %}navbar-sakura
+            {% elif group_key == 'nogizaka' %}navbar-nogi
+            {% else %}navbar-default{% endif %} p-3 d-flex justify-content-between align-items-center">
+
+        <button id="menu-button" style="font-size: 24px; background: transparent; border: none; border-radius: 5px; padding: 5px 10px; color: white; cursor: pointer;">
+            ☰
+        </button>
+        <div style="font-size: 20px; font-weight: bold; color: black;">
+            坂道グループ 生写真アプリ
+        </div>
+        <div style="width: 40px;"></div>
+    </div>
+
+    <!-- サイドバー -->
+    <div id="sidebar">
+        <h3>メニュー</h3>
+        <a href="{{ url_for('index', group_key=group_key) }}">📷 生写真一覧</a>
+        <a href="{{ url_for('add', group_key=group_key) }}">＋ 新規追加</a>
+        <a href="{{ url_for('stats', group_key=group_key) }}">📊 統計を見る</a>
+        <a href="{{ url_for('missing', group_key=group_key) }}">📦 未所持リスト</a>
+        <a href="{{ url_for('gallery', group_key=group_key) }}">🖼️ ギャラリー</a>
+        <hr>
+        <h3>グループ切替</h3>
+        <a href="{{ url_for(endpoint, group_key='nogizaka') }}">乃木坂46</a>
+        <a href="{{ url_for(endpoint, group_key='sakurazaka') }}">櫻坂46</a>
+        <a href="{{ url_for(endpoint, group_key='hinatazaka') }}">日向坂46</a>
+        <a href="{{ url_for('logout') }}">🚪 ログアウト</a>
+    </div>
+
+    <!-- メインコンテンツ -->
+    <div class="container mt-4 {{ group_color }}">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <!-- 上へ戻るボタン -->
+    <button id="back-to-top" title="上へ戻る">⬆</button>
+
+    <!-- スクリプト -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // サイドバー開閉
+        const menuBtn = document.getElementById("menu-button");
+        const sidebar = document.getElementById("sidebar");
+
+        menuBtn.addEventListener("click", () => {
+            sidebar.style.left = sidebar.style.left === "0px" ? "-250px" : "0px";
+        });
+
+        document.addEventListener("click", (e) => {
+            if (!sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
+                sidebar.style.left = "-250px";
+            }
+        });
+
+        // Select2
+        $(document).ready(function () {
+            $('.select2').select2({
+                width: '100%',
+                placeholder: '選択してください',
+                allowClear: true
+            });
+        });
+
+        // 上へ戻るボタン
+        window.addEventListener("scroll", function () {
+            const btn = document.getElementById("back-to-top");
+            btn.style.display = window.scrollY > 200 ? "block" : "none";
+        });
+
+        document.getElementById("back-to-top").addEventListener("click", function () {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+    </script>
+
+</body>
+</html>
