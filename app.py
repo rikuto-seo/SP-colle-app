@@ -18,7 +18,8 @@ app = Flask(__name__)
 
 # コンフィグ設定
 basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/main.db'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/main.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'koito-annbata'
 app.config.from_object(Config)
