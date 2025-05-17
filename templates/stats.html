@@ -2,14 +2,14 @@
 {% block title %}{{ group_name }} 統計情報{% endblock %}
 
 {% block content %}
-<div class="container mt-5 p-4 rounded {{ group_color }}">
-  <div class="text-center mb-5">
-    <h1 class="display-4 fw-bold">{{ group_name }} 統計情報</h1>
+<div class="container mt-4">
+  <div class="text-center mb-4">
+    <h1 class="display-5 fw-bold text-black p-3 rounded section-title">{{ group_name }} 統計情報</h1>
   </div>
 
   <div class="row g-4">
     <!-- メンバー別所持数 -->
-    <div class="col-md-4">
+    <div class="col-12 col-md-4">
       <div class="card shadow-sm h-100">
         <div class="card-body">
           <h3 class="card-title text-primary">🧍‍♀️ メンバー別所持数</h3>
@@ -23,14 +23,14 @@
               {% endfor %}
             </ul>
           {% else %}
-            <p class="text-muted">データがありません。</p>
+            <p class="text-muted mt-3">データがありません。</p>
           {% endif %}
         </div>
       </div>
     </div>
 
     <!-- 種類別所持数 -->
-    <div class="col-md-4">
+    <div class="col-12 col-md-4">
       <div class="card shadow-sm h-100">
         <div class="card-body">
           <h3 class="card-title text-success">📐 種類別所持数</h3>
@@ -44,22 +44,22 @@
               {% endfor %}
             </ul>
           {% else %}
-            <p class="text-muted">データがありません。</p>
+            <p class="text-muted mt-3">データがありません。</p>
           {% endif %}
         </div>
       </div>
     </div>
 
     <!-- 衣装別達成率 -->
-    <div class="col-md-4">
+    <div class="col-12 col-md-4">
       <div class="card shadow-sm h-100">
         <div class="card-body">
           <h3 class="card-title text-warning">👗 衣装別達成率</h3>
           {% if progress_list %}
             {% for item in progress_list %}
               <div class="mb-3">
-                <div class="d-flex justify-content-between small">
-                  <strong>{{ item.costume }}</strong>
+                <div class="d-flex justify-content-between small fw-semibold">
+                  <span>{{ item.costume }}</span>
                   <span>{{ item.owned }}/{{ item.total }}（{{ item.rate|round(1) }}%）</span>
                 </div>
                 <div class="progress" style="height: 20px;">
@@ -72,7 +72,7 @@
                       bg-danger
                     {% endif %}"
                     role="progressbar"
-                    style="width: {{ item.rate }}%; min-width: 1rem;"
+                    style="width: {{ item.rate }}%;"
                     aria-valuenow="{{ item.rate }}" aria-valuemin="0" aria-valuemax="100">
                     {{ item.rate|round(1) }}%
                   </div>
@@ -80,12 +80,11 @@
               </div>
             {% endfor %}
           {% else %}
-            <p class="text-muted">データがありません。</p>
+            <p class="text-muted mt-3">データがありません。</p>
           {% endif %}
         </div>
       </div>
     </div>
-
   </div> <!-- row -->
 </div> <!-- container -->
 {% endblock %}

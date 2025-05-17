@@ -2,102 +2,110 @@
 {% block title %}生写真を追加{% endblock %}
 
 {% block content %}
-<h1>生写真を追加</h1>
+<div class="container mt-5 {{ group_color }}">
+  <div class="text-center mb-4">
+    <h1 class="display-5 fw-bold text-black p-3 rounded section-title">生写真を追加</h1>
+  </div>
 
-<div class="p-4 rounded {{ group_color }}">
-    <form method="post" action="{{ url_for('add', group_key=group_key) }}">
-
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <form method="post" action="{{ url_for('add', group_key=group_key) }}">
         <!-- グループはURLで指定されるので非表示でOK -->
         <input type="hidden" id="group_key" value="{{ group_key }}">
 
-        <div class="mb-3">
-            <label for="member" class="form-label">メンバー</label>
+        <div class="row g-4">
+          <div class="col-md-6">
+            <label for="member" class="form-label text-black">メンバー</label>
             <select class="form-select" id="member" name="member" required>
-                <option value="">読み込み中...</option>
+              <option value="">読み込み中...</option>
             </select>
-        </div>
+          </div>
 
-        <div class="mb-3">
-            <label for="costume" class="form-label">衣装</label>
+          <div class="col-md-6">
+            <label for="costume" class="form-label text-black">衣装</label>
             <select class="form-select" id="costume" name="costume" required>
-                <option value="">衣装を選択してください</option>
+              <option value="">衣装を選択してください</option>
             </select>
-        </div>
+          </div>
 
-        <div class="mb-3">
-            <label for="type" class="form-label">種類</label>
+          <div class="col-md-4">
+            <label for="type" class="form-label text-black">種類</label>
             <select class="form-select" name="type" required>
-                <option value="ヨリ">ヨリ</option>
-                <option value="チュウ">チュウ</option>
-                <option value="ヒキ">ヒキ</option>
-                <option value="座り">座り</option>
+              <option value="ヨリ">ヨリ</option>
+              <option value="チュウ">チュウ</option>
+              <option value="ヒキ">ヒキ</option>
+              <option value="座り">座り</option>
             </select>
-        </div>
+          </div>
 
-        <div class="mb-3">
-            <label for="quantity" class="form-label">枚数</label>
+          <div class="col-md-4">
+            <label for="quantity" class="form-label text-black">枚数</label>
             <input type="number" class="form-control" name="quantity" min="1" value="1" required>
-        </div>    
+          </div>
 
-        <div class="mb-3">
-            <label for="date_acquired" class="form-label">入手日</label>
+          <div class="col-md-4">
+            <label for="date_acquired" class="form-label text-black">入手日</label>
             <input type="date" class="form-control" name="date_acquired">
-        </div>
+          </div>
 
-        <div class="mb-3">
-            <label for="memo" class="form-label">メモ</label>
+          <div class="col-12">
+            <label for="memo" class="form-label text-black">メモ</label>
             <textarea class="form-control" name="memo" rows="2" placeholder="例：2024年9月全握でゲット！"></textarea>
-        </div>
+          </div>
 
-        <button type="submit" class="btn btn-success">追加</button>
-    </form>
+          <div class="col-12 text-center mt-3">
+            <button type="submit" class="btn btn-success px-5 py-2">追加</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    const groupKey = document.getElementById('group_key').value;
-    const memberSelect = document.getElementById('member');
-    const costumeSelect = document.getElementById('costume');
+  const groupKey = document.getElementById('group_key').value;
+  const memberSelect = document.getElementById('member');
+  const costumeSelect = document.getElementById('costume');
 
-    // メンバー一覧を取得して表示
-    fetch(`/get_members?group=${encodeURIComponent(groupKey)}`)
-        .then(response => response.json())
-        .then(data => {
-            memberSelect.innerHTML = '<option value="">選択してください</option>';
-            data.members.forEach(member => {
-                const option = document.createElement('option');
-                option.value = member;
-                option.textContent = member;
-                memberSelect.appendChild(option);
-            });
-        })
-        .catch(error => {
-            memberSelect.innerHTML = '<option value="">読み込み失敗</option>';
-            console.error('メンバー取得エラー:', error);
-        });
-
-    // メンバー選択時に衣装一覧を取得して表示
-    memberSelect.addEventListener('change', function () {
-        const member = this.value;
-        costumeSelect.innerHTML = '<option value="">読み込み中...</option>';
-
-        fetch(`/get_costumes?group=${encodeURIComponent(groupKey)}&member=${encodeURIComponent(member)}`)
-            .then(response => response.json())
-            .then(data => {
-                costumeSelect.innerHTML = '<option value="">選択してください</option>';
-                data.costumes.forEach(costume => {
-                    const option = document.createElement('option');
-                    option.value = costume;
-                    option.textContent = costume;
-                    costumeSelect.appendChild(option);
-                });
-            })
-            .catch(error => {
-                costumeSelect.innerHTML = '<option value="">読み込み失敗</option>';
-                console.error('衣装取得エラー:', error);
-            });
+  // メンバー一覧を取得
+  fetch(`/get_members?group=${encodeURIComponent(groupKey)}`)
+    .then(response => response.json())
+    .then(data => {
+      memberSelect.innerHTML = '<option value="">選択してください</option>';
+      data.members.forEach(member => {
+        const option = document.createElement('option');
+        option.value = member;
+        option.textContent = member;
+        memberSelect.appendChild(option);
+      });
+    })
+    .catch(error => {
+      memberSelect.innerHTML = '<option value="">読み込み失敗</option>';
+      console.error('メンバー取得エラー:', error);
     });
+
+  // メンバー選択時に衣装一覧を取得
+  memberSelect.addEventListener('change', function () {
+    const member = this.value;
+    costumeSelect.innerHTML = '<option value="">読み込み中...</option>';
+
+    fetch(`/get_costumes?group=${encodeURIComponent(groupKey)}&member=${encodeURIComponent(member)}`)
+      .then(response => response.json())
+      .then(data => {
+        costumeSelect.innerHTML = '<option value="">選択してください</option>';
+        data.costumes.forEach(costume => {
+          const option = document.createElement('option');
+          option.value = costume;
+          option.textContent = costume;
+          costumeSelect.appendChild(option);
+        });
+      })
+      .catch(error => {
+        costumeSelect.innerHTML = '<option value="">読み込み失敗</option>';
+        console.error('衣装取得エラー:', error);
+      });
+  });
 });
 </script>
-
 {% endblock %}

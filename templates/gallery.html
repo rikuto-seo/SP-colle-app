@@ -1,64 +1,66 @@
 {% extends 'base.html' %}
+{% block title %}ギャラリー{% endblock %}
 
 {% block content %}
-  <h1>ギャラリー</h1>
+<div class="container mt-4">
+  <div class="text-center mb-4">
+    <h1 class="display-5 fw-bold text-black p-3 rounded section-title">ギャラリー</h1>
+  </div>
 
-  <!-- 絞り込みフォーム（メンバー & 衣装） -->
-  <div class="col-md-12 mb-4">
-    <div class="card shadow-sm h-100">
-      <div class="card-body">
-        <h3 class="card-title text-black">絞り込み</h3>
-        <form method="get" action="{{ url_for(endpoint, group_key=group_key) }}">
-          <div class="row">
-            <!-- メンバー選択 -->
-            <div class="form-group col-md-6">
-              <label for="member" style="color: black;">メンバー</label>
-              <div class="custom-select-container">
-                <select name="member" id="member" class="form-select" onchange="this.form.submit()">
-                  <option value="">すべて表示</option>
-                  {% for m in member_list %}
-                    <option value="{{ m }}" {% if m == selected_member %}selected{% endif %}>{{ m }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
-
-            <!-- 衣装選択 -->
-            <div class="form-group col-md-6">
-              <label for="costume" style="color: black;">衣装</label>
-              <div class="custom-select-container">
-                <select name="costume" id="costume" class="form-select" onchange="this.form.submit()">
-                  <option value="">すべて表示</option>
-                  {% for c in costume_list %}
-                    <option value="{{ c }}" {% if c == selected_costume %}selected{% endif %}>{{ c }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
+  <!-- 絞り込みフォーム -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title text-black">絞り込み</h5>
+      <form method="get" action="{{ url_for(endpoint, group_key=group_key) }}">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label for="member" class="form-label text-black">メンバー</label>
+            <select name="member" id="member" class="form-select" onchange="this.form.submit()">
+              <option value="">すべて表示</option>
+              {% for m in member_list %}
+                <option value="{{ m }}" {% if m == selected_member %}selected{% endif %}>{{ m }}</option>
+              {% endfor %}
+            </select>
           </div>
-        </form>
-      </div>
+          <div class="col-md-6">
+            <label for="costume" class="form-label text-black">衣装</label>
+            <select name="costume" id="costume" class="form-select" onchange="this.form.submit()">
+              <option value="">すべて表示</option>
+              {% for c in costume_list %}
+                <option value="{{ c }}" {% if c == selected_costume %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </form>
     </div>
   </div>
 
   <!-- ギャラリー表示 -->
   {% for member, photos in photos_by_member.items() %}
-    <h3>{{ member }}</h3>
-    <div class="photo-gallery">
-      {% for photo in photos %}
-        {% set image_filename = photo['member'] ~ '_' ~ photo['costume'] ~ '_' ~ photo['photo_type'] ~ '.jpg' %}
-        {% set image_path = 'member_images/' + group_key + '/' + photo['member'] + '/' + image_filename if photo['image_exists'] else 'member_images/no_photo.jpg' %}
-        <div class="photo-item">
-          <img
-            src="{{ url_for('static', filename=image_path) }}"
-            alt="{{ photo['member'] }}"
-            class="{{ 'missing-photo' if not photo['image_exists'] else '' }}"
-          >
-          <div class="photo-info">
-            {{ photo['member'] }} / {{ photo['costume'] }} / {{ photo['photo_type'] }}
+    <div class="mb-4">
+      <h4 class="text-black mb-3">{{ member }}</h4>
+      <div class="row g-3">
+        {% for photo in photos %}
+          {% set image_filename = photo['member'] ~ '_' ~ photo['costume'] ~ '_' ~ photo['photo_type'] ~ '.jpg' %}
+          {% set image_path = 'member_images/' + group_key + '/' + photo['member'] + '/' + image_filename if photo['image_exists'] else 'member_images/no_photo.jpg' %}
+          <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+            <div class="card h-100 shadow-sm">
+              <img
+                src="{{ url_for('static', filename=image_path) }}"
+                class="card-img-top {% if not photo['image_exists'] %}missing-photo{% endif %}"
+                alt="{{ photo['member'] }}"
+              >
+              <div class="card-body p-2 text-center">
+                <small class="text-muted">
+                  {{ photo['costume'] }}<br>{{ photo['photo_type'] }}
+                </small>
+              </div>
+            </div>
           </div>
-        </div>
-      {% endfor %}
+        {% endfor %}
+      </div>
     </div>
   {% endfor %}
+</div>
 {% endblock %}
