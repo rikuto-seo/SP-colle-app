@@ -24,7 +24,12 @@
 
           <div class="col-md-6">
             <label for="costume" class="form-label text-black">衣装</label>
-            <input type="text" id="costume" name="costume" class="form-control" placeholder="例: ドレミソラシド" value="{{ search_costume }}">
+            <select id="costume" name="costume" class="form-select">
+              <option value="">全て</option>
+              {% for costume in costume_list %}
+                <option value="{{ costume }}" {% if search_costume == costume %}selected{% endif %}>{{ costume }}</option>
+              {% endfor %}
+            </select>
           </div>
         </div>
 

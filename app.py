@@ -117,47 +117,71 @@ def group(group_key):
 @app.route('/stats/<group_key>')
 @login_required
 def stats(group_key):
-    group_key = group_key.strip()
+    group_key = group_key.strip().lower()
+
+    group_colors = {
+        'nogizaka': 'bg-nogizaka',
+        'sakurazaka': 'bg-sakurazaka',
+        'hinatazaka': 'bg-hinatazaka'
+    }
+
+    if group_key not in group_colors:
+        return "不正なグループキーです", 404
+
+    group_color = group_colors[group_key]
+    
     all_photos = load_photos_from_csv(group_key)
     if not all_photos:
         return "グループのデータが見つかりません", 404
 
-    # 🔧 所持写真（UserPhoto）をセットにまとめる（stripして比較用に整形）
     owned = set(
         (p.member.strip(), p.costume.strip(), p.photo_type.strip())
         for p in UserPhoto.query.filter_by(user_id=current_user.id, group=group_key).all()
     )
 
-    # 🐛 デバッグ出力：登録されているUserPhotoの中身を表示
     print("[DEBUG] 所持しているUserPhoto:")
     for photo in UserPhoto.query.filter_by(user_id=current_user.id, group=group_key).all():
         print(f"member='{photo.member}' costume='{photo.costume}' type='{photo.photo_type}'")
 
-    # 🔧 全衣装を抽出し、costume_stats を初期化
     all_costumes = set(p.costume.strip() for p in all_photos)
-    costume_stats = {
-        costume: {'owned': 0, 'total': 0}
-        for costume in all_costumes
-    }
+    costume_stats = {costume: {'owned': 0, 'total': 0} for costume in all_costumes}
 
     member_stats = defaultdict(int)
     type_stats = defaultdict(int)
 
-    # 🔄 所持状況と統計情報を集計
+    # ✅ コンプ集計用：メンバー×衣装で種類を集める
+    costume_dict = defaultdict(lambda: defaultdict(set))  # costume_dict[member][costume] = set of all types
+    owned_dict = defaultdict(lambda: defaultdict(set))    # owned_dict[member][costume] = set of owned types
+
     for p in all_photos:
         member = p.member.strip()
         costume = p.costume.strip()
         photo_type = p.photo_type.strip()
 
-        costume_stats[costume]['total'] += 1
+        costume_dict[member][costume].add(photo_type)
         if (member, costume, photo_type) in owned:
+            owned_dict[member][costume].add(photo_type)
             member_stats[member] += 1
             type_stats[photo_type] += 1
             costume_stats[costume]['owned'] += 1
-        else:
-            print(f"[NOT OWNED MATCH] ({member}, {costume}, {photo_type})→ 所持していません")
+        costume_stats[costume]['total'] += 1
 
-    # 🔃 衣装別進捗リストを構築（ソート付き）
+    # ✅ comp_stats を構築
+    comp_stats = {}
+    for member, costumes in costume_dict.items():
+        comp_stats[member] = []
+        for costume, types in sorted(costumes.items()):
+            total = len(types)
+            owned_types = owned_dict[member][costume]
+            owned = len(owned_types)
+            comp_stats[member].append({
+                'costume': costume,
+                'owned': owned,
+                'total': total,
+                'is_complete': owned == total
+            })
+
+    # 🔃 衣装別進捗
     progress = sorted([
         {
             'costume': c,
@@ -174,6 +198,18 @@ def stats(group_key):
         'hinatazaka': 'bg-hinatazaka'
     }
 
+    # ✅ comp_ranking を構築
+    comp_ranking_list = []
+    for member, costumes in comp_stats.items():
+        complete_count = sum(1 for item in costumes if item['is_complete'])
+        comp_ranking_list.append({
+            'member': member,
+            'complete_count': complete_count
+        })
+
+    # コンプ数降順にソート
+    comp_ranking = sorted(comp_ranking_list, key=lambda x: x['complete_count'], reverse=True)
+
     return render_template(
         'stats.html',
         endpoint=request.endpoint,
@@ -182,7 +218,9 @@ def stats(group_key):
         member_stats=sorted(member_stats.items()),
         type_stats=sorted(type_stats.items()),
         progress_list=progress,
-        group_color=group_colors.get(group_key, '')
+        comp_stats=comp_stats,  # 🔑 追加
+        comp_ranking=comp_ranking,
+        group_color=group_colors
     )
 
 @app.route('/get_members')
@@ -590,6 +628,15 @@ def missing(group_key):  # ←ここを追加！
 
     grouped = get_missing_photos(search_member, search_costume, group_key)
 
+    # 衣装一覧を抽出
+    costume_set = set()
+    for photos in grouped.values():
+        for photo in photos:
+            costume = (photo.get('costume') or '').strip()
+            if costume:
+                costume_set.add(costume)
+    costume_list = sorted(costume_set)
+
     return render_template(
         'missing.html',
         endpoint=request.endpoint,
@@ -597,7 +644,8 @@ def missing(group_key):  # ←ここを追加！
         group_key=group_key,
         group_color=group_colors,
         search_member=search_member,
-        search_costume=search_costume
+        search_costume=search_costume,
+        costume_list=costume_list
     )
 
 if __name__ == '__main__':

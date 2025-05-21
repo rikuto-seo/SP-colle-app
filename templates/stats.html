@@ -7,12 +7,114 @@
     <h1 class="display-5 fw-bold text-black p-3 rounded section-title">{{ group_name }} 統計情報</h1>
   </div>
 
+  <!-- フィルター＆ソート -->
+  <form method="get" class="mb-4">
+    <div class="row g-3 align-items-center">
+      <div class="col-auto">
+        <label for="filterMember" class="col-form-label">メンバー名で絞り込み:</label>
+      </div>
+      <div class="col-auto">
+        <input type="text" id="filterMember" name="filter_member" value="{{ request.args.get('filter_member', '') }}" class="form-control" placeholder="例: メンバー名">
+      </div>
+      <div class="col-auto">
+        <label for="sortOrder" class="col-form-label">ソート順:</label>
+      </div>
+      <div class="col-auto">
+        <select id="sortOrder" name="sort_order" class="form-select">
+          <option value="desc" {% if request.args.get('sort_order', 'desc') == 'desc' %}selected{% endif %}>コンプ数 多い順</option>
+          <option value="asc" {% if request.args.get('sort_order') == 'asc' %}selected{% endif %}>コンプ数 少ない順</option>
+          <option value="alpha" {% if request.args.get('sort_order') == 'alpha' %}selected{% endif %}>名前順</option>
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary">適用</button>
+      </div>
+    </div>
+  </form>
+
+  <!-- メンバー別コンプ状況アコーディオン -->
+  <div class="accordion mb-5" id="accordionCompStats">
+    {% for member, costumes in comp_stats.items() %}
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="heading-{{ loop.index }}">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                  data-bs-target="#collapse-{{ loop.index }}" aria-expanded="false"
+                  aria-controls="collapse-{{ loop.index }}">
+            {{ member }}
+          </button>
+        </h2>
+        <div id="collapse-{{ loop.index }}" class="accordion-collapse collapse"
+             aria-labelledby="heading-{{ loop.index }}" data-bs-parent="#accordionCompStats">
+          <div class="accordion-body">
+            {% if costumes %}
+              <ul class="list-group">
+                {% for item in costumes %}
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ item.costume }}
+                    <span>
+                      {{ item.owned }}/{{ item.total }}
+                      {% if item.is_complete %}
+                        <span class="badge bg-success">
+                          <i class="fa-solid fa-check"></i> コンプ
+                        </span>
+                      {% else %}
+                        <span class="badge bg-secondary">
+                          <i class="fa-regular fa-circle-xmark"></i> 未コンプ
+                        </span>
+                      {% endif %}
+                    </span>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="text-muted">データがありません。</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- コンプ数ランキング -->
+  <div class="card shadow-sm mb-5">
+    <div class="card-body">
+      <h3 class="card-title text-danger">
+        <i class="fa-solid fa-trophy"></i> コンプ数ランキング
+      </h3>
+      {% if comp_ranking %}
+        <ol class="list-group list-group-numbered">
+          {% for entry in comp_ranking %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              {{ entry.member }}
+              <span class="badge bg-danger rounded-pill">{{ entry.complete_count }}コンプ</span>
+            </li>
+          {% endfor %}
+        </ol>
+      {% else %}
+        <p class="text-muted">ランキングデータがありません。</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 所持率グラフ -->
+  <div class="card shadow-sm my-4">
+    <div class="card-body">
+      <h3 class="card-title text-info">
+        <i class="fa-solid fa-chart-bar"></i> 衣装別所持率グラフ
+      </h3>
+      <canvas id="progressChart" height="150"></canvas>
+    </div>
+  </div>
+
+  <!-- ▼ 既存の統計3種 -->
   <div class="row g-4">
     <!-- メンバー別所持数 -->
     <div class="col-12 col-md-4">
       <div class="card shadow-sm h-100">
         <div class="card-body">
-          <h3 class="card-title text-primary">🧍‍♀️ メンバー別所持数</h3>
+          <h3 class="card-title text-primary">
+            <i class="fa-solid fa-user"></i> メンバー別所持数
+          </h3>
           {% if member_stats %}
             <ul class="list-group list-group-flush">
               {% for member, count in member_stats %}
@@ -33,7 +135,9 @@
     <div class="col-12 col-md-4">
       <div class="card shadow-sm h-100">
         <div class="card-body">
-          <h3 class="card-title text-success">📐 種類別所持数</h3>
+          <h3 class="card-title text-success">
+            <i class="fa-solid fa-layer-group"></i> 種類別所持数
+          </h3>
           {% if type_stats %}
             <ul class="list-group list-group-flush">
               {% for type, count in type_stats %}
@@ -54,7 +158,9 @@
     <div class="col-12 col-md-4">
       <div class="card shadow-sm h-100">
         <div class="card-body">
-          <h3 class="card-title text-warning">👗 衣装別達成率</h3>
+          <h3 class="card-title text-warning">
+            <i class="fa-solid fa-shirt"></i> 衣装別達成率
+          </h3>
           {% if progress_list %}
             {% for item in progress_list %}
               <div class="mb-3">
@@ -87,4 +193,40 @@
     </div>
   </div> <!-- row -->
 </div> <!-- container -->
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const ctx = document.getElementById('progressChart').getContext('2d');
+    const data = {
+      labels: {{ progress_list | map(attribute='costume') | list | tojson }},
+      datasets: [{
+        label: '所持率 (%)',
+        data: {{ progress_list | map(attribute='rate') | list | tojson }},
+        backgroundColor: 'rgba(54, 162, 235, 0.7)'
+      }]
+    };
+    const config = {
+      type: 'bar',
+      data: data,
+      options: {
+        scales: {
+          y: { beginAtZero: true, max: 100 }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: context => context.parsed.y.toFixed(1) + '%'
+            }
+          }
+        }
+      }
+    };
+    new Chart(ctx, config);
+  });
+</script>
+
 {% endblock %}
