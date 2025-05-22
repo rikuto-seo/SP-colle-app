@@ -8,37 +8,40 @@
     <h1 class="display-5 fw-bold text-black p-3 rounded section-title">{{ group_name }} 統計情報</h1>
   </div>
 
-  <!-- シェア＆フィルター -->
-  <div class="row mb-4 g-3 align-items-center justify-content-between">
-    <div class="col-auto">
-      <form method="get" class="d-flex flex-wrap align-items-center gap-2">
-        <div>
-          <label for="filterMember" class="form-label mb-0">メンバー名で絞り込み:</label>
-        </div>
-        <div>
-          <input type="text" id="filterMember" name="filter_member" value="{{ request.args.get('filter_member', '') }}" class="form-control" placeholder="例: メンバー名">
-        </div>
-        <div>
-          <label for="sortOrder" class="form-label mb-0">ソート順:</label>
-        </div>
-        <div>
-          <select id="sortOrder" name="sort_order" class="form-select">
-            <option value="desc" {% if request.args.get('sort_order', 'desc') == 'desc' %}selected{% endif %}>コンプ数 多い順</option>
-            <option value="asc" {% if request.args.get('sort_order') == 'asc' %}selected{% endif %}>コンプ数 少ない順</option>
-            <option value="alpha" {% if request.args.get('sort_order') == 'alpha' %}selected{% endif %}>名前順</option>
-          </select>
-        </div>
-        <div>
-          <button type="submit" class="btn btn-primary">適用</button>
-        </div>
-      </form>
-    </div>
-    <div class="col-auto">
-      <a href="{{ url_for('generate_qr', group_key=group_key) }}" target="_blank" class="btn btn-outline-secondary">
-        <i class="fa-solid fa-qrcode"></i> QRコードで共有
-      </a>
-    </div>
+  <!-- QRコード共有＆公開切り替え -->
+  <div class="d-flex justify-content-start align-items-center gap-3 mb-4">
+    <a href="{{ url_for('generate_qr', group_key=group_key) }}" target="_blank" class="btn btn-outline-secondary">
+      <i class="fa-solid fa-qrcode"></i> QRコードで共有
+    </a>
+    <form method="post" action="{{ url_for('toggle_share', group_key=group_key) }}">
+      <button type="submit" class="btn {% if is_shared %}btn-success{% else %}btn-outline-secondary{% endif %}">
+        {% if is_shared %}
+          <i class="fa-solid fa-eye-slash"></i> 公開中 → 非公開にする
+        {% else %}
+          <i class="fa-solid fa-eye"></i> 非公開 → 公開にする
+        {% endif %}
+      </button>
+    </form>
   </div>
+
+  <!-- フィルター＆ソート -->
+  <form method="get" class="row mb-4 g-3 align-items-center">
+    <div class="col-md-4">
+      <label for="filterMember" class="form-label">メンバー名で絞り込み:</label>
+      <input type="text" id="filterMember" name="filter_member" value="{{ request.args.get('filter_member', '') }}" class="form-control" placeholder="例: メンバー名">
+    </div>
+    <div class="col-md-4">
+      <label for="sortOrder" class="form-label">ソート順:</label>
+      <select id="sortOrder" name="sort_order" class="form-select">
+        <option value="desc" {% if request.args.get('sort_order', 'desc') == 'desc' %}selected{% endif %}>コンプ数 多い順</option>
+        <option value="asc" {% if request.args.get('sort_order') == 'asc' %}selected{% endif %}>コンプ数 少ない順</option>
+        <option value="alpha" {% if request.args.get('sort_order') == 'alpha' %}selected{% endif %}>名前順</option>
+      </select>
+    </div>
+    <div class="col-md-4 d-flex align-items-end">
+      <button type="submit" class="btn btn-primary w-100">適用</button>
+    </div>
+  </form>
 
   <!-- メンバー別コンプ状況 -->
   <div class="accordion mb-5" id="accordionCompStats">
@@ -83,7 +86,7 @@
     {% endfor %}
   </div>
 
-  <!-- グリッド表示：ランキング、グラフ、統計 -->
+  <!-- グリッド表示：ランキング＋統計3種 -->
   <div class="row g-4">
     <!-- コンプ数ランキング -->
     <div class="col-12 col-lg-6">
@@ -108,23 +111,8 @@
       </div>
     </div>
 
-    <!-- 所持率グラフ -->
-    <div class="col-12 col-lg-6">
-      <div class="card shadow-sm h-100">
-        <div class="card-body">
-          <h3 class="card-title text-info">
-            <i class="fa-solid fa-chart-bar"></i> 衣装別所持率グラフ
-          </h3>
-          <canvas id="progressChart" height="150"></canvas>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 統計情報 3種 -->
-  <div class="row g-4 mt-2">
     <!-- メンバー別所持数 -->
-    <div class="col-12 col-md-4">
+    <div class="col-12 col-md-6 col-lg-3">
       <div class="card shadow-sm h-100">
         <div class="card-body">
           <h3 class="card-title text-primary">
@@ -147,7 +135,7 @@
     </div>
 
     <!-- 種類別所持数 -->
-    <div class="col-12 col-md-4">
+    <div class="col-12 col-md-6 col-lg-3">
       <div class="card shadow-sm h-100">
         <div class="card-body">
           <h3 class="card-title text-success">
@@ -168,79 +156,6 @@
         </div>
       </div>
     </div>
-
-    <!-- 衣装別達成率 -->
-    <div class="col-12 col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body">
-          <h3 class="card-title text-warning">
-            <i class="fa-solid fa-shirt"></i> 衣装別達成率
-          </h3>
-          {% if progress_list %}
-            {% for item in progress_list %}
-              <div class="mb-3">
-                <div class="d-flex justify-content-between small fw-semibold">
-                  <span>{{ item.costume }}</span>
-                  <span>{{ item.owned }}/{{ item.total }}（{{ item.rate|round(1) }}%）</span>
-                </div>
-                <div class="progress" style="height: 20px;">
-                  <div class="progress-bar 
-                    {% if item.rate >= 80 %}
-                      bg-success
-                    {% elif item.rate >= 50 %}
-                      bg-warning
-                    {% else %}
-                      bg-danger
-                    {% endif %}"
-                    role="progressbar"
-                    style="width: {{ item.rate }}%;"
-                    aria-valuenow="{{ item.rate }}" aria-valuemin="0" aria-valuemax="100">
-                    {{ item.rate|round(1) }}%
-                  </div>
-                </div>
-              </div>
-            {% endfor %}
-          {% else %}
-            <p class="text-muted mt-3">データがありません。</p>
-          {% endif %}
-        </div>
-      </div>
-    </div>
   </div>
 </div>
-
-<!-- Chart.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const ctx = document.getElementById('progressChart').getContext('2d');
-    const data = {
-      labels: {{ progress_list | map(attribute='costume') | list | tojson }},
-      datasets: [{
-        label: '所持率 (%)',
-        data: {{ progress_list | map(attribute='rate') | list | tojson }},
-        backgroundColor: 'rgba(54, 162, 235, 0.7)'
-      }]
-    };
-    const config = {
-      type: 'bar',
-      data: data,
-      options: {
-        scales: {
-          y: { beginAtZero: true, max: 100 }
-        },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: context => context.parsed.y.toFixed(1) + '%'
-            }
-          }
-        }
-      }
-    };
-    new Chart(ctx, config);
-  });
-</script>
 {% endblock %}

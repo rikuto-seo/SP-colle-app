@@ -92,7 +92,15 @@ def stats(group_key):
         return "不正なグループキーです", 404
 
     group_color = group_colors[group_key]
-    
+
+    # ✅ 共有状態を取得
+    share_status_map = {
+        'nogizaka': current_user.is_nogizaka_shared,
+        'sakurazaka': current_user.is_sakurazaka_shared,
+        'hinatazaka': current_user.is_hinatazaka_shared
+    }
+    is_shared = share_status_map[group_key]
+
     all_photos = load_photos_from_csv(group_key)
     if not all_photos:
         return "グループのデータが見つかりません", 404
@@ -113,8 +121,8 @@ def stats(group_key):
     type_stats = defaultdict(int)
 
     # ✅ コンプ集計用：メンバー×衣装で種類を集める
-    costume_dict = defaultdict(lambda: defaultdict(set))  # costume_dict[member][costume] = set of all types
-    owned_dict = defaultdict(lambda: defaultdict(set))    # owned_dict[member][costume] = set of owned types
+    costume_dict = defaultdict(lambda: defaultdict(set))
+    owned_dict = defaultdict(lambda: defaultdict(set))
 
     for p in all_photos:
         member = p.member.strip()
@@ -155,12 +163,6 @@ def stats(group_key):
         for c, d in costume_stats.items()
     ], key=lambda x: x['costume'])
 
-    group_colors = {
-        'nogizaka': 'bg-nogizaka',
-        'sakurazaka': 'bg-sakurazaka',
-        'hinatazaka': 'bg-hinatazaka'
-    }
-
     # ✅ comp_ranking を構築
     comp_ranking_list = []
     for member, costumes in comp_stats.items():
@@ -170,8 +172,16 @@ def stats(group_key):
             'complete_count': complete_count
         })
 
-    # コンプ数降順にソート
     comp_ranking = sorted(comp_ranking_list, key=lambda x: x['complete_count'], reverse=True)
+
+    if group_key == 'nogizaka':
+        is_shared = current_user.is_nogizaka_shared
+    elif group_key == 'sakurazaka':
+        is_shared = current_user.is_sakurazaka_shared
+    elif group_key == 'hinatazaka':
+        is_shared = current_user.is_hinatazaka_shared
+    else:
+        is_shared = False
 
     return render_template(
         'stats.html',
@@ -181,9 +191,10 @@ def stats(group_key):
         member_stats=sorted(member_stats.items()),
         type_stats=sorted(type_stats.items()),
         progress_list=progress,
-        comp_stats=comp_stats,  # 🔑 追加
+        comp_stats=comp_stats,
         comp_ranking=comp_ranking,
-        group_color=group_colors
+        group_color=group_colors,
+        is_shared=is_shared  # ✅ 追加ポイント
     )
 
 @app.route('/get_members')
@@ -628,20 +639,21 @@ def shared_stats(user_id, group_key):
                            all_photos=all_photos,
                            owned_photo_ids=owned_photo_ids)
 
-@app.route('/qr/<group_key>')
+@app.route('/toggle_share/<group_key>', methods=['POST'])
 @login_required
-def generate_qr(group_key):
+def toggle_share(group_key):
     group_key = group_key.lower()
     if group_key not in ['nogizaka', 'sakurazaka', 'hinatazaka']:
         abort(404)
 
-    # QRコードはユーザーのコレクション共有ページ（username版）へ誘導する例
-    share_url = url_for('shared_collection', group_key=group_key, username=current_user.username, _external=True)
-    img = qrcode.make(share_url)
-    buf = BytesIO()
-    img.save(buf, format='PNG')
-    buf.seek(0)
-    return send_file(buf, mimetype='image/png')
+    try:
+        current_user.toggle_share_setting(group_key)
+    except ValueError:
+        abort(400)
+
+    # 変更をDBに保存
+    db.session.commit()
+    return redirect(url_for('stats', group_key=group_key))
 
 @app.route("/share/<group_key>/<username>")
 def shared_collection(group_key, username):
@@ -651,7 +663,7 @@ def shared_collection(group_key, username):
 
     user = User.query.filter_by(username=username).first_or_404()
 
-    # ここは、グループごとに公開設定のカラムを変えるか共通化してください
+    # 共有設定を判定
     is_shared = False
     if group_key == 'nogizaka':
         is_shared = user.is_nogizaka_shared
@@ -663,7 +675,7 @@ def shared_collection(group_key, username):
     if not is_shared:
         return render_template("shared_collection/not_shared.html", username=username)
 
-    # UserPhotoのgroupフィールドがgroup_keyと一致するものを取得
+    # UserPhotoのgroupフィールドがgroup_keyのものを取得
     user_photos = UserPhoto.query.filter_by(user_id=user.id, group=group_key).all()
 
     return render_template(
@@ -672,6 +684,22 @@ def shared_collection(group_key, username):
         photocards=user_photos,
         group_name=group_key.capitalize()
     )
+
+@app.route('/generate_qr/<group_key>')
+@login_required
+def generate_qr(group_key):
+    group_key = group_key.lower()
+    if group_key not in ['nogizaka', 'sakurazaka', 'hinatazaka']:
+        abort(404)
+
+    # QRコードが開くのはユーザーの公開ページ
+    share_url = url_for('shared_collection', group_key=group_key, username=current_user.username, _external=True)
+
+    qr_img = qrcode.make(share_url)
+    buf = io.BytesIO()
+    qr_img.save(buf)
+    buf.seek(0)
+    return send_file(buf, mimetype='image/png')
 
 if __name__ == '__main__':
     with app.app_context():

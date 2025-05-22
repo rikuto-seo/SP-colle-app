@@ -21,16 +21,25 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(64), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
 
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)  # Werkzeugでハッシュ化
-
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)  # Werkzeugで検証
-    # 例：各グループごとに共有可否を持たせる
     is_nogizaka_shared = db.Column(db.Boolean, default=False)
     is_sakurazaka_shared = db.Column(db.Boolean, default=False)
     is_hinatazaka_shared = db.Column(db.Boolean, default=False)
 
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    def toggle_share_setting(self, group_key):
+        if group_key == 'nogizaka':
+            self.is_nogizaka_shared = not self.is_nogizaka_shared
+        elif group_key == 'sakurazaka':
+            self.is_sakurazaka_shared = not self.is_sakurazaka_shared
+        elif group_key == 'hinatazaka':
+            self.is_hinatazaka_shared = not self.is_hinatazaka_shared
+        else:
+            raise ValueError(f"無効なグループキー: {group_key}")
 
 class UserPhoto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
