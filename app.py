@@ -1,5 +1,5 @@
-import os,bcrypt,csv
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, current_app
+import os, bcrypt, csv
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, current_app, abort, send_file
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
@@ -9,10 +9,21 @@ from config import Config
 from collections import defaultdict
 from itertools import groupby
 from operator import attrgetter
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.orm import joinedload
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
+import qrcode
+from io import BytesIO
+from utils import (
+    get_costumes_for_member,
+    load_photos_from_csv,
+    build_image_path,
+    get_all_photos,
+    get_user_photo_ids,
+    compute_collection_stats
+)
+
 
 app = Flask(__name__)
 
@@ -54,54 +65,6 @@ def inject_endpoint():
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
-
-def get_costumes_for_member(group, member):
-    # グループ名を実際のフォルダ名にマッピング
-    group_mapping = {
-        "hinata": "hinatazaka",  # hinataをhinatazakaにマッピング
-        "nogizaka": "nogizaka",
-        "sakurazaka": "sakurazaka"
-    }
-
-    # グループ名を実際のフォルダ名に変換
-    group_folder = group_mapping.get(group, group)
-    
-    # CSVファイルのパスを構成
-    path = os.path.join('members_csv', group_folder, f'{member}.csv')
-
-    print(f"Looking for path: {path}")  # パス確認用
-    try:
-        with open(path, encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            costumes = {row['costume'].strip() for row in reader if 'costume' in row}
-            return sorted(costumes)
-    except FileNotFoundError:
-        print(f"File not found: {path}")  # ファイルが見つからない場合
-        return []
-
-def load_photos_from_csv(group_key):
-    folder = os.path.join('members_csv', group_key)
-    photos = []
-    if not os.path.exists(folder):
-        return photos
-    for fname in os.listdir(folder):
-        if fname.endswith('.csv'):
-            with open(os.path.join(folder, fname), encoding='utf-8') as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    if not all(k in row for k in ('member', 'costume', 'type')):
-                        continue
-                    photos.append(Photo(
-                        member=row['member'].strip(),
-                        costume=row['costume'].strip(),
-                        photo_type=row['type'].strip(),
-                        group_key=group_key
-                    ))
-    return photos
-
-def build_image_path(member, costume, type_, group_key):
-    filename = f"{member}_{costume}_{type_}.jpg"
-    return f"member_images/{group_key}/{member}/{filename}"
 
 @app.route('/group/<group_key>')
 def group(group_key):
@@ -454,8 +417,6 @@ def delete_user_photo(photo_id, group_key):
     flash('生写真を削除しました。', 'success')
     return redirect(url_for('index', group_key=group_key))
 
-from sqlalchemy.exc import IntegrityError
-
 @app.route('/add/<group_key>', methods=['GET', 'POST'])
 @login_required
 def add(group_key):
@@ -646,6 +607,70 @@ def missing(group_key):  # ←ここを追加！
         search_member=search_member,
         search_costume=search_costume,
         costume_list=costume_list
+    )
+
+@app.route('/shared/<int:user_id>/<group_key>')
+def shared_stats(user_id, group_key):
+    user = User.query.get_or_404(user_id)
+    group_key = group_key.lower()
+
+    if group_key not in ['nogizaka', 'sakurazaka', 'hinatazaka']:
+        abort(404)
+
+    all_photos = get_all_photos(group_key)
+    owned_photo_ids = get_user_photo_ids(user.id, group_key)
+    stats = compute_collection_stats(all_photos, owned_photo_ids)
+
+    return render_template('shared_stats.html',
+                           user=user,
+                           group_key=group_key,
+                           stats=stats,
+                           all_photos=all_photos,
+                           owned_photo_ids=owned_photo_ids)
+
+@app.route('/qr/<group_key>')
+@login_required
+def generate_qr(group_key):
+    group_key = group_key.lower()
+    if group_key not in ['nogizaka', 'sakurazaka', 'hinatazaka']:
+        abort(404)
+
+    # QRコードはユーザーのコレクション共有ページ（username版）へ誘導する例
+    share_url = url_for('shared_collection', group_key=group_key, username=current_user.username, _external=True)
+    img = qrcode.make(share_url)
+    buf = BytesIO()
+    img.save(buf, format='PNG')
+    buf.seek(0)
+    return send_file(buf, mimetype='image/png')
+
+@app.route("/share/<group_key>/<username>")
+def shared_collection(group_key, username):
+    group_key = group_key.lower()
+    if group_key not in ['nogizaka', 'sakurazaka', 'hinatazaka']:
+        abort(404)
+
+    user = User.query.filter_by(username=username).first_or_404()
+
+    # ここは、グループごとに公開設定のカラムを変えるか共通化してください
+    is_shared = False
+    if group_key == 'nogizaka':
+        is_shared = user.is_nogizaka_shared
+    elif group_key == 'sakurazaka':
+        is_shared = user.is_sakurazaka_shared
+    elif group_key == 'hinatazaka':
+        is_shared = user.is_hinatazaka_shared
+
+    if not is_shared:
+        return render_template("shared_collection/not_shared.html", username=username)
+
+    # UserPhotoのgroupフィールドがgroup_keyと一致するものを取得
+    user_photos = UserPhoto.query.filter_by(user_id=user.id, group=group_key).all()
+
+    return render_template(
+        "shared_collection/shared_view.html",
+        username=username,
+        photocards=user_photos,
+        group_name=group_key.capitalize()
     )
 
 if __name__ == '__main__':

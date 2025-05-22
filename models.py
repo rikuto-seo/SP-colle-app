@@ -26,6 +26,11 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)  # Werkzeugで検証
+    # 例：各グループごとに共有可否を持たせる
+    is_nogizaka_shared = db.Column(db.Boolean, default=False)
+    is_sakurazaka_shared = db.Column(db.Boolean, default=False)
+    is_hinatazaka_shared = db.Column(db.Boolean, default=False)
+
 
 class UserPhoto(db.Model):
     id = db.Column(db.Integer, primary_key=True)

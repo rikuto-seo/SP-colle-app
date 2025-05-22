@@ -1,0 +1,16 @@
+<!-- templates/shared_stats.html -->
+{% extends "base.html" %}
+{% block content %}
+  <h1>{{ user.username }}さんの{{ group_key | capitalize }}コレクション</h1>
+
+  <p>所持数: {{ stats.owned_count }} / {{ stats.total_count }} ({{ stats.percent }}%)</p>
+
+  <!-- 簡易的なサムネイル表示 -->
+  <div class="row">
+    {% for photo in all_photos %}
+      <div class="col-3 mb-2">
+        <img src="{{ photo.image_url }}" class="img-thumbnail {% if photo.id not in owned_photo_ids %}opacity-25{% endif %}">
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}

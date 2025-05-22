@@ -1,0 +1,11 @@
+<!-- templates/shared_collection/shared_view.html -->
+
+<h2>{{ username }}さんの乃木坂46コレクション</h2>
+
+<ul>
+  {% for card in photocards %}
+    <li>{{ card.member }} - {{ card.costume }} - {{ card.type }}</li>
+  {% empty %}
+    <li>まだコレクションはありません。</li>
+  {% endfor %}
+</ul>

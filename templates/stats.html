@@ -3,36 +3,44 @@
 
 {% block content %}
 <div class="container mt-4">
+  <!-- タイトル -->
   <div class="text-center mb-4">
     <h1 class="display-5 fw-bold text-black p-3 rounded section-title">{{ group_name }} 統計情報</h1>
   </div>
 
-  <!-- フィルター＆ソート -->
-  <form method="get" class="mb-4">
-    <div class="row g-3 align-items-center">
-      <div class="col-auto">
-        <label for="filterMember" class="col-form-label">メンバー名で絞り込み:</label>
-      </div>
-      <div class="col-auto">
-        <input type="text" id="filterMember" name="filter_member" value="{{ request.args.get('filter_member', '') }}" class="form-control" placeholder="例: メンバー名">
-      </div>
-      <div class="col-auto">
-        <label for="sortOrder" class="col-form-label">ソート順:</label>
-      </div>
-      <div class="col-auto">
-        <select id="sortOrder" name="sort_order" class="form-select">
-          <option value="desc" {% if request.args.get('sort_order', 'desc') == 'desc' %}selected{% endif %}>コンプ数 多い順</option>
-          <option value="asc" {% if request.args.get('sort_order') == 'asc' %}selected{% endif %}>コンプ数 少ない順</option>
-          <option value="alpha" {% if request.args.get('sort_order') == 'alpha' %}selected{% endif %}>名前順</option>
-        </select>
-      </div>
-      <div class="col-auto">
-        <button type="submit" class="btn btn-primary">適用</button>
-      </div>
+  <!-- シェア＆フィルター -->
+  <div class="row mb-4 g-3 align-items-center justify-content-between">
+    <div class="col-auto">
+      <form method="get" class="d-flex flex-wrap align-items-center gap-2">
+        <div>
+          <label for="filterMember" class="form-label mb-0">メンバー名で絞り込み:</label>
+        </div>
+        <div>
+          <input type="text" id="filterMember" name="filter_member" value="{{ request.args.get('filter_member', '') }}" class="form-control" placeholder="例: メンバー名">
+        </div>
+        <div>
+          <label for="sortOrder" class="form-label mb-0">ソート順:</label>
+        </div>
+        <div>
+          <select id="sortOrder" name="sort_order" class="form-select">
+            <option value="desc" {% if request.args.get('sort_order', 'desc') == 'desc' %}selected{% endif %}>コンプ数 多い順</option>
+            <option value="asc" {% if request.args.get('sort_order') == 'asc' %}selected{% endif %}>コンプ数 少ない順</option>
+            <option value="alpha" {% if request.args.get('sort_order') == 'alpha' %}selected{% endif %}>名前順</option>
+          </select>
+        </div>
+        <div>
+          <button type="submit" class="btn btn-primary">適用</button>
+        </div>
+      </form>
     </div>
-  </form>
+    <div class="col-auto">
+      <a href="{{ url_for('generate_qr', group_key=group_key) }}" target="_blank" class="btn btn-outline-secondary">
+        <i class="fa-solid fa-qrcode"></i> QRコードで共有
+      </a>
+    </div>
+  </div>
 
-  <!-- メンバー別コンプ状況アコーディオン -->
+  <!-- メンバー別コンプ状況 -->
   <div class="accordion mb-5" id="accordionCompStats">
     {% for member, costumes in comp_stats.items() %}
       <div class="accordion-item">
@@ -75,39 +83,46 @@
     {% endfor %}
   </div>
 
-  <!-- コンプ数ランキング -->
-  <div class="card shadow-sm mb-5">
-    <div class="card-body">
-      <h3 class="card-title text-danger">
-        <i class="fa-solid fa-trophy"></i> コンプ数ランキング
-      </h3>
-      {% if comp_ranking %}
-        <ol class="list-group list-group-numbered">
-          {% for entry in comp_ranking %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-              {{ entry.member }}
-              <span class="badge bg-danger rounded-pill">{{ entry.complete_count }}コンプ</span>
-            </li>
-          {% endfor %}
-        </ol>
-      {% else %}
-        <p class="text-muted">ランキングデータがありません。</p>
-      {% endif %}
-    </div>
-  </div>
-
-  <!-- 所持率グラフ -->
-  <div class="card shadow-sm my-4">
-    <div class="card-body">
-      <h3 class="card-title text-info">
-        <i class="fa-solid fa-chart-bar"></i> 衣装別所持率グラフ
-      </h3>
-      <canvas id="progressChart" height="150"></canvas>
-    </div>
-  </div>
-
-  <!-- ▼ 既存の統計3種 -->
+  <!-- グリッド表示：ランキング、グラフ、統計 -->
   <div class="row g-4">
+    <!-- コンプ数ランキング -->
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h3 class="card-title text-danger">
+            <i class="fa-solid fa-trophy"></i> コンプ数ランキング
+          </h3>
+          {% if comp_ranking %}
+            <ol class="list-group list-group-numbered">
+              {% for entry in comp_ranking %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  {{ entry.member }}
+                  <span class="badge bg-danger rounded-pill">{{ entry.complete_count }}コンプ</span>
+                </li>
+              {% endfor %}
+            </ol>
+          {% else %}
+            <p class="text-muted">ランキングデータがありません。</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- 所持率グラフ -->
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h3 class="card-title text-info">
+            <i class="fa-solid fa-chart-bar"></i> 衣装別所持率グラフ
+          </h3>
+          <canvas id="progressChart" height="150"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 統計情報 3種 -->
+  <div class="row g-4 mt-2">
     <!-- メンバー別所持数 -->
     <div class="col-12 col-md-4">
       <div class="card shadow-sm h-100">
@@ -191,8 +206,8 @@
         </div>
       </div>
     </div>
-  </div> <!-- row -->
-</div> <!-- container -->
+  </div>
+</div>
 
 <!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -228,5 +243,4 @@
     new Chart(ctx, config);
   });
 </script>
-
 {% endblock %}
