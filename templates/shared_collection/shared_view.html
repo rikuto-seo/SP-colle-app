@@ -5,7 +5,7 @@
 <ul>
   {% for card in photocards %}
     <li>{{ card.member }} - {{ card.costume }} - {{ card.type }}</li>
-  {% empty %}
+  {% else %}
     <li>まだコレクションはありません。</li>
   {% endfor %}
 </ul>
