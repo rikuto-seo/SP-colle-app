@@ -1,4 +1,4 @@
-import os, bcrypt, csv
+import os, bcrypt, csv,io
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, current_app, abort, send_file
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from flask_migrate import Migrate
