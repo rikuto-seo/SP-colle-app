@@ -721,20 +721,32 @@ def confirm_delete_account():
 
     return render_template('confirm_delete_account.html')
 
+@app.route('/confirm_delete_account', methods=['GET'])
+@login_required
+def confirm_delete_account():
+    return render_template('confirm_delete_account.html')
+
 @app.route('/delete_account', methods=['POST'])
 @login_required
 def delete_account():
-    user_id = session.get('user_id')
-    user = User.query.get(user_id)
+    password = request.form.get('password')
+    user = current_user
 
-    if user:
-        db.session.delete(user)
-        db.session.commit()
-        session.clear()
-        flash("アカウントを削除しました。ご利用ありがとうございました。")
-    else:
-        flash("アカウントが見つかりません。")
+    if not password:
+        flash("パスワードを入力してください。")
+        return redirect(url_for('confirm_delete_account'))
 
+    if not user.check_password(password):
+        flash("パスワードが間違っています。")
+        return redirect(url_for('confirm_delete_account'))
+
+    # アカウント削除処理
+    db.session.delete(user)
+    db.session.commit()
+    logout_user()
+    session.clear()
+
+    flash("アカウントを削除しました。ご利用ありがとうございました。")
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
