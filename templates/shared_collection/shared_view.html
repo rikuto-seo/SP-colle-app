@@ -1,11 +1,33 @@
-<!-- templates/shared_collection/shared_view.html -->
+{% extends "base.html" %}
+{% block title %}{{ username }}さんの{{ group_name }}コレクション{% endblock %}
 
-<h2>{{ username }}さんの乃木坂46コレクション</h2>
+{% block content %}
+<div class="container mt-5">
+  <div class="text-center mb-4">
+    <h2 class="display-6 fw-bold text-dark">{{ username }}さんの{{ group_name }}コレクション</h2>
+    <p class="text-muted">※ このページは公開されています。</p>
+  </div>
 
-<ul>
-  {% for card in photocards %}
-    <li>{{ card.member }} - {{ card.costume }} - {{ card.type }}</li>
+  {% if photocards %}
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+      {% for card in photocards %}
+        <div class="col">
+          <div class="card shadow-sm h-100">
+            <div class="card-body">
+              <h5 class="card-title">{{ card.member }}</h5>
+              <p class="card-text mb-1">
+                <i class="fa-solid fa-shirt text-secondary"></i> {{ card.costume }}
+              </p>
+              <span class="badge bg-info text-dark">{{ card.type }}</span>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
   {% else %}
-    <li>まだコレクションはありません。</li>
-  {% endfor %}
-</ul>
+    <div class="alert alert-warning text-center mt-4" role="alert">
+      <i class="fa-regular fa-face-sad-tear"></i> まだコレクションはありません。
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
