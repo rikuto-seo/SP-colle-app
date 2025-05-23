@@ -235,9 +235,22 @@
         </a>
         <hr>
         <h3>グループ切替</h3>
-        <a href="{{ url_for(endpoint, group_key='nogizaka') }}">乃木坂46</a>
-        <a href="{{ url_for(endpoint, group_key='sakurazaka') }}">櫻坂46</a>
-        <a href="{{ url_for(endpoint, group_key='hinatazaka') }}">日向坂46</a>
+        <a href="{% if endpoint == 'shared_collection' and username %}
+             {{ url_for(endpoint, group_key='nogizaka', username=username) }}
+         {% else %}
+             {{ url_for(endpoint, group_key='nogizaka') }}
+         {% endif %}">乃木坂46</a>
+        <a href="{% if endpoint == 'shared_collection' and username %}
+                    {{ url_for(endpoint, group_key='sakurazaka', username=username) }}
+                {% else %}
+                    {{ url_for(endpoint, group_key='sakurazaka') }}
+                {% endif %}">櫻坂46</a>
+
+        <a href="{% if endpoint == 'shared_collection' and username %}
+                    {{ url_for(endpoint, group_key='hinatazaka', username=username) }}
+                {% else %}
+                    {{ url_for(endpoint, group_key='hinatazaka') }}
+                {% endif %}">日向坂46</a>
         <a href="{{ url_for('logout') }}">
             <i class="fas fa-sign-out-alt logout-icon"></i> ログアウト
         </a>
