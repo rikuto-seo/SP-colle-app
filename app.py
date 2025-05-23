@@ -721,11 +721,6 @@ def confirm_delete_account():
 
     return render_template('confirm_delete_account.html')
 
-@app.route('/confirm_delete_account', methods=['GET'])
-@login_required
-def confirm_delete_account():
-    return render_template('confirm_delete_account.html')
-
 @app.route('/delete_account', methods=['POST'])
 @login_required
 def delete_account():
