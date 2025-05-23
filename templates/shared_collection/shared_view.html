@@ -1,11 +1,35 @@
 {% extends "base.html" %}
-{% block title %}{{ username }}さんの{{ group_name }}コレクション{% endblock %}
+{% block title %}
+  {{ username }}さんの
+  {% if group_name == 'nogizaka' %}
+    乃木坂46
+  {% elif group_name == 'sakurazaka' %}
+    櫻坂46
+  {% elif group_name == 'hinatazaka' %}
+    日向坂46
+  {% else %}
+    {{ group_name }}
+  {% endif %}
+  コレクション
+{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
   <div class="text-center mb-4">
-    <h2 class="display-6 fw-bold text-dark">{{ username }}さんの{{ group_name }}コレクション</h2>
-    <p class="text-muted">※ このページは公開されています。</p>
+    <h2 class="display-6 fw-bold text-dark">
+      {{ username }}さんの
+      {% if group_name == 'nogizaka' %}
+        乃木坂46
+      {% elif group_name == 'sakurazaka' %}
+        櫻坂46
+      {% elif group_name == 'hinatazaka' %}
+        日向坂46
+      {% else %}
+        {{ group_name }}
+      {% endif %}
+      コレクション
+    </h2>
+    {# 以下の公開表示は削除しました #}
   </div>
 
   {% if photocards %}

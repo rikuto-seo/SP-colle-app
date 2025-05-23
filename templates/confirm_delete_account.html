@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}アカウント削除の確認{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4 text-danger">アカウント削除の確認</h2>
+  <p>本当にアカウントを削除しますか？この操作は取り消せません。</p>
+  <form method="POST" action="{{ url_for('confirm_delete_account') }}">
+    <div class="mb-3">
+      <label for="password" class="form-label">パスワードの再入力</label>
+      <input type="password" class="form-control" id="password" name="password" required autocomplete="current-password">
+    </div>
+    <button type="submit" class="btn btn-danger">アカウントを削除する</button>
+    <a href="{{ url_for('index', group_key=group_key) }}" class="btn btn-secondary ms-2">キャンセル</a>
+  </form>
+</div>
+{% endblock %}

@@ -701,6 +701,42 @@ def generate_qr(group_key):
     buf.seek(0)
     return send_file(buf, mimetype='image/png')
 
+@app.route('/confirm_delete_account', methods=['GET', 'POST'])
+@login_required
+def confirm_delete_account():
+    user = current_user  # ここでログインユーザーを直接取得
+
+    if request.method == 'POST':
+        password = request.form.get('password')
+
+        if not password:
+            flash("パスワードを入力してください。")
+            return redirect(url_for('confirm_delete_account'))
+
+        if not user.check_password(password):  # Userクラスのメソッドを使う
+            flash("パスワードが違います。")
+            return redirect(url_for('confirm_delete_account'))
+
+        return redirect(url_for('delete_account'))
+
+    return render_template('confirm_delete_account.html')
+
+@app.route('/delete_account', methods=['POST'])
+@login_required
+def delete_account():
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+
+    if user:
+        db.session.delete(user)
+        db.session.commit()
+        session.clear()
+        flash("アカウントを削除しました。ご利用ありがとうございました。")
+    else:
+        flash("アカウントが見つかりません。")
+
+    return redirect(url_for('index'))
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()  # ←これが大事！
