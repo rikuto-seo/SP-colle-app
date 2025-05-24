@@ -704,7 +704,10 @@ def generate_qr(group_key):
 @app.route('/confirm_delete_account', methods=['GET', 'POST'])
 @login_required
 def confirm_delete_account():
-    user = current_user  # ここでログインユーザーを直接取得
+    user = current_user
+
+    # ここで group_key を取得（ユーザーに紐づいているなら）
+    group_key = user.group_key  # 例：ユーザーモデルに group_key フィールドがある前提
 
     if request.method == 'POST':
         password = request.form.get('password')
@@ -713,13 +716,13 @@ def confirm_delete_account():
             flash("パスワードを入力してください。")
             return redirect(url_for('confirm_delete_account'))
 
-        if not user.check_password(password):  # Userクラスのメソッドを使う
+        if not user.check_password(password):
             flash("パスワードが違います。")
             return redirect(url_for('confirm_delete_account'))
 
         return redirect(url_for('delete_account'))
 
-    return render_template('confirm_delete_account.html')
+    return render_template('confirm_delete_account.html', group_key=group_key)
 
 @app.route('/delete_account', methods=['POST'])
 @login_required
