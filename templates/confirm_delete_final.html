@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}アカウント削除確認{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card p-4 shadow-sm" style="max-width: 600px; margin: 0 auto;">
+        <h2 class="text-center mb-4 text-danger">⚠ アカウント削除の最終確認</h2>
+        <p class="text-center">
+            アカウントを削除すると、すべてのデータが完全に削除され、復元できません。<br>
+            本当によろしいですか？
+        </p>
+
+        <form method="POST" action="{{ url_for('confirm_delete_final') }}">
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-danger">はい、アカウントを削除します</button>
+                <a href="{{ url_for('index', group_key=group_key) }}" class="btn btn-secondary">キャンセル</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

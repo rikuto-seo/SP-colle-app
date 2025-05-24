@@ -23,9 +23,13 @@ from utils import (
     get_user_photo_ids,
     compute_collection_stats
 )
+from datetime import timedelta
 
 
 app = Flask(__name__)
+app.secret_key = 'cheesenahn'  # セッションに必須（安全なランダム値にしてください）
+app.permanent_session_lifetime = timedelta(minutes=10)
+
 
 # コンフィグ設定
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -701,13 +705,16 @@ def generate_qr(group_key):
     buf.seek(0)
     return send_file(buf, mimetype='image/png')
 
+@app.before_request
+def make_session_permanent():
+    session.permanent = True
+
+
 @app.route('/confirm_delete_account', methods=['GET', 'POST'])
 @login_required
 def confirm_delete_account():
     user = current_user
-
-    # ここで group_key を取得（ユーザーに紐づいているなら）
-    group_key = user.group_key  # 例：ユーザーモデルに group_key フィールドがある前提
+    group_key = user.group_key or "nogizaka"
 
     if request.method == 'POST':
         password = request.form.get('password')
@@ -720,32 +727,40 @@ def confirm_delete_account():
             flash("パスワードが違います。")
             return redirect(url_for('confirm_delete_account'))
 
-        return redirect(url_for('delete_account'))
+        session['pending_delete_password'] = password
+        session['pending_delete_group_key'] = group_key
+
+        return redirect(url_for('confirm_delete_final'))
 
     return render_template('confirm_delete_account.html', group_key=group_key)
 
-@app.route('/delete_account', methods=['POST'])
+
+@app.route('/confirm_delete_final', methods=['GET', 'POST'])
 @login_required
-def delete_account():
-    password = request.form.get('password')
-    user = current_user
+def confirm_delete_final():
+    password = session.get('pending_delete_password')
+    group_key = session.get('pending_delete_group_key', 'nogizaka')
 
     if not password:
-        flash("パスワードを入力してください。")
+        flash("不正な操作です。もう一度お試しください。")
         return redirect(url_for('confirm_delete_account'))
 
-    if not user.check_password(password):
-        flash("パスワードが間違っています。")
-        return redirect(url_for('confirm_delete_account'))
+    if request.method == 'POST':
+        user = current_user
 
-    # アカウント削除処理
-    db.session.delete(user)
-    db.session.commit()
-    logout_user()
-    session.clear()
+        if not user.check_password(password):
+            flash("認証エラーが発生しました。")
+            return redirect(url_for('confirm_delete_account'))
 
-    flash("アカウントを削除しました。ご利用ありがとうございました。")
-    return redirect(url_for('index'))
+        db.session.delete(user)
+        db.session.commit()
+        logout_user()
+        session.clear()
+
+        flash("アカウントを削除しました。ご利用ありがとうございました。")
+        return redirect(url_for('index', group_key=group_key))
+
+    return render_template('confirm_delete_final.html', group_key=group_key)
 
 if __name__ == '__main__':
     with app.app_context():
