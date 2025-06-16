@@ -1,4 +1,4 @@
-import os, bcrypt, csv,io
+import os, bcrypt, csv,io,random
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, current_app, abort, send_file
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from flask_migrate import Migrate
@@ -29,7 +29,6 @@ from datetime import timedelta
 app = Flask(__name__)
 app.secret_key = 'cheesenahn'  # セッションに必須（安全なランダム値にしてください）
 app.permanent_session_lifetime = timedelta(minutes=10)
-
 
 # コンフィグ設定
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -226,7 +225,7 @@ def login():
         flash('ユーザー名またはパスワードが間違っています。', 'error')
         return redirect(url_for('login'))
 
-    return render_template('login.html')
+    return render_template('login.html',songs=[], is_login_page=True)
 
 @app.route('/<group_key>/dashboard')
 def dashboard(group_key):
