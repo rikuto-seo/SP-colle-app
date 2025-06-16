@@ -278,6 +278,7 @@ def get_photos_by_group(group_key):
             csv_path = os.path.join(folder_path, filename)
             with open(csv_path, encoding='utf-8') as f:
                 reader = csv.reader(f)
+                next(reader,None)
                 for row in reader:
                     if len(row) == 3:
                         member, costume, photo_type = row
