@@ -798,6 +798,7 @@ def mypage():
     return render_template(
         "mypage.html",
         user=current_user,
+        group_key=default_group,
         default_group=default_group,
         is_shared=share_statuses.get(default_group, False),
         qr_codes=qr_codes,
