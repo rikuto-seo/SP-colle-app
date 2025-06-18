@@ -19,7 +19,7 @@
 
 </head>
 
-<body class="{{ group_color }}">
+<body class="{{ group_color }}{% if current_user.is_authenticated and current_user.dark_mode %} dark-mode{% endif %}">
 
     <div class="{% if group_key == 'hinatazaka' %}navbar-hinata
         {% elif group_key == 'sakurazaka' %}navbar-sakura
@@ -34,7 +34,8 @@
     </div>
 
     <div id="sidebar">
-        <h3>メニュー</h3>
+        <div class="sidebar-main">
+            <h3>メニュー</h3>
             <a href="{{ url_for('index', group_key=group_key) }}">
                 <i class="fas fa-camera"></i> 生写真一覧
             </a>
@@ -50,22 +51,26 @@
             <a href="{{ url_for('gallery', group_key=group_key) }}">
                 <i class="fas fa-image"></i> ギャラリー
             </a>
+
             <hr>
 
             <h3>グループ切替</h3>
             <a href="{% if endpoint == 'shared_collection' and username %}{{ url_for(endpoint, group_key='nogizaka', username=username) }}{% else %}{{ url_for(endpoint, group_key='nogizaka') }}{% endif %}">乃木坂46</a>
             <a href="{% if endpoint == 'shared_collection' and username %}{{ url_for(endpoint, group_key='sakurazaka', username=username) }}{% else %}{{ url_for(endpoint, group_key='sakurazaka') }}{% endif %}">櫻坂46</a>
             <a href="{% if endpoint == 'shared_collection' and username %}{{ url_for(endpoint, group_key='hinatazaka', username=username) }}{% else %}{{ url_for(endpoint, group_key='hinatazaka') }}{% endif %}">日向坂46</a>
-            <a href="{{ url_for('logout') }}">
-                <i class="fas fa-sign-out-alt logout-icon"></i> ログアウト
-            </a>
-                <!-- アカウント削除リンク -->
-            <a href="{{ url_for('confirm_delete_account') }}" style="color: red;">
-                <i class="fas fa-user-slash"></i> アカウント削除
-            </a>
-            
-    </div>
+        </div>
 
+        <div class="sidebar-footer">
+            <a href="{{ url_for('mypage') }}">
+                {% if current_user.icon_url %}
+                    <img src="{{ current_user.icon_url }}" alt="ユーザーアイコン" class="sidebar-user-icon" />
+                {% else %}
+                    <i class="fas fa-user"></i>
+                {% endif %}
+                マイページ
+            </a>
+        </div>
+    </div>
 
     <div class="container mt-4 {{ group_color }}">
         {% block content %}

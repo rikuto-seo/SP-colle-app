@@ -65,28 +65,41 @@ body {
     cursor: pointer;
 }
 
-/* === サイドバー === */
+/* === サイドバー全体 === */
 #sidebar {
     position: fixed;
     top: 0;
-    width: 200px;
+    left: 0; /* 画面左端に固定 */
+    width: 30%;
     max-width: 70vw;
-    height: 100%;
+    height: 100vh; /* 画面全体の高さ */
     background-color: #ffffff;
     box-shadow: 2px 0 5px rgba(0,0,0,0.3);
     padding: 20px;
-    transition: transform 0.3s ease;
-    z-index: 9999;
     box-sizing: border-box;
     overflow-x: hidden;
+    overflow-y: auto; /* 縦スクロール可能に */
+    transition: transform 0.3s ease;
     transform: translateX(-100%);
+    z-index: 9999;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 #sidebar.open {
     transform: translateX(0);
 }
 
-#sidebar a {
+/* === メニュー部分 === */
+.sidebar-main {
+    flex-grow: 1;
+}
+
+/* === リンクの共通スタイル === */
+#sidebar a,
+.sidebar-footer a {
     display: block;
     margin: 10px 0;
     font-size: 18px;
@@ -98,16 +111,33 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-#sidebar a:hover {
+#sidebar a:hover,
+.sidebar-footer a:hover {
     background-color: #a3d4f7;
     color: white;
 }
 
+/* === 見出し === */
 #sidebar h3 {
     font-size: 24px;
     font-weight: bold;
     margin-bottom: 20px;
     color: #333;
+}
+
+/* === フッター（マイページリンク） === */
+.sidebar-footer {
+    padding-top: 10px;
+    border-top: 1px solid #ccc;
+}
+
+.sidebar-user-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-right: 8px;
+    object-fit: cover;
 }
 
 /* === トップへ戻るボタン === */
@@ -235,7 +265,7 @@ body {
     }
 
     #sidebar {
-        width: 50%;
+        width: 40%;
     }
 
     #sidebar h3 {
@@ -293,4 +323,123 @@ body {
         color: white;
         box-shadow: 0 0 0 2px rgba(255, 165, 0, 0.5);
     }
+}
+
+/* 全体背景と文字色 */
+body.dark-mode {
+  background-color: #181a1b !important; /* #121212より少し明るめ */
+  color: #e0e0e0 !important;           /* 白に近いけどやや柔らかめの文字色 */
+}
+
+/* カードやリスト項目、ナビバー、ボーダー系 */
+body.dark-mode .card,
+body.dark-mode .list-group-item,
+body.dark-mode .navbar-hinata,
+body.dark-mode .navbar-sakura,
+body.dark-mode .navbar-nogi,
+body.dark-mode .navbar-default {
+  background-color: #24292e !important; /* 少し青みがかったダークグレー */
+  color: #e0e0e0 !important;
+  border-color: #444c56 !important;
+}
+
+/* ダークモードのハンバーガーメニュー */
+body.dark-mode #menu-button {
+    color: #fff;        /* 文字色を白に */
+    background: transparent; /* 背景を透明に（必要に応じて調整） */
+    border: none;       /* ボーダーがあれば消す */
+    font-size: 24px;    /* サイズ調整（必要なら） */
+    cursor: pointer;
+}
+
+/* サイドバー背景とリンク */
+body.dark-mode #sidebar {
+  background-color: #24292e !important;
+  color: #e0e0e0 !important;
+}
+
+body.dark-mode #sidebar a {
+  color: #58a6ff !important; /* 明るい青 */
+}
+
+body.dark-mode #sidebar a:hover {
+  color: #cdd9e5 !important; /* 薄いグレー */
+}
+
+/* サイドバーの見出し（h3など） */
+body.dark-mode #sidebar h3 {
+  color: #cdd9e5 !important; /* 薄いグレーで読みやすく */
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+/* 通常リンク */
+body.dark-mode a {
+  color: #58a6ff !important;
+}
+
+body.dark-mode a:hover {
+  color: #cdd9e5 !important;
+}
+
+/* 入力フォーム、セレクトボックス */
+body.dark-mode .form-control,
+body.dark-mode select,
+body.dark-mode input,
+body.dark-mode textarea {
+  background-color: #2d333b !important;
+  color: #c9d1d9 !important;
+  border: 1px solid #444c56 !important;
+}
+
+/* ボタン */
+body.dark-mode .btn {
+  background-color: #444c56 !important;
+  color: #c9d1d9 !important;
+  border-color: #444c56 !important;
+}
+
+body.dark-mode .btn:hover {
+  background-color: #57606a !important;
+}
+
+/* グループ背景色の上書き（勝つように） */
+body.dark-mode .bg-nogi,
+body.dark-mode .bg-sakura,
+body.dark-mode .bg-hinata {
+  background-color: #24292e !important;
+  color: #e0e0e0 !important;
+}
+/* === マイページ設定リンクをサイドバー風に === */
+.setting-links a,
+.setting-links .sidebar-like-link {
+    display: block;
+    margin: 10px 0;
+    font-size: 18px;
+    font-family: 'Arial', sans-serif;
+    text-decoration: none;
+    color: #333;
+    padding: 8px 15px;
+    border-radius: 5px;
+    background-color: #f5f5f5;
+    border: none;
+    width: 100%;
+    text-align: left;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.setting-links a:hover,
+.setting-links .sidebar-like-link:hover {
+    background-color: #a3d4f7;
+    color: white;
+    text-decoration: none;
+}
+
+.sidebar-like-link {
+    background: none;
+    border: none;
+    padding: 0;
+    width: auto;
+    cursor: pointer;
 }

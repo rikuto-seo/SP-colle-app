@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}アイコン設定{% endblock %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 600px;">
+  <h1>アイコン設定</h1>
+
+  <form method="post" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+
+    <div class="mb-3">
+      {{ form.icon.label(class="form-label") }}
+      {{ form.icon(class="form-control") }}
+      {% if form.icon.errors %}
+        <div class="text-danger">
+          {% for error in form.icon.errors %}
+            <div>{{ error }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+
+    <button type="submit" class="btn btn-primary">アップロード</button>
+  </form>
+</div>
+<a href="{{ url_for('mypage') }}" class="btn btn-secondary mt-3">
+  ← 戻る
+</a>
+{% endblock %}

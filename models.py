@@ -20,11 +20,15 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     group_key = db.Column(db.String(50), nullable=True)
     username = db.Column(db.String(64), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True)
     password_hash = db.Column(db.String(128), nullable=False)
-
+    default_group = db.Column(db.String(100), nullable=True)
+    dark_mode = db.Column(db.Boolean, default=False)
     is_nogizaka_shared = db.Column(db.Boolean, default=False)
     is_sakurazaka_shared = db.Column(db.Boolean, default=False)
     is_hinatazaka_shared = db.Column(db.Boolean, default=False)
+
+    icon_filename = db.Column(db.String(255), nullable=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -41,6 +45,14 @@ class User(UserMixin, db.Model):
             self.is_hinatazaka_shared = not self.is_hinatazaka_shared
         else:
             raise ValueError(f"無効なグループキー: {group_key}")
+        
+    @property
+    def icon_url(self):
+        from flask import url_for
+        if self.icon_filename:
+            return url_for('static', filename='uploads/icons/' + self.icon_filename)
+        else:
+            return url_for('static', filename='images/default_icon.png')
 
 class UserPhoto(db.Model):
     id = db.Column(db.Integer, primary_key=True)

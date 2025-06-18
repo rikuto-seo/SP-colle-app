@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}マイページ{% endblock %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 800px;">
+  <!-- タイトル -->
+  <div class="text-center mb-4">
+    <h1 class="display-5 fw-bold text-black p-3 rounded section-title">マイページ</h1>
+    <p class="text-muted">アカウント情報と共有設定</p>
+  </div>
+
+  <!-- ユーザー挨拶カード -->
+    <div class="card mb-4">
+    <div class="card-body d-flex align-items-center gap-3">
+        {% if user.icon_url %}
+        <img src="{{ user.icon_url }}" alt="ユーザーアイコン" class="rounded-circle" style="width: 64px; height: 64px; object-fit: cover;">
+        {% else %}
+        <i class="fas fa-user-circle fa-3x text-secondary"></i>
+        {% endif %}
+        <div>
+        <h5 class="card-title mb-1">こんにちは、{{ user.username }} さん</h5>
+        <p class="card-text">アカウント情報や表示設定を確認・変更できます。</p>
+        </div>
+    </div>
+    </div>
+
+
+  <!-- 📱 QRコード共有セクション -->
+  <div class="mb-4">
+    <h4 class="fw-bold mb-3"><i class="fa-solid fa-qrcode me-2"></i>所持一覧のQRコード共有</h4>
+
+    {% set group_names = {'nogizaka': '乃木坂46', 'sakurazaka': '櫻坂46', 'hinatazaka': '日向坂46'} %}
+
+    {% for key, name in group_names.items() %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h5 class="card-title">{{ name }}</h5>
+        <div class="d-flex align-items-center gap-3">
+          <img src="data:image/png;base64,{{ qr_codes[key] }}" alt="{{ name }}のQRコード" class="border rounded" style="width: 120px; height: 120px;">
+          <form method="post" action="{{ url_for('toggle_share', group_key=key) }}">
+            <button type="submit" class="btn {% if share_statuses[key] %}btn-success{% else %}btn-outline-secondary{% endif %}">
+              {% if share_statuses[key] %}
+                <i class="fa-solid fa-eye-slash"></i> 公開中 → 非公開にする
+              {% else %}
+                <i class="fa-solid fa-eye"></i> 非公開 → 公開にする
+              {% endif %}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ⚙️ 各種設定メニュー -->
+    <div class="card">
+    <div class="card-body">
+        <h5 class="card-title"><i class="fas fa-cog me-2"></i>設定</h5>
+
+        <div class="setting-links">
+        <a href="{{ url_for('edit_profile') }}">
+            <i class="fas fa-user-edit me-2"></i>プロフィール編集
+        </a>
+        <a href="{{ url_for('set_default_group') }}">
+            <i class="fas fa-sliders-h me-2"></i>初期表示グループの設定
+        </a>
+        <a href="{{ url_for('icon_setting') }}">
+            <i class="fas fa-image me-2"></i>アイコン設定
+        </a>
+        <form action="{{ url_for('toggle_dark_mode') }}" method="post" style="display: inline;">
+            <button type="submit" class="sidebar-like-link">
+            <i class="fas fa-moon me-2"></i>
+            {% if user.dark_mode %}ダークモードを解除{% else %}ダークモードを有効にする{% endif %}
+            </button>
+        </form>
+        <!-- ✅ 追加：ログアウトリンク -->
+        <a href="{{ url_for('logout') }}">
+            <i class="fas fa-sign-out-alt me-2"></i>ログアウト
+        </a>
+        <a href="{{ url_for('confirm_delete_account') }}" class="text-danger">
+            <i class="fas fa-user-slash me-2"></i>アカウント削除
+        </a>
+        </div>
+    </div>
+    </div>
+</div>
+{% endblock %}

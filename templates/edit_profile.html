@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}プロフィール編集{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h1>プロフィール編集</h1>
+
+  <form method="post">
+    <div class="mb-3">
+      <label for="username" class="form-label">ユーザー名</label>
+      <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="email" class="form-label">メールアドレス（任意）</label>
+      <input type="email" class="form-control" id="email" name="email" value="{{ user.email or '' }}">
+    </div>
+
+    <button type="submit" class="btn btn-primary">更新する</button>
+    <a href="{{ url_for('mypage') }}" class="btn btn-secondary ms-2">キャンセル</a>
+  </form>
+</div>
+<a href="{{ url_for('mypage') }}" class="btn btn-secondary mt-3">
+  ← 戻る
+</a>
+{% endblock %}

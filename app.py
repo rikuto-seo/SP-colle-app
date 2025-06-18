@@ -1,4 +1,4 @@
-import os, bcrypt, csv,io,random
+import os, bcrypt, csv,io,random,base64,shutil
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, current_app, abort, send_file
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from flask_migrate import Migrate
@@ -10,6 +10,7 @@ from collections import defaultdict
 from itertools import groupby
 from operator import attrgetter
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 from sqlalchemy.orm import joinedload
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
@@ -24,6 +25,7 @@ from utils import (
     compute_collection_stats
 )
 from datetime import timedelta
+from forms import IconUploadForm
 
 
 app = Flask(__name__)
@@ -54,11 +56,11 @@ login_manager.init_app(app)
 # DB作成とサンプルユーザー作成
 with app.app_context():
     db.create_all()
-    if not User.query.filter_by(username='testuser').first():
-        user = User(username='testuser')
-        user.set_password('testpassword')
-        db.session.add(user)
-        db.session.commit()
+    #if not User.query.filter_by(username='testuser').first():
+     #   user = User(username='testuser')
+      #  user.set_password('testpassword')
+       # db.session.add(user)
+        #db.session.commit()
 
 @app.context_processor
 def inject_endpoint():
@@ -265,7 +267,11 @@ def logout():
 
 @app.route('/')
 def home():
-    return redirect(url_for('login'))
+    if current_user.is_authenticated:
+        group = current_user.default_group or 'nogizaka'
+        return redirect(url_for('index', group_key=group))
+    else:
+        return redirect(url_for('login'))
 
 def get_photos_by_group(group_key):
     folder_path = f'members_csv/{group_key}'  # 例: members_csv/hinatazaka
@@ -657,7 +663,7 @@ def toggle_share(group_key):
 
     # 変更をDBに保存
     db.session.commit()
-    return redirect(url_for('stats', group_key=group_key))
+    return redirect(url_for('mypage'))
 
 @app.route("/share/<group_key>/<username>")
 def shared_collection(group_key, username):
@@ -689,21 +695,22 @@ def shared_collection(group_key, username):
         group_name=group_key.capitalize()
     )
 
-@app.route('/generate_qr/<group_key>')
+@app.route('/qr_image/<group_key>')
 @login_required
-def generate_qr(group_key):
+def qr_image(group_key):
     group_key = group_key.lower()
     if group_key not in ['nogizaka', 'sakurazaka', 'hinatazaka']:
         abort(404)
 
-    # QRコードが開くのはユーザーの公開ページ
     share_url = url_for('shared_collection', group_key=group_key, username=current_user.username, _external=True)
 
     qr_img = qrcode.make(share_url)
     buf = io.BytesIO()
-    qr_img.save(buf)
+    qr_img.save(buf, format='PNG')
     buf.seek(0)
-    return send_file(buf, mimetype='image/png')
+
+    img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+    return jsonify({'qr_base64': img_base64})
 
 @app.before_request
 def make_session_permanent():
@@ -761,6 +768,152 @@ def confirm_delete_final():
         return redirect(url_for('index', group_key=group_key))
 
     return render_template('confirm_delete_final.html', group_key=group_key)
+
+@app.route("/mypage")
+@login_required
+def mypage():
+    def make_qr_base64(group_key):
+        share_url = url_for('shared_collection', group_key=group_key, username=current_user.username, _external=True)
+        qr_img = qrcode.make(share_url)
+        buf = io.BytesIO()
+        qr_img.save(buf, format='PNG')
+        buf.seek(0)
+        return base64.b64encode(buf.read()).decode('utf-8')
+
+    qr_codes = {
+        'nogizaka': make_qr_base64('nogizaka'),
+        'sakurazaka': make_qr_base64('sakurazaka'),
+        'hinatazaka': make_qr_base64('hinatazaka')
+    }
+
+    share_statuses = {
+        'nogizaka': current_user.is_nogizaka_shared,
+        'sakurazaka': current_user.is_sakurazaka_shared,
+        'hinatazaka': current_user.is_hinatazaka_shared
+    }
+
+    return render_template(
+        "mypage.html",
+        user=current_user,
+        default_group=current_user.default_group,
+        is_shared=share_statuses[current_user.default_group],
+        qr_codes=qr_codes,
+        share_statuses=share_statuses,
+    )
+
+@app.route('/mypage/icon', methods=['GET', 'POST'])
+@login_required
+def icon_setting():
+    form = IconUploadForm()
+    if form.validate_on_submit():
+        file = form.icon.data
+        filename = secure_filename(file.filename)
+
+        user_folder = os.path.join(app.root_path, 'static', 'uploads', 'icons', f'user_{current_user.id}')
+        os.makedirs(user_folder, exist_ok=True)  # フォルダがなければ作成
+
+        save_path = os.path.join(user_folder, filename)
+        file.save(save_path)
+
+        # DBに保存するのは相対パス（例：user_1/filename.jpg）
+        current_user.icon_filename = f'user_{current_user.id}/{filename}'
+        db.session.commit()
+        flash('アイコンを更新しました。', 'success')
+        return redirect(url_for('mypage'))
+
+    return render_template('icon_setting.html', form=form)
+
+@app.route('/edit_profile', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    if request.method == 'POST':
+        new_username = request.form.get('username')
+        email = request.form.get('email')
+
+        if new_username:
+            current_user.username = new_username
+        if email:
+            current_user.email = email
+
+        db.session.commit()
+        flash('プロフィールを更新しました', 'success')
+        return redirect(url_for('mypage'))
+
+    return render_template('edit_profile.html', user=current_user)
+
+@app.route('/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    if request.method == 'POST':
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        if not current_user.check_password(current_password):
+            flash('現在のパスワードが正しくありません。', 'error')
+            return redirect(url_for('change_password'))
+
+        if new_password != confirm_password:
+            flash('新しいパスワードと確認用パスワードが一致しません。', 'error')
+            return redirect(url_for('change_password'))
+
+        if len(new_password) < 6:
+            flash('パスワードは6文字以上にしてください。', 'error')
+            return redirect(url_for('change_password'))
+
+        current_user.set_password(new_password)
+        db.session.commit()
+        flash('パスワードを変更しました。', 'success')
+        return redirect(url_for('mypage'))
+
+    return render_template('change_password.html')
+
+@app.route('/set_default_group', methods=['GET', 'POST'])
+@login_required
+def set_default_group():
+    groups = ['nogizaka', 'keyakizaka', 'hinatazaka']  # 例: グループ一覧
+
+    if request.method == 'POST':
+        selected_group = request.form.get('group')
+        if selected_group not in groups:
+            flash('無効なグループが選択されました。')
+            return redirect(url_for('set_default_group'))
+
+        current_user.default_group = selected_group
+        db.session.commit()
+        flash(f'初期表示グループを「{selected_group}」に設定しました。')
+        return redirect(url_for('mypage'))
+
+    return render_template('set_default_group.html', groups=groups, current_default=current_user.default_group)
+
+@app.route('/toggle_dark_mode', methods=['POST'])
+@login_required
+def toggle_dark_mode():
+
+    current_user.dark_mode = not current_user.dark_mode
+    db.session.commit()
+    flash('ダークモード設定を更新しました。')
+
+    # 前のページに戻す（referrerがなければmypage）
+    return redirect(request.referrer or url_for('mypage'))
+
+@app.route('/delete_account', methods=['POST'])
+@login_required
+def delete_account():
+    user_id = current_user.id
+    user_folder = os.path.join(app.root_path, 'static', 'uploads', 'icons', f'user_{user_id}')
+
+    # DBからユーザー削除処理など
+    # 例: db.session.delete(current_user), db.session.commit() など
+
+    # フォルダ削除（存在する場合のみ）
+    if os.path.exists(user_folder):
+        shutil.rmtree(user_folder)  # フォルダごと削除
+
+    # ログアウトやリダイレクト処理
+    logout_user()
+    flash('アカウントを削除しました。', 'success')
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     with app.app_context():

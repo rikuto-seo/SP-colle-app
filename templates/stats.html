@@ -8,22 +8,6 @@
     <h1 class="display-5 fw-bold text-black p-3 rounded section-title">{{ group_name }} 統計情報</h1>
   </div>
 
-  <!-- QRコード共有＆公開切り替え -->
-  <div class="d-flex justify-content-start align-items-center gap-3 mb-4">
-    <a href="{{ url_for('generate_qr', group_key=group_key) }}" target="_blank" class="btn btn-outline-secondary">
-      <i class="fa-solid fa-qrcode"></i> QRコードで共有
-    </a>
-    <form method="post" action="{{ url_for('toggle_share', group_key=group_key) }}">
-      <button type="submit" class="btn {% if is_shared %}btn-success{% else %}btn-outline-secondary{% endif %}">
-        {% if is_shared %}
-          <i class="fa-solid fa-eye-slash"></i> 公開中 → 非公開にする
-        {% else %}
-          <i class="fa-solid fa-eye"></i> 非公開 → 公開にする
-        {% endif %}
-      </button>
-    </form>
-  </div>
-
   <!-- フィルター＆ソート -->
   <form method="get" class="row mb-4 g-3 align-items-center">
     <div class="col-md-4">
