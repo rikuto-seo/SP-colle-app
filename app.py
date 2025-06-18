@@ -792,11 +792,14 @@ def mypage():
         'hinatazaka': current_user.is_hinatazaka_shared
     }
 
+    # default_groupがNoneなら 'nogizaka' など安全な値を設定
+    default_group = current_user.default_group or 'nogizaka'
+
     return render_template(
         "mypage.html",
         user=current_user,
-        default_group=current_user.default_group,
-        is_shared=share_statuses[current_user.default_group],
+        default_group=default_group,
+        is_shared=share_statuses.get(default_group, False),
         qr_codes=qr_codes,
         share_statuses=share_statuses,
     )
