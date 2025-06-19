@@ -11,20 +11,67 @@
 
     <div class="mb-3">
       {{ form.icon.label(class="form-label") }}
-      {{ form.icon(class="form-control") }}
-      {% if form.icon.errors %}
-        <div class="text-danger">
-          {% for error in form.icon.errors %}
-            <div>{{ error }}</div>
-          {% endfor %}
-        </div>
-      {% endif %}
+      {{ form.icon(class="form-control", id="icon-input") }}
     </div>
+
+    <div class="mb-3">
+      <label class="form-label">トリミングプレビュー</label>
+      <img id="cropper-image" style="max-width: 100%; display: none;">
+    </div>
+
+    <!-- トリミングされた画像を送る hidden input -->
+    <input type="hidden" name="cropped_data" id="cropped-data">
 
     <button type="submit" class="btn btn-primary">アップロード</button>
   </form>
+
+  <a href="{{ url_for('mypage') }}" class="btn btn-secondary mt-3">← 戻る</a>
 </div>
-<a href="{{ url_for('mypage') }}" class="btn btn-secondary mt-3">
-  ← 戻る
-</a>
+
+<!-- 🔥 削除ボタンを別フォームで追加 -->
+<form method="post" action="{{ url_for('delete_icon') }}">
+  <button type="submit" class="btn btn-danger mt-3" onclick="return confirm('本当に削除しますか？')">アイコンを削除</button>
+</form>
+
+<!-- JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const iconInput = document.getElementById('icon-input');
+  const cropperImage = document.getElementById('cropper-image');
+  const croppedDataInput = document.getElementById('cropped-data');
+  let cropper;
+
+  iconInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      cropperImage.src = event.target.result;
+      cropperImage.style.display = 'block';
+
+      if (cropper) {
+        cropper.destroy();
+      }
+
+      cropper = new Cropper(cropperImage, {
+        aspectRatio: 1,
+        viewMode: 1,
+        autoCropArea: 1,
+        responsive: true,
+        background: false
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+
+  const form = document.querySelector('form');
+  form.addEventListener('submit', (e) => {
+    if (cropper) {
+      const canvas = cropper.getCroppedCanvas({ width: 256, height: 256 });
+      croppedDataInput.value = canvas.toDataURL('image/png');
+    }
+  });
+});
+</script>
 {% endblock %}

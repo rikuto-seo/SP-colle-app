@@ -1,4 +1,4 @@
-import os, bcrypt, csv,io,random,base64,shutil
+import os, bcrypt, csv,io,random,base64,shutil,re
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, current_app, abort, send_file
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from flask_migrate import Migrate
@@ -26,6 +26,7 @@ from utils import (
 )
 from datetime import timedelta
 from forms import IconUploadForm
+from PIL import Image
 
 
 app = Flask(__name__)
@@ -239,14 +240,31 @@ def dashboard(group_key):
     group_name = group_names.get(group_key, 'グループ不明')
     return render_template('dashboard.html',endpoint=request.endpoint, group_key=group_key, group_name=group_name)
 
+import re  # 上に記述済みなら不要
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+
         existing_user = User.query.filter_by(username=username).first()
         if existing_user:
-            flash('そのユーザー名はすでに使われています')
+            flash('そのユーザー名はすでに使われています', 'error')
+            return redirect(url_for('register'))
+
+        # ✅ パスワード強度チェック
+        if len(password) < 6:
+            flash('パスワードは6文字以上にしてください。', 'error')
+            return redirect(url_for('register'))
+        if not re.search(r"[A-Za-z]", password):
+            flash('パスワードには英字を含めてください。', 'error')
+            return redirect(url_for('register'))
+        if not re.search(r"[0-9]", password):
+            flash('パスワードには数字を含めてください。', 'error')
+            return redirect(url_for('register'))
+        if not re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]", password):
+            flash('パスワードには記号を含めてください。', 'error')
             return redirect(url_for('register'))
 
         new_user = User(username=username)
@@ -254,7 +272,7 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
-        flash('ユーザー登録が完了しました！ログインしてください')
+        flash('ユーザー登録が完了しました！ログインしてください', 'success')
         return redirect(url_for('login'))
 
     return render_template('register.html')
@@ -809,23 +827,62 @@ def mypage():
 @login_required
 def icon_setting():
     form = IconUploadForm()
-    if form.validate_on_submit():
-        file = form.icon.data
-        filename = secure_filename(file.filename)
 
-        user_folder = os.path.join(app.root_path, 'static', 'uploads', 'icons', f'user_{current_user.id}')
-        os.makedirs(user_folder, exist_ok=True)  # フォルダがなければ作成
+    if request.method == 'POST':
+        cropped_data = request.form.get('cropped_data')
 
-        save_path = os.path.join(user_folder, filename)
-        file.save(save_path)
+        if cropped_data:
+            try:
+                # base64ヘッダーを除去
+                header, encoded = cropped_data.split(',', 1)
+                binary_data = base64.b64decode(encoded)
 
-        # DBに保存するのは相対パス（例：user_1/filename.jpg）
-        current_user.icon_filename = f'user_{current_user.id}/{filename}'
-        db.session.commit()
-        flash('アイコンを更新しました。', 'success')
-        return redirect(url_for('mypage'))
+                # 画像として読み込み
+                image = Image.open(BytesIO(binary_data))
+
+                # 保存パスを準備
+                user_folder = os.path.join(app.root_path, 'static', 'uploads', 'icons', f'user_{current_user.id}')
+                os.makedirs(user_folder, exist_ok=True)
+
+                # 保存ファイル名を統一（例：icon.png）
+                filename = 'icon.png'
+                save_path = os.path.join(user_folder, filename)
+
+                # PNGで保存
+                image.save(save_path, format='PNG')
+
+                # DBに相対パスを保存
+                current_user.icon_filename = f'user_{current_user.id}/{filename}'
+                db.session.commit()
+
+                flash('アイコンを更新しました。', 'success')
+                return redirect(url_for('mypage'))
+            except Exception as e:
+                flash('画像の処理に失敗しました。', 'danger')
+                print(f"[エラー] {e}")
+        else:
+            flash('画像がトリミングされていません。', 'warning')
 
     return render_template('icon_setting.html', form=form)
+
+@app.route('/mypage/icon/delete', methods=['POST'])
+@login_required
+def delete_icon():
+    if current_user.icon_filename:
+        icon_path = os.path.join(app.root_path, 'static', 'uploads', 'icons', current_user.icon_filename)
+        try:
+            if os.path.exists(icon_path):
+                os.remove(icon_path)
+        except Exception as e:
+            app.logger.error(f"アイコン削除失敗: {e}")
+
+        # DBのフィールドをリセット
+        current_user.icon_filename = None
+        db.session.commit()
+
+        flash('アイコンを削除しました。', 'info')
+
+    return redirect(url_for('icon_setting'))
 
 @app.route('/edit_profile', methods=['GET', 'POST'])
 @login_required
@@ -844,6 +901,8 @@ def edit_profile():
         return redirect(url_for('mypage'))
 
     return render_template('edit_profile.html', user=current_user)
+
+import re  # 正規表現モジュールを使います
 
 @app.route('/change_password', methods=['GET', 'POST'])
 @login_required
@@ -865,6 +924,19 @@ def change_password():
             flash('パスワードは6文字以上にしてください。', 'error')
             return redirect(url_for('change_password'))
 
+        # ✅ パスワード強度チェック
+        if not re.search(r"[A-Za-z]", new_password):
+            flash('パスワードには英字を含めてください。', 'error')
+            return redirect(url_for('change_password'))
+
+        if not re.search(r"[0-9]", new_password):
+            flash('パスワードには数字を含めてください。', 'error')
+            return redirect(url_for('change_password'))
+
+        if not re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]", new_password):
+            flash('パスワードには記号を含めてください。', 'error')
+            return redirect(url_for('change_password'))
+
         current_user.set_password(new_password)
         db.session.commit()
         flash('パスワードを変更しました。', 'success')
@@ -875,7 +947,7 @@ def change_password():
 @app.route('/set_default_group', methods=['GET', 'POST'])
 @login_required
 def set_default_group():
-    groups = ['nogizaka', 'keyakizaka', 'hinatazaka']  # 例: グループ一覧
+    groups = ['nogizaka', 'sakurazaka', 'hinatazaka']  # 例: グループ一覧
 
     if request.method == 'POST':
         selected_group = request.form.get('group')

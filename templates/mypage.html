@@ -11,19 +11,17 @@
 
   <!-- ユーザー挨拶カード -->
     <div class="card mb-4">
-    <div class="card-body d-flex align-items-center gap-3">
-        {% if user.icon_url %}
-        <img src="{{ user.icon_url }}" alt="ユーザーアイコン" class="rounded-circle" style="width: 64px; height: 64px; object-fit: cover;">
-        {% else %}
-        <i class="fas fa-user-circle fa-3x text-secondary"></i>
-        {% endif %}
-        <div>
-        <h5 class="card-title mb-1">こんにちは、{{ user.username }} さん</h5>
-        <p class="card-text">アカウント情報や表示設定を確認・変更できます。</p>
+        <div class="card-body d-flex align-items-center gap-3">
+            {% set icon_url = user.icon_url if user.icon_url else url_for('static', filename='img/default_icon.png') %}
+            <img src="{{ icon_url }}"
+                alt="ユーザーアイコン"
+                style="width: 64px; height: 64px; object-fit: cover; border-radius: 50%;">
+            <div>
+                <h5 class="card-title mb-1">こんにちは、{{ user.username }} さん</h5>
+                <p class="card-text">アカウント情報や表示設定を確認・変更できます。</p>
+            </div>
         </div>
     </div>
-    </div>
-
 
   <!-- 📱 QRコード共有セクション -->
   <div class="mb-4">
@@ -66,6 +64,9 @@
         </a>
         <a href="{{ url_for('icon_setting') }}">
             <i class="fas fa-image me-2"></i>アイコン設定
+        </a>
+        <a href="{{ url_for('change_password') }}">
+        <i class="fas fa-key me-2"></i>パスワード変更
         </a>
         <form action="{{ url_for('toggle_dark_mode') }}" method="post" style="display: inline;">
             <button type="submit" class="sidebar-like-link">
