@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}申請済み一覧{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>送信したフレンド申請</h2>
+  {% if requests %}
+    <ul class="list-group">
+      {% for req in requests %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <img src="{{ req.friend.icon_url }}" style="width: 40px; height: 40px; border-radius: 50%;">
+            <span>{{ req.friend.username }}</span>
+          </div>
+          <span class="badge bg-secondary">申請中</span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-muted">送信した申請はありません。</p>
+  {% endif %}
+</div>
+{% endblock %}

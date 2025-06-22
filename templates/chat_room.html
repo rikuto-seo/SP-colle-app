@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}チャット - {{ other_user.username }}{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">チャット with {{ other_user.username }}</h2>
+
+<div class="card">
+  <div class="card-body" id="chat-box" style="height: 400px; overflow-y: auto; background: #f8f9fa;">
+    {% if messages %}
+      {% for msg in messages %}
+        <div class="mb-3 d-flex {% if msg.sender_id == current_user.id %}justify-content-end{% else %}justify-content-start{% endif %}">
+          <div class="p-2 rounded" 
+               style="max-width: 70%; background-color: {% if msg.sender_id == current_user.id %}#0d6efd; color: white;{% else %}#e9ecef; color: black;{% endif %};">
+            <small class="fw-bold">
+              {% if msg.sender_id == current_user.id %}
+                あなた
+              {% else %}
+                {{ msg.sender.username }}
+              {% endif %}
+            </small><br>
+            {{ msg.content | e }}<br>
+            <small class="text-muted" style="font-size: 0.75rem;">{{ msg.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="text-center text-muted">メッセージはまだありません。</p>
+    {% endif %}
+  </div>
+
+  <form method="post" class="mt-3">
+    <div class="input-group">
+      <textarea name="content" class="form-control" rows="2" placeholder="メッセージを入力してください" required></textarea>
+      <button class="btn btn-primary" type="submit">送信</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  // ページ読み込み時にチャットのスクロールを一番下に移動
+  document.addEventListener("DOMContentLoaded", () => {
+    const chatBox = document.getElementById("chat-box");
+    chatBox.scrollTop = chatBox.scrollHeight;
+  });
+</script>
+{% endblock %}

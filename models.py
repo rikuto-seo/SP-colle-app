@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 
 db = SQLAlchemy()
 
@@ -54,6 +55,23 @@ class User(UserMixin, db.Model):
         else:
             return url_for('static', filename='images/default_icon.png')
 
+        # --- フレンド申請（受信側）と（送信側）のリレーションを明示定義 ---
+    received_requests = db.relationship(
+        'Friendship',
+        foreign_keys='Friendship.friend_id',
+        lazy='dynamic',
+        cascade='all, delete-orphan',
+        backref='receiver_user_explicit'
+    )
+
+    sent_requests = db.relationship(
+        'Friendship',
+        foreign_keys='Friendship.user_id',
+        lazy='dynamic',
+        cascade='all, delete-orphan',
+        backref='sender_user_explicit'
+    )
+
 class UserPhoto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -70,4 +88,31 @@ class UserPhoto(db.Model):
 
     __table_args__ = (
         db.UniqueConstraint('user_id', 'member', 'costume', 'photo_type', 'group', name='_user_photo_uc'),
+    )
+
+class Message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_messages')
+    receiver = db.relationship('User', foreign_keys=[receiver_id], backref='received_messages')
+
+class Friendship(db.Model):
+    __tablename__ = 'friendships'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    friend_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    chat_enabled = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default='pending')  # 'pending', 'accepted', 'rejected'
+
+    user = db.relationship('User', foreign_keys=[user_id], backref='friend_requests_sent')
+    friend = db.relationship('User', foreign_keys=[friend_id], backref='friend_requests_received')
+
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'friend_id', name='uq_user_friend'),
     )

@@ -1,10 +1,10 @@
 import os, bcrypt, csv,io,random,base64,shutil,re
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, current_app, abort, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, current_app, abort, send_file,Blueprint
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_caching import Cache
-from models import db, Photo, User, UserPhoto
+from models import db, Photo, User, UserPhoto, Message,Friendship
 from config import Config
 from collections import defaultdict
 from itertools import groupby
@@ -27,11 +27,21 @@ from utils import (
 from datetime import timedelta
 from forms import IconUploadForm
 from PIL import Image
-
+from flask_socketio import SocketIO, emit, join_room, leave_room
+from chat_routes import chat_bp
+from friend import friend_bp
+from flask_wtf.csrf import CSRFProtect
 
 app = Flask(__name__)
-app.secret_key = 'cheesenahn'  # セッションに必須（安全なランダム値にしてください）
 app.permanent_session_lifetime = timedelta(minutes=10)
+
+# CSRFProtectの初期化
+csrf = CSRFProtect()
+csrf.init_app(app)  # ここでFlaskアプリにCSRF保護を有効化
+
+app.register_blueprint(chat_bp)
+# アプリ作成後にBlueprint登録
+app.register_blueprint(friend_bp)
 
 # コンフィグ設定
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -62,6 +72,7 @@ with app.app_context():
       #  user.set_password('testpassword')
        # db.session.add(user)
         #db.session.commit()
+
 
 @app.context_processor
 def inject_endpoint():
@@ -239,8 +250,6 @@ def dashboard(group_key):
     }
     group_name = group_names.get(group_key, 'グループ不明')
     return render_template('dashboard.html',endpoint=request.endpoint, group_key=group_key, group_name=group_name)
-
-import re  # 上に記述済みなら不要
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -901,8 +910,6 @@ def edit_profile():
         return redirect(url_for('mypage'))
 
     return render_template('edit_profile.html', user=current_user)
-
-import re  # 正規表現モジュールを使います
 
 @app.route('/change_password', methods=['GET', 'POST'])
 @login_required
