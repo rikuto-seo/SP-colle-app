@@ -38,21 +38,29 @@
     <div id="sidebar">
         <div class="sidebar-main">
             <h3>メニュー</h3>
-            <a href="{{ url_for('index', group_key=group_key) }}">
-                <i class="fas fa-camera"></i> 生写真一覧
-            </a>
-            <a href="{{ url_for('add', group_key=group_key) }}">
-                <i class="fas fa-plus-circle"></i> 新規追加
-            </a>
-            <a href="{{ url_for('stats', group_key=group_key) }}">
-                <i class="fas fa-chart-bar"></i> 統計を見る
-            </a>
-            <a href="{{ url_for('missing', group_key=group_key) }}">
-                <i class="fas fa-box-open"></i> 未所持リスト
-            </a>
-            <a href="{{ url_for('gallery', group_key=group_key) }}">
-                <i class="fas fa-image"></i> ギャラリー
-            </a>
+            {% if group_key is defined and group_key %}
+                <a href="{{ url_for('index', group_key=group_key) }}">
+                    <i class="fas fa-camera"></i> 生写真一覧
+                </a>
+                <a href="{{ url_for('add', group_key=group_key) }}">
+                    <i class="fas fa-plus-circle"></i> 新規追加
+                </a>
+                <a href="{{ url_for('stats', group_key=group_key) }}">
+                    <i class="fas fa-chart-bar"></i> 統計を見る
+                </a>
+                <a href="{{ url_for('missing', group_key=group_key) }}">
+                    <i class="fas fa-box-open"></i> 未所持リスト
+                </a>
+                <a href="{{ url_for('gallery', group_key=group_key) }}">
+                    <i class="fas fa-image"></i> ギャラリー
+                </a>
+            {% else %}
+                <span class="text-muted"><i class="fas fa-camera"></i> 生写真一覧</span>
+                <span class="text-muted"><i class="fas fa-plus-circle"></i> 新規追加</span>
+                <span class="text-muted"><i class="fas fa-chart-bar"></i> 統計を見る</span>
+                <span class="text-muted"><i class="fas fa-box-open"></i> 未所持リスト</span>
+                <span class="text-muted"><i class="fas fa-image"></i> ギャラリー</span>
+            {% endif %}
 
             <hr>
 

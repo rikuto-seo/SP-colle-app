@@ -26,7 +26,7 @@
               <div class="col-md-3">
                 <label for="member" class="form-label text-black">メンバー</label>
                 <select class="form-select" id="member" name="member">
-                  <option value="" disabled {% if not request.args.get('member') %}selected{% endif %}>選択してください</option>
+                  <option value="" {% if not request.args.get('member') %}selected{% endif %}>選択してください</option>
                   {% for m in members %}
                     <option value="{{ m }}" {% if m == request.args.get('member') %}selected{% endif %}>{{ m }}</option>
                   {% endfor %}
@@ -36,7 +36,7 @@
               <div class="col-md-3">
                 <label for="costume" class="form-label text-black">衣装</label>
                 <select class="form-select" id="costume" name="costume">
-                  <option value="" disabled {% if not request.args.get('costume') %}selected{% endif %}>選択してください</option>
+                  <option value="" {% if not request.args.get('costume') %}selected{% endif %}>選択してください</option>
                   {% for c in costumes %}
                     <option value="{{ c }}" {% if c == request.args.get('costume') %}selected{% endif %}>{{ c }}</option>
                   {% endfor %}
@@ -66,10 +66,10 @@
     <div class="col-12">
       <div class="d-flex justify-content-end mb-3">
         <div class="btn-group" role="group">
-          <button id="btn-card" class="btn btn-outline-primary btn-sm active" onclick="switchView('card')">
+          <button id="btn-card" class="btn btn-outline-primary btn-sm active" onclick="switchView('card')" type="button">
             <i class="bi bi-grid-3x3-gap"></i> カード表示
           </button>
-          <button id="btn-table" class="btn btn-outline-primary btn-sm" onclick="switchView('table')">
+          <button id="btn-table" class="btn btn-outline-primary btn-sm" onclick="switchView('table')" type="button">
             <i class="bi bi-table"></i> 表表示
           </button>
         </div>
@@ -82,7 +82,7 @@
         <div class="col">
           <div class="card shadow-sm h-100">
             {% if photo.image_exists %}
-              <img src="{{ url_for('static', filename=photo.image_path) }}" class="card-img-top" alt="{{ photo.member }}の写真">
+              <img src="{{ url_for('static', filename='member_images/' ~ group_key ~ '/' ~ photo.member ~ '/' ~ photo.member ~ '_' ~ photo.costume ~ '_' ~ photo.photo_type ~ '.jpg') }}" class="card-img-top" alt="{{ photo.member }}の写真">
             {% else %}
               <img src="{{ url_for('static', filename='member_images/no_photo.jpg') }}" class="card-img-top" alt="画像なし">
             {% endif %}
@@ -102,6 +102,9 @@
           </div>
         </div>
       {% endfor %}
+      {% if photos|length == 0 %}
+        <p class="text-center">該当する写真がありません。</p>
+      {% endif %}
     </div>
 
     <!-- 表表示 -->
@@ -127,7 +130,7 @@
               <td>{{ photo.photo_type }}</td>
               <td>
                 {% if photo.image_exists %}
-                  <img src="{{ url_for('static', filename=photo.image_path) }}" class="img-fluid" width="100" loading="lazy" alt="{{ photo.member }}の写真">
+                  <img src="{{ url_for('static', filename='member_images/' ~ group_key ~ '/' ~ photo.member ~ '/' ~ photo.member ~ '_' ~ photo.costume ~ '_' ~ photo.photo_type ~ '.jpg') }}" class="img-fluid" width="100" loading="lazy" alt="{{ photo.member }}の写真">
                 {% else %}
                   <img src="{{ url_for('static', filename='member_images/no_photo.jpg') }}" class="img-fluid" width="100" loading="lazy" alt="画像なし">
                 {% endif %}
@@ -142,6 +145,9 @@
               </td>
             </tr>
           {% endfor %}
+          {% if photos|length == 0 %}
+            <tr><td colspan="8" class="text-center">該当する写真がありません。</td></tr>
+          {% endif %}
         </tbody>
       </table>
     </div>
@@ -167,6 +173,8 @@
       cardView.classList.add('d-none');
       tableView.classList.remove('d-none');
     }
+    // 現在の表示形式をlocalStorageに保存
+    localStorage.setItem('photoViewMode', mode);
   }
 
   // ページ読み込み時に保存された表示形式を反映
@@ -174,26 +182,5 @@
     const savedView = localStorage.getItem('photoViewMode') || 'card';
     switchView(savedView);
   });
-
-  function switchView(mode) {
-    const cardBtn = document.getElementById('btn-card');
-    const tableBtn = document.getElementById('btn-table');
-    const cardView = document.getElementById('view-card');
-    const tableView = document.getElementById('view-table');
-
-    if (mode === 'card') {
-      cardBtn.classList.add('active');
-      tableBtn.classList.remove('active');
-      cardView.classList.remove('d-none');
-      tableView.classList.add('d-none');
-    } else {
-      cardBtn.classList.remove('active');
-      tableBtn.classList.add('active');
-      cardView.classList.add('d-none');
-      tableView.classList.remove('d-none');
-    }
-    // 現在の表示形式をlocalStorageに保存
-    localStorage.setItem('photoViewMode', mode);
-  }
 </script>
 {% endblock %}

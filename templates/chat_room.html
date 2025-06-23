@@ -29,15 +29,15 @@
   </div>
 
   <form method="post" class="mt-3">
+     
     <div class="input-group">
-      <textarea name="content" class="form-control" rows="2" placeholder="メッセージを入力してください" required></textarea>
-      <button class="btn btn-primary" type="submit">送信</button>
+      {{ form.content(class_="form-control", rows=2, placeholder="メッセージを入力してください") }}
+      {{ form.submit(class_="btn btn-primary") }}
     </div>
   </form>
 </div>
 
 <script>
-  // ページ読み込み時にチャットのスクロールを一番下に移動
   document.addEventListener("DOMContentLoaded", () => {
     const chatBox = document.getElementById("chat-box");
     chatBox.scrollTop = chatBox.scrollHeight;

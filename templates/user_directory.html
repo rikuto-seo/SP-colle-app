@@ -21,7 +21,6 @@
               <span class="badge bg-success">フレンド</span>
             {% else %}
               <form action="{{ url_for('friend.add_friend', user_id=user.id) }}" method="post" style="margin: 0;">
-                {{ csrf_token() | safe }}
                 <button class="btn btn-sm btn-primary">
                     <i class="fas fa-user-plus"></i>
                     {% if user.friend_status == 'rejected' %}

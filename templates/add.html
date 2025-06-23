@@ -10,49 +10,48 @@
   <div class="card shadow-sm">
     <div class="card-body">
       <form method="post" action="{{ url_for('add', group_key=group_key) }}">
+         
         <!-- グループはURLで指定されるので非表示でOK -->
         <input type="hidden" id="group_key" value="{{ group_key }}">
 
         <div class="row g-4">
+          <!-- メンバー -->
           <div class="col-md-6">
-            <label for="member" class="form-label text-black">メンバー</label>
-            <select class="form-select" id="member" name="member" required>
-              <option value="">読み込み中...</option>
-            </select>
+            {{ form.member.label(class="form-label text-black") }}
+            {{ form.member(class="form-select", id="member") }}
           </div>
 
+          <!-- 衣装 -->
           <div class="col-md-6">
-            <label for="costume" class="form-label text-black">衣装</label>
-            <select class="form-select" id="costume" name="costume" required>
-              <option value="">衣装を選択してください</option>
-            </select>
+            {{ form.costume.label(class="form-label text-black") }}
+            {{ form.costume(class="form-select", id="costume") }}
           </div>
 
+          <!-- 種類 -->
           <div class="col-md-4">
-            <label for="type" class="form-label text-black">種類</label>
-            <select class="form-select" name="type" required>
-              <option value="ヨリ">ヨリ</option>
-              <option value="チュウ">チュウ</option>
-              <option value="ヒキ">ヒキ</option>
-              <option value="座り">座り</option>
-            </select>
+            {{ form.photo_type.label(class="form-label text-black") }}
+            {{ form.photo_type(class="form-select") }}
           </div>
 
+          <!-- 枚数 -->
           <div class="col-md-4">
-            <label for="quantity" class="form-label text-black">枚数</label>
-            <input type="number" class="form-control" name="quantity" min="1" value="1" required>
+            {{ form.quantity.label(class="form-label text-black") }}
+            {{ form.quantity(class="form-control") }}
           </div>
 
+          <!-- 入手日 -->
           <div class="col-md-4">
-            <label for="date_acquired" class="form-label text-black">入手日</label>
-            <input type="date" class="form-control" name="date_acquired">
+            {{ form.date_acquired.label(class="form-label text-black") }}
+            {{ form.date_acquired(class="form-control") }}
           </div>
 
+          <!-- メモ -->
           <div class="col-12">
-            <label for="memo" class="form-label text-black">メモ</label>
-            <textarea class="form-control" name="memo" rows="2" placeholder="例：2024年9月全握でゲット！"></textarea>
+            {{ form.memo.label(class="form-label text-black") }}
+            {{ form.memo(class="form-control", rows="2", placeholder="例：2024年9月全握でゲット！") }}
           </div>
 
+          <!-- 送信ボタン -->
           <div class="col-12 text-center mt-3">
             <button type="submit" class="btn btn-success px-5 py-2">追加</button>
           </div>

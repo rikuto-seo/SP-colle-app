@@ -7,7 +7,7 @@
   <h1>アイコン設定</h1>
 
   <form method="post" enctype="multipart/form-data">
-    {{ form.hidden_tag() }}
+     
 
     <div class="mb-3">
       {{ form.icon.label(class="form-label") }}
@@ -30,6 +30,7 @@
 
 <!-- 🔥 削除ボタンを別フォームで追加 -->
 <form method="post" action="{{ url_for('delete_icon') }}">
+   
   <button type="submit" class="btn btn-danger mt-3" onclick="return confirm('本当に削除しますか？')">アイコンを削除</button>
 </form>
 

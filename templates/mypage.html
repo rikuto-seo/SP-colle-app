@@ -43,7 +43,7 @@
         <h5 class="card-title">{{ name }}</h5>
         <div class="d-flex align-items-center gap-3">
           <img src="data:image/png;base64,{{ qr_codes[key] }}" alt="{{ name }}のQRコード" class="border rounded" style="width: 120px; height: 120px;">
-          <form method="post" action="{{ url_for('toggle_share', group_key=key) }}">
+          <form method="post" action="{{ url_for('toggle_share', group_key=key) }}">     
             <button type="submit" class="btn {% if share_statuses[key] %}btn-success{% else %}btn-outline-secondary{% endif %}">
               {% if share_statuses[key] %}
                 <i class="fa-solid fa-eye-slash"></i> 公開中 → 非公開にする
@@ -92,9 +92,5 @@
         </div>
     </div>
     </div>
-
-    <a href="{{ url_for('chat.chat_list') }}">
-      <i class="fas fa-comments me-2"></i>チャット一覧
-    </a>
 </div>
 {% endblock %}

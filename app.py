@@ -1,4 +1,4 @@
-import os, bcrypt, csv,io,random,base64,shutil,re
+import os, bcrypt, csv,io,random,base64,shutil,re,logging
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, current_app, abort, send_file,Blueprint
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from flask_migrate import Migrate
@@ -25,19 +25,14 @@ from utils import (
     compute_collection_stats
 )
 from datetime import timedelta
-from forms import IconUploadForm
+from forms import IconUploadForm,LoginForm,AddPhotoForm
 from PIL import Image
-from flask_socketio import SocketIO, emit, join_room, leave_room
 from chat_routes import chat_bp
 from friend import friend_bp
-from flask_wtf.csrf import CSRFProtect
+from sqlalchemy import or_
 
 app = Flask(__name__)
 app.permanent_session_lifetime = timedelta(minutes=10)
-
-# CSRFProtectの初期化
-csrf = CSRFProtect()
-csrf.init_app(app)  # ここでFlaskアプリにCSRF保護を有効化
 
 app.register_blueprint(chat_bp)
 # アプリ作成後にBlueprint登録
@@ -45,11 +40,11 @@ app.register_blueprint(friend_bp)
 
 # コンフィグ設定
 basedir = os.path.abspath(os.path.dirname(__file__))
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/main.db'
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL") or 'sqlite:///instance/main.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'koito-annbata'
 app.config.from_object(Config)
+app.config['WTF_CSRF_ENABLED'] = False
 
 # Cache設定（シンプルなメモリキャッシュ）
 cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache'})
@@ -72,7 +67,6 @@ with app.app_context():
       #  user.set_password('testpassword')
        # db.session.add(user)
         #db.session.commit()
-
 
 @app.context_processor
 def inject_endpoint():
@@ -228,18 +222,18 @@ def get_costumes():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        user = User.query.filter_by(username=request.form['username']).first()
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
 
-        if user and check_password_hash(user.password_hash, request.form['password']):
+        if user and check_password_hash(user.password_hash, form.password.data):
             login_user(user)
             return redirect(url_for('index', group_key='nogizaka'))
 
-        # ログイン失敗時にエラーメッセージを 'error' として渡す
         flash('ユーザー名またはパスワードが間違っています。', 'error')
-        return redirect(url_for('login'))
-
-    return render_template('login.html',songs=[], is_login_page=True)
+        # フラッシュメッセージ表示のためGETにリダイレクトせずに、フォーム再表示へ
+        # return redirect(url_for('login')) ではなくこのままrender_templateに行く
+    return render_template('login.html', form=form)
 
 @app.route('/<group_key>/dashboard')
 def dashboard(group_key):
@@ -389,80 +383,110 @@ def index(group_key):
         'sakurazaka': 'bg-sakura',
         'hinatazaka': 'bg-hinata'
     }
-    group_names = {
-        'nogizaka': '乃木坂46',
-        'sakurazaka': '櫻坂46',
-        'hinatazaka': '日向坂46'
-    }
-
     group_color = group_colors.get(group_key, 'bg-default')
-    group_name = group_names.get(group_key, '不明')
 
-    user_photos = UserPhoto.query.options(
-        joinedload(UserPhoto.photo)
-    ).join(
-        Photo, UserPhoto.photo_id == Photo.id
-    ).filter(
-        UserPhoto.user_id == current_user.id,
-        Photo.group_key == group_key
-    ).all()
-    query = request.args.get('query', '').strip().lower()
-    member = request.args.get('member', '').strip()
-    costume = request.args.get('costume', '').strip()
-    photo_type = request.args.get('type', '').strip()
+    selected_member = request.args.get('member', '').strip()
+    selected_costume = request.args.get('costume', '').strip()
+    selected_type = request.args.get('type', '').strip()
+    query = request.args.get('query', '').strip()
 
+    q = UserPhoto.query.filter_by(user_id=current_user.id, group_key=group_key)
+
+    if selected_member:
+        q = q.filter(UserPhoto.member == selected_member)
+    if selected_costume:
+        q = q.filter(UserPhoto.costume == selected_costume)
+    if selected_type:
+        q = q.filter(UserPhoto.photo_type == selected_type)
     if query:
-        user_photos = [p for p in user_photos if query in p.member.lower() or query in p.costume.lower()]
-    if member:
-        user_photos = [p for p in user_photos if p.member == member]
-    if costume:
-        user_photos = [p for p in user_photos if p.costume == costume]
-    if photo_type:
-        user_photos = [p for p in user_photos if p.photo_type == photo_type]
+        like_pattern = f"%{query}%"
+        q = q.filter(
+            or_(
+                UserPhoto.member.ilike(like_pattern),
+                UserPhoto.costume.ilike(like_pattern)
+            )
+        )
 
-    # 画像パスを追加
-    for p in user_photos:
+    photos_raw = q.all()
+    print(f"[DEBUG] photos_raw count: {len(photos_raw)}")
+    for p in photos_raw:
+        print(f"[DEBUG] Photo: id={p.id}, member={p.member}, costume={p.costume}, type={p.photo_type}")
+
+    photos = []
+    for p in photos_raw:
         image_rel_path = build_image_path(p.member, p.costume, p.photo_type, group_key)
         image_abs_path = os.path.join(current_app.static_folder, image_rel_path)
-        p.image_exists = os.path.exists(image_abs_path)
-        p.image_path = image_rel_path
+        image_exists = os.path.exists(image_abs_path)
 
-    members = sorted(set(p.member for p in user_photos))
-    costumes = sorted(set(p.costume for p in user_photos))
-    types = sorted(set(p.photo_type for p in user_photos))
+        photo_dict = {
+            'id': p.id,
+            'member': p.member,
+            'costume': p.costume,
+            'photo_type': p.photo_type,
+            'quantity': p.quantity,
+            'date': p.date,
+            'memo': p.memo,
+            'image_exists': image_exists,
+            'image_path': image_rel_path,
+        }
+        photos.append(photo_dict)
+
+    # フィルター用データはDBの全写真から作る
+    all_photos = UserPhoto.query.filter_by(user_id=current_user.id, group_key=group_key).all()
+    members = sorted(set(p.member for p in all_photos))
+    costumes = sorted(set(p.costume for p in all_photos))
+    types = sorted(set(p.photo_type for p in all_photos))
 
     return render_template(
         'index.html',
         group_key=group_key,
-        group_name=group_name,
         group_color=group_color,
-        photos=user_photos,
+        photos=photos,
         members=members,
         costumes=costumes,
         types=types,
+        selected_member=selected_member,
+        selected_costume=selected_costume,
+        selected_type=selected_type,
+        query=query,
         endpoint=request.endpoint
     )
 
-@app.route('/delete_user_photo/<int:photo_id>/<group_key>', methods=['POST'])
+GROUP_KEY_MAP = {
+    'nogizaka': '乃木坂46',
+    'sakurazaka': '櫻坂46',
+    'hinatazaka': '日向坂46'
+}
+
+@app.route('/delete_user_photo/<group_key>/<int:photo_id>', methods=['POST'])
 @login_required
-def delete_user_photo(photo_id, group_key):
+def delete_user_photo(group_key, photo_id):
     photo = UserPhoto.query.get(photo_id)
-    
-    if not photo or photo.user_id != current_user.id or photo.group != group_key:
-        flash('該当の生写真が見つかりません。', 'error')
+    if not photo:
+        flash('写真が見つかりません。', 'error')
+        app.logger.debug(f"[DEBUG] Photo with id={photo_id} not found.")
         return redirect(url_for('index', group_key=group_key))
 
-    # 画像ファイルを削除（任意）
-    image_rel_path = build_image_path(photo.member, photo.costume, photo.photo_type, group_key)
-    image_abs_path = os.path.join(current_app.static_folder, image_rel_path)
-    if os.path.exists(image_abs_path):
-        os.remove(image_abs_path)
+    if photo.user_id != current_user.id:
+        flash('あなたの写真ではありません。', 'error')
+        app.logger.debug(f"[DEBUG] Photo user_id={photo.user_id} does not match current_user.id={current_user.id}")
+        return redirect(url_for('index', group_key=group_key))
 
-    # DBから削除
+    expected_group = GROUP_KEY_MAP.get(group_key)
+    if not expected_group:
+        flash('無効なグループキーです。', 'error')
+        return redirect(url_for('index', group_key=group_key))
+
+    if photo.group != expected_group:
+        flash('グループキーが不正です。', 'error')
+        app.logger.debug(f"[DEBUG] Photo group={photo.group} does not match expected_group={expected_group}")
+        return redirect(url_for('index', group_key=group_key))
+
     db.session.delete(photo)
     db.session.commit()
-    
     flash('生写真を削除しました。', 'success')
+    app.logger.debug(f"[DEBUG] Deleted photo id={photo_id} for user_id={current_user.id} group={group_key}")
+
     return redirect(url_for('index', group_key=group_key))
 
 @app.route('/add/<group_key>', methods=['GET', 'POST'])
@@ -473,55 +497,62 @@ def add(group_key):
         'sakurazaka': 'bg-sakura',
         'hinatazaka': 'bg-hinata'
     }
+    group_names = {
+        'nogizaka': '乃木坂46',
+        'sakurazaka': '櫻坂46',
+        'hinatazaka': '日向坂46'
+    }
+
     group_color = group_colors.get(group_key, 'bg-default')
+    group_name = group_names.get(group_key, '不明')
+
+    form = AddPhotoForm()
 
     if request.method == 'POST':
-        member = request.form['member'].strip()
-        costume = request.form['costume'].strip()
-        type_ = request.form['type'].strip()
-        quantity = int(request.form['quantity'])
-        memo = request.form.get('memo', '').strip()
+        # POST時は送信された値をchoicesにセット（member, costumeは動的なので送信値だけ）
+        member_value = request.form.get('member', '')
+        costume_value = request.form.get('costume', '')
+        photo_type_value = request.form.get('photo_type', '')
 
-        # 取得日
-        date_acquired_str = request.form.get('date_acquired')
-        date_acquired = None
-        if date_acquired_str:
-            try:
-                date_acquired = datetime.strptime(date_acquired_str, '%Y-%m-%d').date()
-            except ValueError:
-                flash('取得日の形式が正しくありません。YYYY-MM-DD形式で入力してください。', 'error')
-                return redirect(url_for('add', group_key=group_key))
+        form.member.choices = [(member_value, member_value)]
+        form.costume.choices = [(costume_value, costume_value)]
 
-        has_owner_raw = request.form.get('has_owner', 'yes')
-        has_owner = True if has_owner_raw == 'yes' else False
+        # photo_type は固定選択肢を常にセット
+        form.photo_type.choices = [
+            ('ヨリ', 'ヨリ'),
+            ('チュウ', 'チュウ'),
+            ('ヒキ', 'ヒキ'),
+            ('座り', '座り')
+        ]
 
-        # 既に所持しているか確認
-        existing_photo = UserPhoto.query.filter_by(
-            user_id=current_user.id,
-            group=group_key,
-            member=member,
-            costume=costume,
-            photo_type=type_
-        ).first()
+    else:
+        # GET時は空の選択肢をセット
+        form.member.choices = []
+        form.costume.choices = []
+        form.photo_type.choices = [
+            ('ヨリ', 'ヨリ'),
+            ('チュウ', 'チュウ'),
+            ('ヒキ', 'ヒキ'),
+            ('座り', '座り')
+        ]
 
-        if existing_photo:
-            existing_photo.quantity += quantity
-            db.session.commit()
-            flash(f'{member}の{costume}（{type_}）は既に所持しています。所持数を{quantity}枚増やしました。')
-        else:
-            group_names = {
-                'nogizaka': '乃木坂46',
-                'sakurazaka': '櫻坂46',
-                'hinatazaka': '日向坂46'
-            }
-            group_name = group_names.get(group_key, '不明')
+    if form.validate_on_submit():
+        logging.info("✅ フォームバリデーション成功")
+        try:
+            member = form.member.data.strip()
+            costume = form.costume.data.strip()
+            photo_type = form.photo_type.data.strip()
+            quantity = form.quantity.data
+            memo = form.memo.data.strip()
+            date_acquired = form.date_acquired.data
+            has_owner = True
 
-            # Photo を探すか新規作成
+            # Photoマスタを取得または作成
             photo = Photo.query.filter_by(
                 group_key=group_key,
                 member=member,
                 costume=costume,
-                photo_type=type_
+                photo_type=photo_type
             ).first()
 
             if not photo:
@@ -531,7 +562,7 @@ def add(group_key):
                         group=group_name,
                         member=member,
                         costume=costume,
-                        photo_type=type_
+                        photo_type=photo_type
                     )
                     db.session.add(photo)
                     db.session.commit()
@@ -541,22 +572,37 @@ def add(group_key):
                         group_key=group_key,
                         member=member,
                         costume=costume,
-                        photo_type=type_
+                        photo_type=photo_type
                     ).first()
 
-            # それでも見つからなければ中断
             if not photo:
                 flash('Photoの登録に失敗しました。データベースを確認してください。', 'error')
+                logging.error('Photo登録に失敗: DBを確認してください')
                 return redirect(url_for('add', group_key=group_key))
 
-            try:
+            # すでに所持しているか確認（photo_id基準）
+            existing = UserPhoto.query.filter_by(
+                user_id=current_user.id,
+                photo_id=photo.id
+            ).first()
+
+            if existing:
+                existing.quantity += quantity
+                existing.memo = memo
+                if date_acquired:
+                    existing.date = date_acquired
+                db.session.commit()
+                flash(f'{member}の{costume}（{photo_type}）は既に所持しています。所持数を{quantity}枚増やしました。')
+                logging.info(f'{member}の{costume}（{photo_type}）の数量を{quantity}枚増加')
+            else:
                 new_user_photo = UserPhoto(
                     user_id=current_user.id,
                     photo_id=photo.id,
-                    group=group_key,
                     member=member,
                     costume=costume,
-                    photo_type=type_,
+                    photo_type=photo_type,
+                    group_key=group_key,
+                    group=group_name,
                     has_owner=has_owner,
                     memo=memo,
                     date=date_acquired,
@@ -564,14 +610,22 @@ def add(group_key):
                 )
                 db.session.add(new_user_photo)
                 db.session.commit()
-                flash(f'{member}の{costume}（{type_}）が{quantity}枚追加されました！')
-            except IntegrityError:
-                db.session.rollback()
-                flash('同じ生写真がすでに登録されています。', 'error')
+                flash(f'{member}の{costume}（{photo_type}）が{quantity}枚追加されました！')
+                logging.info(f'新規生写真追加: {member}の{costume}（{photo_type}）{quantity}枚')
 
-        return redirect(url_for('index', group_key=group_key))
+            return redirect(url_for('index', group_key=group_key))
 
-    return render_template('add.html', endpoint=request.endpoint, group_key=group_key, group_color=group_color)
+        except Exception as e:
+            db.session.rollback()
+            logging.exception("❌ 生写真追加処理で例外発生")
+            flash('エラーが発生しました。管理者に連絡してください。', 'error')
+            return redirect(url_for('add', group_key=group_key))
+
+    else:
+        if request.method == 'POST':
+            logging.warning(f"⚠️ フォームバリデーション失敗: {form.errors}")
+
+    return render_template('add.html', form=form, group_key=group_key, group_color=group_color)
 
 def get_missing_photos(search_member='', search_costume='', group_key='hinata'):
 

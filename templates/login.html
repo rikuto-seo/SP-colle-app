@@ -20,16 +20,20 @@
             {% endwith %}
 
             <form method="POST" action="{{ url_for('login') }}">
+                 
+
                 <div class="mb-3">
-                    <label for="username" class="form-label">ユーザー名</label>
-                    <input type="text" class="form-control" id="username" name="username" placeholder="ユーザー名を入力" required>
+                    {{ form.username.label(class="form-label") }}
+                    {{ form.username(class="form-control", placeholder="ユーザー名を入力") }}
                 </div>
+
                 <div class="mb-3">
-                    <label for="password" class="form-label">パスワード</label>
-                    <input type="password" class="form-control" id="password" name="password" placeholder="パスワードを入力" required>
+                    {{ form.password.label(class="form-label") }}
+                    {{ form.password(class="form-control", placeholder="パスワードを入力") }}
                 </div>
+
                 <div class="d-grid">
-                    <button type="submit" class="btn btn-primary">ログイン</button>
+                    {{ form.submit(class="btn btn-primary") }}
                 </div>
             </form>
 

@@ -15,9 +15,11 @@
           </div>
           <div>
             <form action="{{ url_for('friend.approve_friend', friendship_id=req.id) }}" method="post" style="display:inline;">
+            {{ form.hidden_tag() }}
               <button class="btn btn-sm btn-success"><i class="fas fa-check"></i> 承認</button>
             </form>
             <form action="{{ url_for('friend.reject_friend', friendship_id=req.id) }}" method="post" style="display:inline;">
+            {{ form.hidden_tag() }}
               <button class="btn btn-sm btn-danger"><i class="fas fa-times"></i> 拒否</button>
             </form>
           </div>

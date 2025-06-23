@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import current_user, login_required
 from models import User, Message, db
 from sqlalchemy.orm import joinedload
+from forms import ChatForm
 
 chat_bp = Blueprint('chat', __name__, url_prefix='/chat')
 
@@ -9,8 +10,10 @@ chat_bp = Blueprint('chat', __name__, url_prefix='/chat')
 @login_required
 def chat_with(user_id):
     other_user = User.query.get_or_404(user_id)
-    if request.method == 'POST':
-        content = request.form.get('content', '').strip()
+    form = ChatForm()  # フォーム生成
+
+    if form.validate_on_submit():  # CSRFチェックを含むフォーム検証
+        content = form.content.data.strip()
         if content:
             msg = Message(sender_id=current_user.id, receiver_id=other_user.id, content=content)
             db.session.add(msg)
@@ -19,7 +22,7 @@ def chat_with(user_id):
         else:
             flash('メッセージを入力してください。')
 
-    # senderをjoinedloadで一緒に読み込むように修正
+    # メッセージを送信者をjoinedloadで一緒に読み込み
     messages = Message.query.options(
         joinedload(Message.sender)
     ).filter(
@@ -27,7 +30,7 @@ def chat_with(user_id):
         ((Message.sender_id == other_user.id) & (Message.receiver_id == current_user.id))
     ).order_by(Message.timestamp.asc()).all()
 
-    return render_template('chat_room.html', other_user=other_user, messages=messages)
+    return render_template('chat_room.html', other_user=other_user, messages=messages, form=form)
 
 @chat_bp.route('/', methods=['GET'])
 @login_required

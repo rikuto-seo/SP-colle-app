@@ -17,6 +17,7 @@ class Photo(db.Model):
         db.UniqueConstraint('member', 'costume', 'photo_type', 'group_key', name='_photo_uc'),
     )
 
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     group_key = db.Column(db.String(50), nullable=True)
@@ -46,7 +47,7 @@ class User(UserMixin, db.Model):
             self.is_hinatazaka_shared = not self.is_hinatazaka_shared
         else:
             raise ValueError(f"無効なグループキー: {group_key}")
-        
+
     @property
     def icon_url(self):
         from flask import url_for
@@ -55,13 +56,13 @@ class User(UserMixin, db.Model):
         else:
             return url_for('static', filename='images/default_icon.png')
 
-        # --- フレンド申請（受信側）と（送信側）のリレーションを明示定義 ---
     received_requests = db.relationship(
         'Friendship',
         foreign_keys='Friendship.friend_id',
         lazy='dynamic',
         cascade='all, delete-orphan',
-        backref='receiver_user_explicit'
+        backref='receiver_user_explicit',
+        overlaps="receiver_user_explicit,friend_requests_received"
     )
 
     sent_requests = db.relationship(
@@ -69,7 +70,8 @@ class User(UserMixin, db.Model):
         foreign_keys='Friendship.user_id',
         lazy='dynamic',
         cascade='all, delete-orphan',
-        backref='sender_user_explicit'
+        backref='sender_user_explicit',
+        overlaps="sender_user_explicit,friend_requests_sent"
     )
 
 class UserPhoto(db.Model):
@@ -79,16 +81,19 @@ class UserPhoto(db.Model):
     member = db.Column(db.String(64), nullable=False)
     costume = db.Column(db.String(128), nullable=False)
     photo_type = db.Column(db.String(64), nullable=False)
+    group_key = db.Column(db.String(64), nullable=False)
     group = db.Column(db.String(64), nullable=False)
-    has_owner = db.Column(db.Boolean, default=True, nullable=False)  # ← 追加
+    has_owner = db.Column(db.Boolean, default=True, nullable=False)
     memo = db.Column(db.String, nullable=True)
     date = db.Column(db.Date, nullable=True)
     quantity = db.Column(db.Integer, nullable=True, default=1)
+
     photo = db.relationship('Photo', backref='user_photos')
 
     __table_args__ = (
         db.UniqueConstraint('user_id', 'member', 'costume', 'photo_type', 'group', name='_user_photo_uc'),
     )
+
 
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -100,6 +105,7 @@ class Message(db.Model):
     sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_messages')
     receiver = db.relationship('User', foreign_keys=[receiver_id], backref='received_messages')
 
+
 class Friendship(db.Model):
     __tablename__ = 'friendships'
 
@@ -110,8 +116,19 @@ class Friendship(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     status = db.Column(db.String(20), default='pending')  # 'pending', 'accepted', 'rejected'
 
-    user = db.relationship('User', foreign_keys=[user_id], backref='friend_requests_sent')
-    friend = db.relationship('User', foreign_keys=[friend_id], backref='friend_requests_received')
+    user = db.relationship(
+        'User',
+        foreign_keys=[user_id],
+        backref='friend_requests_sent',
+        overlaps="sent_requests,sender_user_explicit"
+    )
+
+    friend = db.relationship(
+        'User',
+        foreign_keys=[friend_id],
+        backref='friend_requests_received',
+        overlaps="received_requests,receiver_user_explicit"
+    )
 
     __table_args__ = (
         db.UniqueConstraint('user_id', 'friend_id', name='uq_user_friend'),

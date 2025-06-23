@@ -24,6 +24,7 @@
               <span class="text-muted">チャットOFF中</span>
             {% endif %}
             <form action="{{ url_for('friend.toggle_chat', friend_id=friendship.friend.id) }}" method="post">
+               
               <button class="btn btn-sm {% if friendship.chat_enabled %}btn-danger{% else %}btn-success{% endif %}">
                 {% if friendship.chat_enabled %}チャットOFF{% else %}チャットON{% endif %}
               </button>
@@ -41,6 +42,12 @@
       <i class="fas fa-search me-2"></i>フレンドを探す
     </a>
   </div>
+</div>
+
+<div class="mt-4 text-center">
+  <a href="{{ url_for('chat.chat_list') }}" class="btn btn-outline-primary">
+    <i class="fas fa-comments me-1"></i> チャット一覧を見る
+  </a>
 </div>
 
 <a href="{{ url_for('friend.friend_requests') }}" class="btn btn-outline-secondary mt-3">
