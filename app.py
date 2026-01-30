@@ -118,11 +118,11 @@ def stats(group_key):
 
     owned = set(
         (p.member.strip(), p.costume.strip(), p.photo_type.strip())
-        for p in UserPhoto.query.filter_by(user_id=current_user.id, group=group_key).all()
+        for p in UserPhoto.query.filter_by(user_id=current_user.id, group_key=group_key).all()
     )
 
     print("[DEBUG] 所持しているUserPhoto:")
-    for photo in UserPhoto.query.filter_by(user_id=current_user.id, group=group_key).all():
+    for photo in UserPhoto.query.filter_by(user_id=current_user.id, group_key=group_key).all():
         print(f"member='{photo.member}' costume='{photo.costume}' type='{photo.photo_type}'")
 
     all_costumes = set(p.costume.strip() for p in all_photos)
