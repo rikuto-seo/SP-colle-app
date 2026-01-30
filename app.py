@@ -58,16 +58,6 @@ login_manager = LoginManager()
 login_manager.login_view = 'login'
 login_manager.init_app(app)
 
-
-# DB作成とサンプルユーザー作成
-with app.app_context():
-    db.create_all()
-    #if not User.query.filter_by(username='testuser').first():
-     #   user = User(username='testuser')
-      #  user.set_password('testpassword')
-       # db.session.add(user)
-        #db.session.commit()
-
 @app.context_processor
 def inject_endpoint():
     from flask import request
