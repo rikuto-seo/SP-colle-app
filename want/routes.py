@@ -123,21 +123,26 @@ def delete_want(want_id):
 
 @want_bp.route('/share/<public_uuid>/<group_key>')
 def public_want(public_uuid, group_key):
+    # 公開用のユーザーを取得
     user = User.query.filter_by(public_uuid=public_uuid).first_or_404()
 
+    # 公開設定がOFFなら404
     if not user.is_want_share_enabled(group_key):
         abort(404)
 
+    # 欲しい写真リスト
     wants = WantPhoto.query.filter_by(
         user_id=user.id,
         group_key=group_key
     ).all()
 
+    # 照合チェックフラグ
     is_check = (
         current_user.is_authenticated
         and request.args.get('check') == '1'
     )
 
+    # 自分の所持写真との照合
     if is_check:
         owned_keys = {
             (p.member, p.costume, p.photo_type)
@@ -154,8 +159,9 @@ def public_want(public_uuid, group_key):
                 want.photo_type
             ) in owned_keys
 
+    # 統合テンプレートでレンダリング
     return render_template(
-        'want/public.html',
+        'want/public_base.html',  # ← public.html ではなく統合版
         owner=user,
         wants=wants,
         group_key=group_key,
