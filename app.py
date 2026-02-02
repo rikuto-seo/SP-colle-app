@@ -35,6 +35,7 @@ from friend import friend_bp
 from sqlalchemy import or_
 from want import want_bp
 from extensions import db
+from forstats import get_all_photos,get_user_photo_ids,compute_collection_stats
 
 app = Flask(__name__)
 app.permanent_session_lifetime = timedelta(minutes=10)

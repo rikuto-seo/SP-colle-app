@@ -1,5 +1,13 @@
-{% extends "base.html" %}
+{# public.html #}
+{% extends "public_base.html" %}
+
 {% block content %}
+
+{% set group_names = {
+    'nogizaka': '乃木坂46',
+    'sakurazaka': '櫻坂46',
+    'hinatazaka': '日向坂46'
+} %}
 
 <h2>{{ owner.username }} さんの欲しい写真（{{ group_key }}）</h2>
 
