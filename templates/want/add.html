@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
 
+{% set group_names = {
+    'nogizaka': '乃木坂46',
+    'sakurazaka': '櫻坂46',
+    'hinatazaka': '日向坂46'
+} %}
+
 <h2>欲しい写真を追加（{{ group_key }}）</h2>
 
 <input type="hidden" id="group_key" value="{{ group_key }}">
