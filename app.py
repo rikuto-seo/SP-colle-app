@@ -1,10 +1,17 @@
-import os, bcrypt, csv,io,random,base64,shutil,re,logging
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, current_app, abort, send_file,Blueprint
+import os
+import bcrypt
+import csv
+import io
+import random
+import base64
+import shutil
+import re
+import logging
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, current_app, abort, send_file, Blueprint
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from flask_migrate import Migrate
-from flask_sqlalchemy import SQLAlchemy
 from flask_caching import Cache
-from models import db, Photo, User, UserPhoto, Message,Friendship
+from models import Photo, User, UserPhoto, Message, Friendship, WantPhoto, WantShare
 from config import Config
 from collections import defaultdict
 from itertools import groupby
@@ -18,29 +25,31 @@ import qrcode
 from io import BytesIO
 from utils import (
     get_costumes_for_member,
-    load_photos_from_csv,
     build_image_path,
-    get_all_photos,
-    get_user_photo_ids,
-    compute_collection_stats
 )
 from datetime import timedelta
-from forms import IconUploadForm,LoginForm,AddPhotoForm
+from forms import IconUploadForm, LoginForm, AddPhotoForm
 from PIL import Image
 from chat_routes import chat_bp
 from friend import friend_bp
 from sqlalchemy import or_
+from want import want_bp
+from extensions import db
 
 app = Flask(__name__)
 app.permanent_session_lifetime = timedelta(minutes=10)
 
+# 機能系
 app.register_blueprint(chat_bp)
-# アプリ作成後にBlueprint登録
 app.register_blueprint(friend_bp)
+
+# コレクション系
+app.register_blueprint(want_bp)
 
 # コンフィグ設定
 basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL") or 'sqlite:///instance/main.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
+    "DATABASE_URL") or 'sqlite:///instance/main.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'koito-annbata'
 app.config.from_object(Config)
@@ -58,14 +67,17 @@ login_manager = LoginManager()
 login_manager.login_view = 'login'
 login_manager.init_app(app)
 
+
 @app.context_processor
 def inject_endpoint():
     from flask import request
     return dict(endpoint=request.endpoint)
 
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
 
 @app.route('/group/<group_key>')
 def group(group_key):
@@ -76,7 +88,8 @@ def group(group_key):
     }
     if group_key not in info:
         return 'グループが見つかりません', 404
-    return render_template('group.html',endpoint=request.endpoint, group_key=group_key, **info[group_key], image_url=url_for('static', filename=f'images/{info[group_key]["image"]}'))
+    return render_template('group.html', endpoint=request.endpoint, group_key=group_key, **info[group_key], image_url=url_for('static', filename=f'images/{info[group_key]["image"]}'))
+
 
 @app.route('/stats/<group_key>')
 @login_required
@@ -102,10 +115,8 @@ def stats(group_key):
     }
     is_shared = share_status_map[group_key]
 
-    all_photos = load_photos_from_csv(group_key)
-    if not all_photos:
-        return "グループのデータが見つかりません", 404
-
+    all_photos = Photo.query.filter_by(group_key=group_key).all()
+  
     owned = set(
         (p.member.strip(), p.costume.strip(), p.photo_type.strip())
         for p in UserPhoto.query.filter_by(user_id=current_user.id, group_key=group_key).all()
@@ -113,10 +124,12 @@ def stats(group_key):
 
     print("[DEBUG] 所持しているUserPhoto:")
     for photo in UserPhoto.query.filter_by(user_id=current_user.id, group_key=group_key).all():
-        print(f"member='{photo.member}' costume='{photo.costume}' type='{photo.photo_type}'")
+        print(
+            f"member='{photo.member}' costume='{photo.costume}' type='{photo.photo_type}'")
 
     all_costumes = set(p.costume.strip() for p in all_photos)
-    costume_stats = {costume: {'owned': 0, 'total': 0} for costume in all_costumes}
+    costume_stats = {costume: {'owned': 0, 'total': 0}
+                     for costume in all_costumes}
 
     member_stats = defaultdict(int)
     type_stats = defaultdict(int)
@@ -173,7 +186,8 @@ def stats(group_key):
             'complete_count': complete_count
         })
 
-    comp_ranking = sorted(comp_ranking_list, key=lambda x: x['complete_count'], reverse=True)
+    comp_ranking = sorted(
+        comp_ranking_list, key=lambda x: x['complete_count'], reverse=True)
 
     if group_key == 'nogizaka':
         is_shared = current_user.is_nogizaka_shared
@@ -188,7 +202,8 @@ def stats(group_key):
         'stats.html',
         endpoint=request.endpoint,
         group_key=group_key,
-        group_name={'nogizaka': '乃木坂46', 'sakurazaka': '櫻坂46', 'hinatazaka': '日向坂46'}[group_key],
+        group_name={'nogizaka': '乃木坂46', 'sakurazaka': '櫻坂46',
+                    'hinatazaka': '日向坂46'}[group_key],
         member_stats=sorted(member_stats.items()),
         type_stats=sorted(type_stats.items()),
         progress_list=progress,
@@ -198,17 +213,20 @@ def stats(group_key):
         is_shared=is_shared  # ✅ 追加ポイント
     )
 
+
 @app.route('/get_members')
 def get_members():
     group = request.args.get('group')
     folder = os.path.join('members_csv', group)
     return jsonify({'members': [f.replace('.csv', '') for f in os.listdir(folder) if f.endswith('.csv')]})
 
+
 @app.route('/get_costumes')
 def get_costumes():
     group = request.args.get('group')
     member = request.args.get('member')
     return jsonify({'costumes': get_costumes_for_member(group, member)})
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -225,6 +243,7 @@ def login():
         # return redirect(url_for('login')) ではなくこのままrender_templateに行く
     return render_template('login.html', form=form)
 
+
 @app.route('/<group_key>/dashboard')
 def dashboard(group_key):
     group_names = {
@@ -233,7 +252,8 @@ def dashboard(group_key):
         'hinatazaka': '日向坂46'
     }
     group_name = group_names.get(group_key, 'グループ不明')
-    return render_template('dashboard.html',endpoint=request.endpoint, group_key=group_key, group_name=group_name)
+    return render_template('dashboard.html', endpoint=request.endpoint, group_key=group_key, group_name=group_name)
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -270,11 +290,13 @@ def register():
 
     return render_template('register.html')
 
+
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
     return redirect(url_for('login'))
+
 
 @app.route('/')
 def home():
@@ -283,6 +305,7 @@ def home():
         return redirect(url_for('index', group_key=group))
     else:
         return redirect(url_for('login'))
+
 
 def get_photos_by_group(group_key):
     folder_path = f'members_csv/{group_key}'  # 例: members_csv/hinatazaka
@@ -295,7 +318,7 @@ def get_photos_by_group(group_key):
             csv_path = os.path.join(folder_path, filename)
             with open(csv_path, encoding='utf-8') as f:
                 reader = csv.reader(f)
-                next(reader,None)
+                next(reader, None)
                 for row in reader:
                     if len(row) == 3:
                         member, costume, photo_type = row
@@ -307,6 +330,7 @@ def get_photos_by_group(group_key):
             photos_by_member[member_name] = member_photos
 
     return photos_by_member
+
 
 @app.route('/gallery/<group_key>', methods=['GET'])
 @login_required
@@ -338,8 +362,10 @@ def gallery(group_key):
             if selected_costume and photo['costume'].strip() != selected_costume:
                 continue
             # 画像パスと存在チェック
-            image_rel_path = build_image_path(photo['member'], photo['costume'], photo['photo_type'], group_key)
-            image_abs_path = os.path.join(current_app.static_folder, image_rel_path)
+            image_rel_path = build_image_path(
+                photo['member'], photo['costume'], photo['photo_type'], group_key)
+            image_abs_path = os.path.join(
+                current_app.static_folder, image_rel_path)
             photo['image_exists'] = os.path.exists(image_abs_path)
             photo['image_path'] = image_rel_path
             filtered_photos.append(photo)
@@ -364,6 +390,7 @@ def gallery(group_key):
         selected_member=selected_member,
         selected_costume=selected_costume
     )
+
 
 @app.route('/index/<group_key>', methods=['GET'])
 @login_required
@@ -400,12 +427,15 @@ def index(group_key):
     photos_raw = q.all()
     print(f"[DEBUG] photos_raw count: {len(photos_raw)}")
     for p in photos_raw:
-        print(f"[DEBUG] Photo: id={p.id}, member={p.member}, costume={p.costume}, type={p.photo_type}")
+        print(
+            f"[DEBUG] Photo: id={p.id}, member={p.member}, costume={p.costume}, type={p.photo_type}")
 
     photos = []
     for p in photos_raw:
-        image_rel_path = build_image_path(p.member, p.costume, p.photo_type, group_key)
-        image_abs_path = os.path.join(current_app.static_folder, image_rel_path)
+        image_rel_path = build_image_path(
+            p.member, p.costume, p.photo_type, group_key)
+        image_abs_path = os.path.join(
+            current_app.static_folder, image_rel_path)
         image_exists = os.path.exists(image_abs_path)
 
         photo_dict = {
@@ -422,7 +452,8 @@ def index(group_key):
         photos.append(photo_dict)
 
     # フィルター用データはDBの全写真から作る
-    all_photos = UserPhoto.query.filter_by(user_id=current_user.id, group_key=group_key).all()
+    all_photos = UserPhoto.query.filter_by(
+        user_id=current_user.id, group_key=group_key).all()
     members = sorted(set(p.member for p in all_photos))
     costumes = sorted(set(p.costume for p in all_photos))
     types = sorted(set(p.photo_type for p in all_photos))
@@ -442,11 +473,13 @@ def index(group_key):
         endpoint=request.endpoint
     )
 
+
 GROUP_KEY_MAP = {
     'nogizaka': '乃木坂46',
     'sakurazaka': '櫻坂46',
     'hinatazaka': '日向坂46'
 }
+
 
 @app.route('/delete_user_photo/<group_key>/<int:photo_id>', methods=['POST'])
 @login_required
@@ -459,7 +492,8 @@ def delete_user_photo(group_key, photo_id):
 
     if photo.user_id != current_user.id:
         flash('あなたの写真ではありません。', 'error')
-        app.logger.debug(f"[DEBUG] Photo user_id={photo.user_id} does not match current_user.id={current_user.id}")
+        app.logger.debug(
+            f"[DEBUG] Photo user_id={photo.user_id} does not match current_user.id={current_user.id}")
         return redirect(url_for('index', group_key=group_key))
 
     expected_group = GROUP_KEY_MAP.get(group_key)
@@ -469,15 +503,18 @@ def delete_user_photo(group_key, photo_id):
 
     if photo.group != expected_group:
         flash('グループキーが不正です。', 'error')
-        app.logger.debug(f"[DEBUG] Photo group={photo.group} does not match expected_group={expected_group}")
+        app.logger.debug(
+            f"[DEBUG] Photo group={photo.group} does not match expected_group={expected_group}")
         return redirect(url_for('index', group_key=group_key))
 
     db.session.delete(photo)
     db.session.commit()
     flash('生写真を削除しました。', 'success')
-    app.logger.debug(f"[DEBUG] Deleted photo id={photo_id} for user_id={current_user.id} group={group_key}")
+    app.logger.debug(
+        f"[DEBUG] Deleted photo id={photo_id} for user_id={current_user.id} group={group_key}")
 
     return redirect(url_for('index', group_key=group_key))
+
 
 @app.route('/add/<group_key>', methods=['GET', 'POST'])
 @login_required
@@ -582,8 +619,10 @@ def add(group_key):
                 if date_acquired:
                     existing.date = date_acquired
                 db.session.commit()
-                flash(f'{member}の{costume}（{photo_type}）は既に所持しています。所持数を{quantity}枚増やしました。')
-                logging.info(f'{member}の{costume}（{photo_type}）の数量を{quantity}枚増加')
+                flash(
+                    f'{member}の{costume}（{photo_type}）は既に所持しています。所持数を{quantity}枚増やしました。')
+                logging.info(
+                    f'{member}の{costume}（{photo_type}）の数量を{quantity}枚増加')
             else:
                 new_user_photo = UserPhoto(
                     user_id=current_user.id,
@@ -601,7 +640,8 @@ def add(group_key):
                 db.session.add(new_user_photo)
                 db.session.commit()
                 flash(f'{member}の{costume}（{photo_type}）が{quantity}枚追加されました！')
-                logging.info(f'新規生写真追加: {member}の{costume}（{photo_type}）{quantity}枚')
+                logging.info(
+                    f'新規生写真追加: {member}の{costume}（{photo_type}）{quantity}枚')
 
             return redirect(url_for('index', group_key=group_key))
 
@@ -617,24 +657,32 @@ def add(group_key):
 
     return render_template('add.html', form=form, group_key=group_key, group_color=group_color)
 
+
 def get_missing_photos(search_member='', search_costume='', group_key='hinata'):
 
     # デバッグ: Photoテーブルの中身を確認
     all_photos = Photo.query.all()
     print("All Photos in DB:")
     for p in all_photos:
-        print(f"id={p.id}, group_key={p.group_key}, member={p.member}, costume={p.costume}, type={p.photo_type}")
+        print(
+            f"id={p.id}, group_key={p.group_key}, member={p.member}, costume={p.costume}, type={p.photo_type}")
 
     # 未所持で、ユーザーがまだ所有していない生写真を取得
     query = Photo.query.filter_by(group_key=group_key)
-    
+
     # ユーザーが所持している生写真（`has_owner=True`）のIDを取得
-    owned_photos = db.session.query(UserPhoto).filter_by(user_id=current_user.id, has_owner=True).all()
-    owned_photos_ids = {(photo.member, photo.costume, photo.photo_type) for photo in owned_photos}
+    owned_photos_ids = {
+        up.photo_id
+        for up in UserPhoto.query.filter_by(
+            user_id=current_user.id,
+            group_key=group_key,
+            has_owner=True
+        ).all()
+    }
 
     # デバッグ: 所持している写真（owned_photos_ids）の内容を表示
     print(f"Owned Photos (IDs): {owned_photos_ids}")
-    
+
     # メンバー名の検索がある場合
     if search_member:
         query = query.filter(Photo.member.ilike(f'%{search_member}%'))
@@ -649,7 +697,7 @@ def get_missing_photos(search_member='', search_costume='', group_key='hinata'):
     print(f"Results Before Filtering: {[photo.id for photo in results]}")
 
     # 未所持の写真をフィルタリング（ユーザーが所有していない写真のみ）
-    results = [photo for photo in results if (photo.member, photo.costume, photo.photo_type) not in owned_photos_ids]
+    results = [photo for photo in results if photo.id not in owned_photos_ids]
 
     # デバッグ: フィルタリング後の結果を表示
     print(f"Results After Filtering: {[photo.id for photo in results]}")
@@ -666,6 +714,7 @@ def get_missing_photos(search_member='', search_costume='', group_key='hinata'):
         })
 
     return grouped
+
 
 @app.route('/missing/<group_key>', methods=['GET'])
 @login_required
@@ -701,6 +750,7 @@ def missing(group_key):  # ←ここを追加！
         costume_list=costume_list
     )
 
+
 @app.route('/shared/<int:user_id>/<group_key>')
 def shared_stats(user_id, group_key):
     user = User.query.get_or_404(user_id)
@@ -720,6 +770,7 @@ def shared_stats(user_id, group_key):
                            all_photos=all_photos,
                            owned_photo_ids=owned_photo_ids)
 
+
 @app.route('/toggle_share/<group_key>', methods=['POST'])
 @login_required
 def toggle_share(group_key):
@@ -735,6 +786,7 @@ def toggle_share(group_key):
     # 変更をDBに保存
     db.session.commit()
     return redirect(url_for('mypage'))
+
 
 @app.route("/share/<group_key>/<username>")
 def shared_collection(group_key, username):
@@ -757,7 +809,8 @@ def shared_collection(group_key, username):
         return render_template("shared_collection/not_shared.html", username=username)
 
     # UserPhotoのgroupフィールドがgroup_keyのものを取得
-    user_photos = UserPhoto.query.filter_by(user_id=user.id, group=group_key).all()
+    user_photos = UserPhoto.query.filter_by(
+        user_id=user.id, group=group_key).all()
 
     return render_template(
         "shared_collection/shared_view.html",
@@ -766,6 +819,7 @@ def shared_collection(group_key, username):
         group_name=group_key.capitalize()
     )
 
+
 @app.route('/qr_image/<group_key>')
 @login_required
 def qr_image(group_key):
@@ -773,7 +827,8 @@ def qr_image(group_key):
     if group_key not in ['nogizaka', 'sakurazaka', 'hinatazaka']:
         abort(404)
 
-    share_url = url_for('shared_collection', group_key=group_key, username=current_user.username, _external=True)
+    share_url = url_for('shared_collection', group_key=group_key,
+                        username=current_user.username, _external=True)
 
     qr_img = qrcode.make(share_url)
     buf = io.BytesIO()
@@ -782,6 +837,7 @@ def qr_image(group_key):
 
     img_base64 = base64.b64encode(buf.read()).decode('utf-8')
     return jsonify({'qr_base64': img_base64})
+
 
 @app.before_request
 def make_session_permanent():
@@ -840,11 +896,13 @@ def confirm_delete_final():
 
     return render_template('confirm_delete_final.html', group_key=group_key)
 
+
 @app.route("/mypage")
 @login_required
 def mypage():
     def make_qr_base64(group_key):
-        share_url = url_for('shared_collection', group_key=group_key, username=current_user.username, _external=True)
+        share_url = url_for('shared_collection', group_key=group_key,
+                            username=current_user.username, _external=True)
         qr_img = qrcode.make(share_url)
         buf = io.BytesIO()
         qr_img.save(buf, format='PNG')
@@ -876,6 +934,7 @@ def mypage():
         share_statuses=share_statuses,
     )
 
+
 @app.route('/mypage/icon', methods=['GET', 'POST'])
 @login_required
 def icon_setting():
@@ -894,7 +953,8 @@ def icon_setting():
                 image = Image.open(BytesIO(binary_data))
 
                 # 保存パスを準備
-                user_folder = os.path.join(app.root_path, 'static', 'uploads', 'icons', f'user_{current_user.id}')
+                user_folder = os.path.join(
+                    app.root_path, 'static', 'uploads', 'icons', f'user_{current_user.id}')
                 os.makedirs(user_folder, exist_ok=True)
 
                 # 保存ファイル名を統一（例：icon.png）
@@ -918,11 +978,13 @@ def icon_setting():
 
     return render_template('icon_setting.html', form=form)
 
+
 @app.route('/mypage/icon/delete', methods=['POST'])
 @login_required
 def delete_icon():
     if current_user.icon_filename:
-        icon_path = os.path.join(app.root_path, 'static', 'uploads', 'icons', current_user.icon_filename)
+        icon_path = os.path.join(
+            app.root_path, 'static', 'uploads', 'icons', current_user.icon_filename)
         try:
             if os.path.exists(icon_path):
                 os.remove(icon_path)
@@ -936,6 +998,7 @@ def delete_icon():
         flash('アイコンを削除しました。', 'info')
 
     return redirect(url_for('icon_setting'))
+
 
 @app.route('/edit_profile', methods=['GET', 'POST'])
 @login_required
@@ -954,6 +1017,7 @@ def edit_profile():
         return redirect(url_for('mypage'))
 
     return render_template('edit_profile.html', user=current_user)
+
 
 @app.route('/change_password', methods=['GET', 'POST'])
 @login_required
@@ -995,6 +1059,7 @@ def change_password():
 
     return render_template('change_password.html')
 
+
 @app.route('/set_default_group', methods=['GET', 'POST'])
 @login_required
 def set_default_group():
@@ -1013,6 +1078,7 @@ def set_default_group():
 
     return render_template('set_default_group.html', groups=groups, current_default=current_user.default_group)
 
+
 @app.route('/toggle_dark_mode', methods=['POST'])
 @login_required
 def toggle_dark_mode():
@@ -1024,11 +1090,13 @@ def toggle_dark_mode():
     # 前のページに戻す（referrerがなければmypage）
     return redirect(request.referrer or url_for('mypage'))
 
+
 @app.route('/delete_account', methods=['POST'])
 @login_required
 def delete_account():
     user_id = current_user.id
-    user_folder = os.path.join(app.root_path, 'static', 'uploads', 'icons', f'user_{user_id}')
+    user_folder = os.path.join(
+        app.root_path, 'static', 'uploads', 'icons', f'user_{user_id}')
 
     # DBからユーザー削除処理など
     # 例: db.session.delete(current_user), db.session.commit() など
@@ -1042,9 +1110,8 @@ def delete_account():
     flash('アカウントを削除しました。', 'success')
     return redirect(url_for('index'))
 
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()  # ←これが大事！
     app.run(debug=True)
-
-

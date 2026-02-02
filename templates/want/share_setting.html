@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+  <h2>欲しい写真の公開設定（{{ group_key }}）</h2>
+
+  <p class="mt-3">
+    現在の状態：
+    {% if share.is_public %}
+      <span class="badge bg-success">公開中</span>
+    {% else %}
+      <span class="badge bg-secondary">非公開</span>
+    {% endif %}
+  </p>
+
+  <form method="POST">
+    <button class="btn btn-primary">
+      {% if share.is_public %}
+        非公開にする
+      {% else %}
+        公開する
+      {% endif %}
+    </button>
+  </form>
+</div>
+
+{% endblock %}

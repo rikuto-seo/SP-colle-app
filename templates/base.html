@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -39,35 +40,44 @@
         <div class="sidebar-main">
             <h3>メニュー</h3>
             {% if group_key is defined and group_key %}
-                <a href="{{ url_for('index', group_key=group_key) }}">
-                    <i class="fas fa-camera"></i> 生写真一覧
-                </a>
-                <a href="{{ url_for('add', group_key=group_key) }}">
-                    <i class="fas fa-plus-circle"></i> 新規追加
-                </a>
-                <a href="{{ url_for('stats', group_key=group_key) }}">
-                    <i class="fas fa-chart-bar"></i> 統計を見る
-                </a>
-                <a href="{{ url_for('missing', group_key=group_key) }}">
-                    <i class="fas fa-box-open"></i> 未所持リスト
-                </a>
-                <a href="{{ url_for('gallery', group_key=group_key) }}">
-                    <i class="fas fa-image"></i> ギャラリー
-                </a>
+            <a href="{{ url_for('index', group_key=group_key) }}">
+                <i class="fas fa-camera"></i> 生写真一覧
+            </a>
+            <a href="{{ url_for('add', group_key=group_key) }}">
+                <i class="fas fa-plus-circle"></i> 新規追加
+            </a>
+            <a href="{{ url_for('stats', group_key=group_key) }}">
+                <i class="fas fa-chart-bar"></i> 統計を見る
+            </a>
+            <a href="{{ url_for('missing', group_key=group_key) }}">
+                <i class="fas fa-box-open"></i> 未所持リスト
+            </a>
+            <a href="{{ url_for('gallery', group_key=group_key) }}">
+                <i class="fas fa-image"></i> ギャラリー
+            </a>
+            <a href="{{ url_for('want.index', group_key=group_key) }}">
+                <i class="fas fa-heart"></i> 欲しい生写真
+            </a>
+
             {% else %}
-                <span class="text-muted"><i class="fas fa-camera"></i> 生写真一覧</span>
-                <span class="text-muted"><i class="fas fa-plus-circle"></i> 新規追加</span>
-                <span class="text-muted"><i class="fas fa-chart-bar"></i> 統計を見る</span>
-                <span class="text-muted"><i class="fas fa-box-open"></i> 未所持リスト</span>
-                <span class="text-muted"><i class="fas fa-image"></i> ギャラリー</span>
+            <span class="text-muted"><i class="fas fa-camera"></i> 生写真一覧</span>
+            <span class="text-muted"><i class="fas fa-plus-circle"></i> 新規追加</span>
+            <span class="text-muted"><i class="fas fa-chart-bar"></i> 統計を見る</span>
+            <span class="text-muted"><i class="fas fa-box-open"></i> 未所持リスト</span>
+            <span class="text-muted"><i class="fas fa-image"></i> ギャラリー</span>
+            <span class="text-muted"><i class="fas fa-heart"></i> 欲しい生写真</span>
+
             {% endif %}
 
             <hr>
 
             <h3>グループ切替</h3>
-            <a href="{% if endpoint == 'shared_collection' and username %}{{ url_for(endpoint, group_key='nogizaka', username=username) }}{% else %}{{ url_for(endpoint, group_key='nogizaka') }}{% endif %}">乃木坂46</a>
-            <a href="{% if endpoint == 'shared_collection' and username %}{{ url_for(endpoint, group_key='sakurazaka', username=username) }}{% else %}{{ url_for(endpoint, group_key='sakurazaka') }}{% endif %}">櫻坂46</a>
-            <a href="{% if endpoint == 'shared_collection' and username %}{{ url_for(endpoint, group_key='hinatazaka', username=username) }}{% else %}{{ url_for(endpoint, group_key='hinatazaka') }}{% endif %}">日向坂46</a>
+            <a
+                href="{% if endpoint == 'shared_collection' and username %}{{ url_for(endpoint, group_key='nogizaka', username=username) }}{% else %}{{ url_for(endpoint, group_key='nogizaka') }}{% endif %}">乃木坂46</a>
+            <a
+                href="{% if endpoint == 'shared_collection' and username %}{{ url_for(endpoint, group_key='sakurazaka', username=username) }}{% else %}{{ url_for(endpoint, group_key='sakurazaka') }}{% endif %}">櫻坂46</a>
+            <a
+                href="{% if endpoint == 'shared_collection' and username %}{{ url_for(endpoint, group_key='hinatazaka', username=username) }}{% else %}{{ url_for(endpoint, group_key='hinatazaka') }}{% endif %}">日向坂46</a>
         </div>
 
         <div class="sidebar-footer">
@@ -130,4 +140,5 @@
         });
     </script>
 </body>
+
 </html>

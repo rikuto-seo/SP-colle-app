@@ -258,6 +258,13 @@ body {
     max-height: 80px;
 }
 
+/* セレクトボックスの文字が見えなくなる問題の対策 */
+select.form-select,
+select.form-select option {
+    color: #000;
+    background-color: #fff;
+}
+
 /* === モバイル対応 === */
 @media (max-width: 768px) {
     .photo-item {
