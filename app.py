@@ -228,22 +228,29 @@ def get_costumes():
     member = request.args.get('member')
     return jsonify({'costumes': get_costumes_for_member(group, member)})
 
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
+
+    # 🔽 GET/POST 両対応で next を拾う
+    next_url = request.args.get('next') or request.form.get('next')
+
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
 
         if user and check_password_hash(user.password_hash, form.password.data):
             login_user(user)
+
+            # ✅ next があれば最優先で戻す
+            if next_url:
+                return redirect(next_url)
+
+            # フォールバック
             return redirect(url_for('index', group_key='nogizaka'))
 
         flash('ユーザー名またはパスワードが間違っています。', 'error')
-        # フラッシュメッセージ表示のためGETにリダイレクトせずに、フォーム再表示へ
-        # return redirect(url_for('login')) ではなくこのままrender_templateに行く
-    return render_template('login.html', form=form)
 
+    return render_template('login.html', form=form, next=next_url)
 
 @app.route('/<group_key>/dashboard')
 def dashboard(group_key):
