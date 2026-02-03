@@ -35,7 +35,7 @@ from friend import friend_bp
 from sqlalchemy import or_
 from want import want_bp
 from extensions import db
-from forstats import get_all_photos,get_user_photo_ids,compute_collection_stats
+from forstats import get_all_photos, get_user_photo_ids, compute_collection_stats
 
 app = Flask(__name__)
 app.permanent_session_lifetime = timedelta(minutes=10)
@@ -92,6 +92,32 @@ def group(group_key):
     return render_template('group.html', endpoint=request.endpoint, group_key=group_key, **info[group_key], image_url=url_for('static', filename=f'images/{info[group_key]["image"]}'))
 
 
+def load_required_types(group_key):
+    base = f"members_csv/{group_key}"
+    required = defaultdict(lambda: defaultdict(set))
+
+    for filename in os.listdir(base):
+        if not filename.endswith(".csv"):
+            continue
+
+        with open(os.path.join(base, filename), encoding="utf-8") as f:
+            reader = csv.reader(f)
+            next(reader, None)  # ヘッダースキップ
+
+            for row in reader:
+                # ✅ 列数チェック
+                if len(row) < 3:
+                    continue
+
+                member = row[0].strip()
+                costume = row[1].strip()
+                photo_type = row[2].strip()
+
+                required[member][costume].add(photo_type)
+
+    return required
+
+
 @app.route('/stats/<group_key>')
 @login_required
 def stats(group_key):
@@ -117,7 +143,7 @@ def stats(group_key):
     is_shared = share_status_map[group_key]
 
     all_photos = Photo.query.filter_by(group_key=group_key).all()
-  
+
     owned = set(
         (p.member.strip(), p.costume.strip(), p.photo_type.strip())
         for p in UserPhoto.query.filter_by(user_id=current_user.id, group_key=group_key).all()
@@ -135,36 +161,44 @@ def stats(group_key):
     member_stats = defaultdict(int)
     type_stats = defaultdict(int)
 
-    # ✅ コンプ集計用：メンバー×衣装で種類を集める
-    costume_dict = defaultdict(lambda: defaultdict(set))
-    owned_dict = defaultdict(lambda: defaultdict(set))
+    user_photos = UserPhoto.query.filter_by(
+        user_id=current_user.id,
+        group_key=group_key
+    ).all()
 
-    for p in all_photos:
+    for p in user_photos:
         member = p.member.strip()
         costume = p.costume.strip()
         photo_type = p.photo_type.strip()
 
-        costume_dict[member][costume].add(photo_type)
-        if (member, costume, photo_type) in owned:
-            owned_dict[member][costume].add(photo_type)
-            member_stats[member] += 1
-            type_stats[photo_type] += 1
-            costume_stats[costume]['owned'] += 1
-        costume_stats[costume]['total'] += 1
+        # メンバー別
+        member_stats[member] += p.quantity
 
-    # ✅ comp_stats を構築
+        # 種類別
+        type_stats[photo_type] += p.quantity
+
+        # 衣装別（所持数）
+        if costume in costume_stats:
+            costume_stats[costume]['owned'] += p.quantity
+
+    # ✅ コンプ集計用：メンバー×衣装で種類を集める
+    required_dict = load_required_types(group_key)
+
+    owned_dict = defaultdict(lambda: defaultdict(set))
+    for p in UserPhoto.query.filter_by(user_id=current_user.id, group_key=group_key):
+        owned_dict[p.member.strip()][p.costume.strip()
+                                     ].add(p.photo_type.strip())
+
     comp_stats = {}
-    for member, costumes in costume_dict.items():
+    for member, costumes in required_dict.items():
         comp_stats[member] = []
-        for costume, types in sorted(costumes.items()):
-            total = len(types)
+        for costume, required_types in costumes.items():
             owned_types = owned_dict[member][costume]
-            owned = len(owned_types)
             comp_stats[member].append({
-                'costume': costume,
-                'owned': owned,
-                'total': total,
-                'is_complete': owned == total
+                "costume": costume,
+                "owned": len(owned_types),
+                "total": len(required_types),
+                "is_complete": required_types.issubset(owned_types)
             })
 
     # 🔃 衣装別進捗
@@ -228,6 +262,7 @@ def get_costumes():
     member = request.args.get('member')
     return jsonify({'costumes': get_costumes_for_member(group, member)})
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
@@ -251,6 +286,7 @@ def login():
         flash('ユーザー名またはパスワードが間違っています。', 'error')
 
     return render_template('login.html', form=form, next=next_url)
+
 
 @app.route('/<group_key>/dashboard')
 def dashboard(group_key):
@@ -665,64 +701,52 @@ def add(group_key):
 
     return render_template('add.html', form=form, group_key=group_key, group_color=group_color)
 
+def get_missing_photos(search_member='', search_costume='', group_key='hinatazaka'):
+    """
+    CSVを正として未所持写真を算出する
+    """
 
-def get_missing_photos(search_member='', search_costume='', group_key='hinata'):
+    # ① CSVから「本来存在する全写真」を取得
+    required = load_required_types(group_key)
+    # required[member][costume] = set(photo_type)
 
-    # デバッグ: Photoテーブルの中身を確認
-    all_photos = Photo.query.all()
-    print("All Photos in DB:")
-    for p in all_photos:
-        print(
-            f"id={p.id}, group_key={p.group_key}, member={p.member}, costume={p.costume}, type={p.photo_type}")
-
-    # 未所持で、ユーザーがまだ所有していない生写真を取得
-    query = Photo.query.filter_by(group_key=group_key)
-
-    # ユーザーが所持している生写真（`has_owner=True`）のIDを取得
-    owned_photos_ids = {
-        up.photo_id
-        for up in UserPhoto.query.filter_by(
+    # ② ユーザーが所持している写真（文字列タプル）
+    owned = {
+        (
+            p.member.strip(),
+            p.costume.strip(),
+            p.photo_type.strip()
+        )
+        for p in UserPhoto.query.filter_by(
             user_id=current_user.id,
-            group_key=group_key,
-            has_owner=True
+            group_key=group_key
         ).all()
     }
 
-    # デバッグ: 所持している写真（owned_photos_ids）の内容を表示
-    print(f"Owned Photos (IDs): {owned_photos_ids}")
+    # ③ 未所持抽出
+    grouped = defaultdict(list)
 
-    # メンバー名の検索がある場合
-    if search_member:
-        query = query.filter(Photo.member.ilike(f'%{search_member}%'))
+    for member, costumes in required.items():
 
-    # 衣装名の検索がある場合
-    if search_costume:
-        query = query.filter(Photo.costume.ilike(f'%{search_costume}%'))
+        # メンバー検索
+        if search_member and search_member not in member:
+            continue
 
-    results = query.all()
+        for costume, types in costumes.items():
 
-    # デバッグ: フィルタリング前の結果を表示
-    print(f"Results Before Filtering: {[photo.id for photo in results]}")
+            # 衣装検索
+            if search_costume and search_costume not in costume:
+                continue
 
-    # 未所持の写真をフィルタリング（ユーザーが所有していない写真のみ）
-    results = [photo for photo in results if photo.id not in owned_photos_ids]
-
-    # デバッグ: フィルタリング後の結果を表示
-    print(f"Results After Filtering: {[photo.id for photo in results]}")
-
-    # 結果をメンバーごとにグループ化
-    grouped = {}
-    for photo in results:
-        member = photo.member
-        if member not in grouped:
-            grouped[member] = []
-        grouped[member].append({
-            'costume': photo.costume,
-            'type': photo.photo_type
-        })
+            for photo_type in types:
+                key = (member, costume, photo_type)
+                if key not in owned:
+                    grouped[member].append({
+                        'costume': costume,
+                        'type': photo_type
+                    })
 
     return grouped
-
 
 @app.route('/missing/<group_key>', methods=['GET'])
 @login_required

@@ -1,4 +1,4 @@
-{% extends "base.html" %} 
+{% extends "base.html" %}
 
 {% block title %}ログイン{% endblock %}
 
@@ -22,7 +22,7 @@
             <form method="POST" action="{{ url_for('login') }}">
                 {{ form.hidden_tag() }}
 
-                {# 🔽 next がある場合のみ hidden で保持 #}
+                {# 🔽 publicページなどから来た場合の next を保持 #}
                 {% if next %}
                     <input type="hidden" name="next" value="{{ next }}">
                 {% endif %}

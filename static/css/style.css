@@ -73,7 +73,7 @@ body {
     width: 30%;
     max-width: 70vw;
     height: 100vh; /* 画面全体の高さ */
-    background-color: #ffffff;
+    background-color: #fffeffb5;
     box-shadow: 2px 0 5px rgba(0,0,0,0.3);
     padding: 20px;
     box-sizing: border-box;
@@ -113,8 +113,8 @@ body {
 
 #sidebar a:hover,
 .sidebar-footer a:hover {
-    background-color: #a3d4f7;
-    color: white;
+    background-color: #b3dcf9;
+    color: rgb(87, 1, 1);
 }
 
 /* === 見出し === */
@@ -272,7 +272,7 @@ select.form-select option {
     }
 
     #sidebar {
-        width: 45%;
+        width: 50%;
     }
 
     #sidebar h3 {
