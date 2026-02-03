@@ -1,110 +1,98 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>欲しい生写真一覧</title>
+{% extends "base.html" %}
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% block title %}欲しい生写真一覧{% endblock %}
 
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-
-<body class="{{ group_color }}">
-
-<div class="{% if group_key == 'hinatazaka' %}navbar-hinata
-    {% elif group_key == 'sakurazaka' %}navbar-sakura
-    {% elif group_key == 'nogizaka' %}navbar-nogi
-    {% else %}navbar-default{% endif %} p-3 text-center">
-
-    <div style="font-size: 20px; font-weight: bold;">
-        坂道グループ 生写真アプリ
-    </div>
-    <div class="text-muted small">
-        公開ページ（閲覧専用）
-    </div>
-</div>
-
+{% block content %}
 <div class="container mt-4 {{ group_color }}">
 
-    {% set group_names = {
-        'nogizaka': '乃木坂46',
-        'sakurazaka': '櫻坂46',
-        'hinatazaka': '日向坂46'
-    } %}
+  {% set group_names = {
+    'nogizaka': '乃木坂46',
+    'sakurazaka': '櫻坂46',
+    'hinatazaka': '日向坂46'
+  } %}
 
-    <h2>
-        {{ owner.username }} さんの欲しい写真（{{ group_names.get(group_key, group_key) }}）
-    </h2>
+  <!-- タイトル -->
+  <div class="text-center mb-4">
+    <h1 class="fw-bold text-black p-3 rounded section-title">
+      {{ owner.username }} さんの欲しい写真
+    </h1>
+    <div class="text-muted">
+      {{ group_names.get(group_key, group_key) }}
+    </div>
+  </div>
 
-    {# ログイン済み → 照合 #}
+  <!-- 操作ボタン -->
+  <div class="d-flex justify-content-center mb-4 gap-2">
+
     {% if current_user.is_authenticated and not is_check %}
-        <a href="{{ url_for(
-            'want.public_want',
-            public_uuid=uuid,
-            group_key=group_key,
-            check=1
-        ) }}"
-           class="btn btn-primary mb-3">
-            自分が持っているか確認
-        </a>
+      <a href="{{ url_for(
+          'want.public_want',
+          public_uuid=uuid,
+          group_key=group_key,
+          check=1
+      ) }}"
+         class="btn btn-primary">
+        自分が持っているか確認
+      </a>
 
-    {# 未ログイン → ログイン誘導 #}
     {% elif not current_user.is_authenticated and not is_check %}
-        <a href="{{ url_for(
-            'login',
-            next=url_for(
-                'want.public_want',
-                public_uuid=uuid,
-                group_key=group_key,
-                check=1
-            )
-        ) }}"
-           class="btn btn-outline-primary mb-3">
-            ログインして確認
-        </a>
+      <a href="{{ url_for(
+          'login',
+          next=url_for(
+              'want.public_want',
+              public_uuid=uuid,
+              group_key=group_key,
+              check=1
+          )
+      ) }}"
+         class="btn btn-outline-primary">
+        ログインして確認
+      </a>
     {% endif %}
 
-    <table class="table table-bordered">
-        <thead>
-        <tr>
-            <th>メンバー</th>
-            <th>衣装</th>
-            <th>種類</th>
-            {% if is_check %}
-                <th>照合結果</th>
+  </div>
+
+  <!-- カード表示（モバイル最適・統一UI） -->
+  <div class="row row-cols-1 row-cols-md-3 g-3">
+
+    {% for want in wants %}
+    <div class="col">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+
+          <h5 class="fw-bold mb-2">{{ want.member }}</h5>
+
+          <div class="small text-muted mb-1">衣装</div>
+          <div class="mb-2">{{ want.costume }}</div>
+
+          <div class="small text-muted mb-1">種類</div>
+          <div class="mb-3">{{ want.photo_type }}</div>
+
+          {% if is_check %}
+            {% if want.is_owned %}
+              <span class="badge bg-success w-100 text-center d-block py-2">
+                所持しています
+              </span>
+            {% else %}
+              <span class="badge bg-secondary w-100 text-center d-block py-2">
+                未所持
+              </span>
             {% endif %}
-        </tr>
-        </thead>
-        <tbody>
-        {% for want in wants %}
-            <tr>
-                <td>{{ want.member }}</td>
-                <td>{{ want.costume }}</td>
-                <td>{{ want.photo_type }}</td>
-                {% if is_check %}
-                    <td>
-                        {% if want.is_owned %}
-                            <span class="badge bg-success">所持</span>
-                        {% else %}
-                            <span class="badge bg-secondary">未所持</span>
-                        {% endif %}
-                    </td>
-                {% endif %}
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+          {% endif %}
+
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    {% if wants|length == 0 %}
+      <p class="text-center">欲しい写真は登録されていません。</p>
+    {% endif %}
+
+  </div>
 </div>
 
 <footer class="text-center text-muted mt-5 mb-3 small">
-    このページは公開用URLです。編集や登録はできません。
+  このページは公開用URLです。編集や登録はできません。
 </footer>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% endblock %}

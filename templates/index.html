@@ -3,113 +3,138 @@
 {% block title %}生写真一覧{% endblock %}
 
 {% block content %}
-<div class="container mt-5 {{ group_color }}">
-  <div class="text-center mb-5">
-    <h1 class="display-4 fw-bold text-black p-3 rounded section-title">
+<div class="container mt-4 {{ group_color }}">
+
+  <!-- タイトル -->
+  <div class="text-center mb-4">
+    <h1 class="fw-bold text-black p-3 rounded section-title">
       生写真一覧
     </h1>
   </div>
 
   <div class="row g-4">
+
     <!-- 検索フォーム -->
     <div class="col-12">
-      <div class="card shadow-sm h-100">
+      <div class="card shadow-sm">
         <div class="card-body">
-          <h3 class="card-title text-black">検索フォーム</h3>
+          <h5 class="card-title mb-3">検索フォーム</h5>
+
           <form method="get" action="{{ url_for('index', group_key=group_key) }}">
             <div class="row g-3">
-              <div class="col-md-3">
-                <label for="query" class="form-label text-black">検索</label>
-                <input type="text" id="query" name="query" value="{{ request.args.get('query', '') }}" class="form-control" placeholder="キーワードで検索">
+
+              <div class="col-12 col-md-3">
+                <label class="form-label">検索</label>
+                <input type="text" name="query" value="{{ request.args.get('query', '') }}"
+                       class="form-control" placeholder="キーワード">
               </div>
 
-              <div class="col-md-3">
-                <label for="member" class="form-label text-black">メンバー</label>
-                <select class="form-select" id="member" name="member">
-                  <option value="" {% if not request.args.get('member') %}selected{% endif %}>選択してください</option>
+              <div class="col-12 col-md-3">
+                <label class="form-label">メンバー</label>
+                <select class="form-select" name="member">
+                  <option value="">選択してください</option>
                   {% for m in members %}
                     <option value="{{ m }}" {% if m == request.args.get('member') %}selected{% endif %}>{{ m }}</option>
                   {% endfor %}
                 </select>
               </div>
 
-              <div class="col-md-3">
-                <label for="costume" class="form-label text-black">衣装</label>
-                <select class="form-select" id="costume" name="costume">
-                  <option value="" {% if not request.args.get('costume') %}selected{% endif %}>選択してください</option>
+              <div class="col-12 col-md-3">
+                <label class="form-label">衣装</label>
+                <select class="form-select" name="costume">
+                  <option value="">選択してください</option>
                   {% for c in costumes %}
                     <option value="{{ c }}" {% if c == request.args.get('costume') %}selected{% endif %}>{{ c }}</option>
                   {% endfor %}
                 </select>
               </div>
 
-              <div class="col-md-3">
-                <label for="type" class="form-label text-black">種類</label>
-                <select class="form-select" id="type" name="type">
-                  <option value="" {% if not request.args.get('type') %}selected{% endif %}>すべて</option>
-                  {% for type in types %}
-                    <option value="{{ type }}" {% if type == request.args.get('type') %}selected{% endif %}>{{ type }}</option>
+              <div class="col-12 col-md-3">
+                <label class="form-label">種類</label>
+                <select class="form-select" name="type">
+                  <option value="">すべて</option>
+                  {% for t in types %}
+                    <option value="{{ t }}" {% if t == request.args.get('type') %}selected{% endif %}>{{ t }}</option>
                   {% endfor %}
                 </select>
               </div>
 
               <div class="col-12">
-                <button type="submit" class="btn {{ group_color }} w-100 mt-3">検索</button>
+                <button class="btn {{ group_color }} w-100 mt-2">検索</button>
               </div>
+
             </div>
           </form>
         </div>
       </div>
     </div>
 
-    <!-- 表示切替ボタン -->
-    <div class="col-12">
-      <div class="d-flex justify-content-end mb-3">
-        <div class="btn-group" role="group">
-          <button id="btn-card" class="btn btn-outline-primary btn-sm active" onclick="switchView('card')" type="button">
-            <i class="bi bi-grid-3x3-gap"></i> カード表示
-          </button>
-          <button id="btn-table" class="btn btn-outline-primary btn-sm" onclick="switchView('table')" type="button">
-            <i class="bi bi-table"></i> 表表示
-          </button>
-        </div>
+    <!-- 表示切替（PCのみ） -->
+    <div class="col-12 d-none d-md-flex justify-content-end">
+      <div class="btn-group btn-group-sm">
+        <button id="btn-card" class="btn btn-outline-primary active" onclick="switchView('card')" type="button">
+          カード
+        </button>
+        <button id="btn-table" class="btn btn-outline-primary" onclick="switchView('table')" type="button">
+          表
+        </button>
       </div>
     </div>
 
-    <!-- カード表示 -->
-    <div id="view-card" class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+    <!-- カード表示（デフォルト・モバイル最適） -->
+    <div id="view-card" class="row row-cols-1 row-cols-md-3 g-3">
+
       {% for photo in photos %}
-        <div class="col">
-          <div class="card shadow-sm h-100">
-            {% if photo.image_exists %}
-              <img src="{{ url_for('static', filename='member_images/' ~ group_key ~ '/' ~ photo.member ~ '/' ~ photo.member ~ '_' ~ photo.costume ~ '_' ~ photo.photo_type ~ '.jpg') }}" class="card-img-top" alt="{{ photo.member }}の写真">
-            {% else %}
-              <img src="{{ url_for('static', filename='member_images/no_photo.jpg') }}" class="card-img-top" alt="画像なし">
+      <div class="col">
+        <div class="card shadow-sm h-100">
+
+          {% if photo.image_exists %}
+            <img src="{{ url_for('static', filename='member_images/' ~ group_key ~ '/' ~ photo.member ~ '/' ~ photo.member ~ '_' ~ photo.costume ~ '_' ~ photo.photo_type ~ '.jpg') }}"
+                 class="card-img-top" loading="lazy">
+          {% else %}
+            <img src="{{ url_for('static', filename='member_images/no_photo.jpg') }}"
+                 class="card-img-top">
+          {% endif %}
+
+          <div class="card-body">
+            <h5 class="fw-bold mb-2">{{ photo.member }}</h5>
+
+            <div class="small text-muted mb-1">衣装</div>
+            <div class="mb-2">{{ photo.costume }}</div>
+
+            <div class="small text-muted mb-1">種類</div>
+            <div class="mb-2">{{ photo.photo_type }}</div>
+
+            <div class="small text-muted mb-1">枚数</div>
+            <div class="mb-2">{{ photo.quantity }}</div>
+
+            <div class="small text-muted mb-1">入手日</div>
+            <div class="mb-2">{{ photo.date or '-' }}</div>
+
+            {% if photo.memo %}
+              <div class="small text-muted mb-1">メモ</div>
+              <div class="mb-2">{{ photo.memo }}</div>
             {% endif %}
-            <div class="card-body">
-              <h5 class="card-title">{{ photo.member }}</h5>
-              <p class="card-text">
-                <strong>衣装:</strong> {{ photo.costume }}<br>
-                <strong>種類:</strong> {{ photo.photo_type }}<br>
-                <strong>枚数:</strong> {{ photo.quantity }}<br>
-                <strong>入手日:</strong> {{ photo.date or '-' }}<br>
-                <strong>メモ:</strong> {{ photo.memo or '-' }}
-              </p>
-              <form method="POST" action="{{ url_for('delete_user_photo', photo_id=photo.id, group_key=group_key) }}">
-                <button type="submit" class="btn btn-danger btn-sm w-100" onclick="return confirm('本当に削除しますか？')">削除</button>
-              </form>
-            </div>
+
+            <form method="POST" action="{{ url_for('delete_user_photo', photo_id=photo.id, group_key=group_key) }}">
+              <button class="btn btn-danger btn-sm w-100"
+                      onclick="return confirm('本当に削除しますか？')">
+                削除
+              </button>
+            </form>
           </div>
         </div>
+      </div>
       {% endfor %}
+
       {% if photos|length == 0 %}
         <p class="text-center">該当する写真がありません。</p>
       {% endif %}
     </div>
 
-    <!-- 表表示 -->
-    <div id="view-table" class="table-responsive d-none">
-      <table class="table table-bordered table-sm align-middle">
+    <!-- 表表示（PC専用） -->
+    <div id="view-table" class="table-responsive d-none d-md-block mt-3">
+      <table class="table table-sm table-bordered align-middle">
         <thead class="table-light">
           <tr>
             <th>メンバー</th>
@@ -119,68 +144,50 @@
             <th>枚数</th>
             <th>入手日</th>
             <th>メモ</th>
-            <th>操作</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
           {% for photo in photos %}
-            <tr>
-              <td>{{ photo.member }}</td>
-              <td>{{ photo.costume }}</td>
-              <td>{{ photo.photo_type }}</td>
-              <td>
-                {% if photo.image_exists %}
-                  <img src="{{ url_for('static', filename='member_images/' ~ group_key ~ '/' ~ photo.member ~ '/' ~ photo.member ~ '_' ~ photo.costume ~ '_' ~ photo.photo_type ~ '.jpg') }}" class="img-fluid" width="100" loading="lazy" alt="{{ photo.member }}の写真">
-                {% else %}
-                  <img src="{{ url_for('static', filename='member_images/no_photo.jpg') }}" class="img-fluid" width="100" loading="lazy" alt="画像なし">
-                {% endif %}
-              </td>
-              <td>{{ photo.quantity }}</td>
-              <td>{{ photo.date or '-' }}</td>
-              <td>{{ photo.memo or '-' }}</td>
-              <td>
-                <form method="POST" action="{{ url_for('delete_user_photo', photo_id=photo.id, group_key=group_key) }}">
-                  <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('本当に削除しますか？')">削除</button>
-                </form>
-              </td>
-            </tr>
+          <tr>
+            <td>{{ photo.member }}</td>
+            <td>{{ photo.costume }}</td>
+            <td>{{ photo.photo_type }}</td>
+            <td>
+              <img src="{{ url_for('static', filename='member_images/' ~ group_key ~ '/' ~ photo.member ~ '/' ~ photo.member ~ '_' ~ photo.costume ~ '_' ~ photo.photo_type ~ '.jpg') if photo.image_exists else url_for('static', filename='member_images/no_photo.jpg') }}"
+                   width="80" loading="lazy">
+            </td>
+            <td>{{ photo.quantity }}</td>
+            <td>{{ photo.date or '-' }}</td>
+            <td>{{ photo.memo or '-' }}</td>
+            <td>
+              <form method="POST" action="{{ url_for('delete_user_photo', photo_id=photo.id, group_key=group_key) }}">
+                <button class="btn btn-danger btn-sm">削除</button>
+              </form>
+            </td>
+          </tr>
           {% endfor %}
-          {% if photos|length == 0 %}
-            <tr><td colspan="8" class="text-center">該当する写真がありません。</td></tr>
-          {% endif %}
         </tbody>
       </table>
     </div>
+
   </div>
 </div>
 
-<!-- 表示切替スクリプト -->
 <script>
-  function switchView(mode) {
-    const cardBtn = document.getElementById('btn-card');
-    const tableBtn = document.getElementById('btn-table');
-    const cardView = document.getElementById('view-card');
-    const tableView = document.getElementById('view-table');
+function switchView(mode) {
+  const card = document.getElementById('view-card');
+  const table = document.getElementById('view-table');
+  document.getElementById('btn-card').classList.toggle('active', mode === 'card');
+  document.getElementById('btn-table').classList.toggle('active', mode === 'table');
+  card.classList.toggle('d-none', mode !== 'card');
+  table.classList.toggle('d-none', mode !== 'table');
+  localStorage.setItem('photoViewMode', mode);
+}
 
-    if (mode === 'card') {
-      cardBtn.classList.add('active');
-      tableBtn.classList.remove('active');
-      cardView.classList.remove('d-none');
-      tableView.classList.add('d-none');
-    } else {
-      cardBtn.classList.remove('active');
-      tableBtn.classList.add('active');
-      cardView.classList.add('d-none');
-      tableView.classList.remove('d-none');
-    }
-    // 現在の表示形式をlocalStorageに保存
-    localStorage.setItem('photoViewMode', mode);
-  }
-
-  // ページ読み込み時に保存された表示形式を反映
-  document.addEventListener('DOMContentLoaded', () => {
-    const savedView = localStorage.getItem('photoViewMode') || 'card';
-    switchView(savedView);
-  });
+document.addEventListener('DOMContentLoaded', () => {
+  const mode = localStorage.getItem('photoViewMode') || 'card';
+  switchView(mode);
+});
 </script>
 {% endblock %}
