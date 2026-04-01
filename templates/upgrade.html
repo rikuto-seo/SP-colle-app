@@ -180,10 +180,12 @@
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({ plan })
-        });
+          body: JSON.stringify({
+            plan: String(plan).trim()
+          })
+        }); // ← ★これが必要
 
-        // 👇これ追加
+        // 👇ここからOK判定
         if (!res.ok) {
           const text = await res.text();
           console.error("SERVER ERROR:", text);

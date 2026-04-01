@@ -4,73 +4,62 @@
 {% block content %}
 <div class="container mt-4">
 
-  <!-- 🔒 ロック判定 -->
-  {% set is_locked = not current_user.can_access_group(group_key) %}
-  {% set is_premium_locked = not current_user.is_premium() %}
+  {# 有料プラン（Lite以上）を持っているかどうかの判定 #}
+  {% set has_paid_plan = current_user.is_lite() or current_user.is_standard() or current_user.is_premium() %}
 
-  <!-- タイトル -->
+  {# ロック条件：グループアクセス権がない、または有料プランを持っていない #}
+  {% set is_locked = (not current_user.can_access_group(group_key)) or (not has_paid_plan) %}
+
   <div class="text-center mb-4">
     <h1 class="display-5 fw-bold text-black p-3 rounded section-title">
       {{ group_name }} 統計情報
     </h1>
-
-    {% if is_locked %}
-    <div class="alert alert-warning mt-3">
-      🔒 このグループは現在のプランでは利用できません
-      <br>
-      <a href="{{ url_for('user.upgrade') }}" class="btn btn-warning btn-sm mt-2">
-        プランをアップグレード
-      </a>
-    </div>
-    {% endif %}
   </div>
 
-  <!-- ========================= -->
-  <!-- 🔥 基本統計（無料） -->
-  <!-- ========================= -->
-  <div style="{% if is_locked %}filter: blur(6px); pointer-events:none;{% endif %}">
-
-    <!-- サマリー -->
-    <div class="row mb-4">
-      <div class="col-12">
-        <div class="card shadow-sm text-center">
-          <div class="card-body">
-            <h5 class="card-title text-muted">総所持枚数</h5>
-
-            <h2 class="fw-bold text-primary mb-1">
-              {{ total_photos }} 枚
-            </h2>
-
-            <div class="text-muted small">
-              総コンプ数：
-              <span class="fw-semibold text-success">
-                {{ total_complete }}
-              </span>
-            </div>
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow-sm text-center">
+        <div class="card-body">
+          <h5 class="card-title text-muted">総所持枚数</h5>
+          <h2 class="fw-bold text-primary mb-1">
+            {{ total_photos }} 枚
+          </h2>
+          <div class="text-muted small">
+            総コンプ数：
+            <span class="fw-semibold text-success">
+              {{ total_complete }}
+            </span>
           </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- グリッド -->
+  {% if is_locked %}
+  <div class="alert alert-warning mt-3">
+    <i class="fa-solid fa-lock"></i> 詳細な統計情報の閲覧にはプランのアップグレードが必要です
+    <br>
+    <a href="{{ url_for('user.upgrade') }}" class="btn btn-warning btn-sm mt-2">
+      プランをアップグレード
+    </a>
+  </div>
+  {% endif %}
+
+  <div style="{% if is_locked %}filter: blur(8px); pointer-events:none; user-select:none;{% endif %}">
+
     <div class="row g-4">
-
-      <!-- コンプランキング -->
       <div class="col-6">
         <div class="card shadow-sm h-100">
           <div class="card-body">
             <h5 class="card-title text-danger">
               <i class="fa-solid fa-trophy"></i> コンプランキング
             </h5>
-
             {% if comp_ranking %}
             <ol class="list-group list-group-numbered">
               {% for entry in comp_ranking %}
               <li class="list-group-item d-flex justify-content-between align-items-center">
                 {{ entry.member }}
-                <span class="badge bg-danger rounded-pill">
-                  {{ entry.complete_count }}
-                </span>
+                <span class="badge bg-danger rounded-pill">{{ entry.complete_count }}</span>
               </li>
               {% endfor %}
             </ol>
@@ -81,14 +70,12 @@
         </div>
       </div>
 
-      <!-- メンバー別所持数 -->
       <div class="col-6">
         <div class="card shadow-sm h-100">
           <div class="card-body">
             <h5 class="card-title text-primary">
               <i class="fa-solid fa-user"></i> メンバー別所持数
             </h5>
-
             {% if member_stats %}
             <ul class="list-group list-group-flush">
               {% for member, count in member_stats %}
@@ -105,14 +92,12 @@
         </div>
       </div>
 
-      <!-- 種類別 -->
       <div class="col-12">
-        <div class="card shadow-sm h-100">
+        <div class="card shadow-sm">
           <div class="card-body">
             <h5 class="card-title text-success">
               <i class="fa-solid fa-layer-group"></i> 種類別所持数
             </h5>
-
             {% if type_stats %}
             <ul class="list-group list-group-flush">
               {% for type, count in type_stats %}
@@ -128,90 +113,53 @@
           </div>
         </div>
       </div>
-
     </div>
-  </div>
 
-  <!-- ========================= -->
-  <!-- 🔒 コンプ詳細（課金専用） -->
-  <!-- ========================= -->
-  <div class="position-relative mt-5">
-    <!-- 🔥 プレミアム専用オーバーレイ -->
-    {% if is_premium_locked %}
-      <div class="text-center bg-white p-4 rounded shadow">
-        <h5 class="fw-bold">🔒 プレミアム機能</h5>
-        <p class="text-muted small mb-2">
-          メンバー別のコンプ詳細を見るにはアップグレードが必要です
-        </p>
-        <a href="{{ url_for('user.upgrade') }}" class="btn btn-warning btn-sm">
-          アップグレード
-        </a>
-      </div>
-    {% endif %}
-
-    <div style="{% if is_premium_locked %}filter: blur(6px); pointer-events:none; user-select:none;{% endif %}">
-
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title text-warning mb-3">
-            <i class="fa-solid fa-list-check"></i> メンバー別コンプ状況
-          </h5>
-
-          {% if comp_stats %}
-          <div class="accordion" id="accordionCompStats">
-            {% for member, costumes in comp_stats.items() %}
-            <div class="accordion-item">
-              <h2 class="accordion-header">
-                <button class="accordion-button collapsed" type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#collapse-comp-{{ loop.index }}">
-                  {{ member }}
-                </button>
-              </h2>
-
-              <div id="collapse-comp-{{ loop.index }}" class="accordion-collapse collapse">
-                <div class="accordion-body">
-
-                  {% if costumes %}
-                  <ul class="list-group">
-                    {% for item in costumes %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                      {{ item.costume }}
-                      <span>
-                        {{ item.owned }}/{{ item.total }}
-
-                        {% if item.is_complete %}
-                        <span class="badge bg-success">
-                          コンプ
-                        </span>
-                        {% else %}
-                        <span class="badge bg-secondary">
-                          未コンプ
-                        </span>
-                        {% endif %}
+    <div class="card shadow-sm mt-4">
+      <div class="card-body">
+        <h5 class="card-title text-warning mb-3">
+          <i class="fa-solid fa-list-check"></i> メンバー別コンプ状況
+        </h5>
+        {% if comp_stats %}
+        <div class="accordion" id="accordionCompStats">
+          {% for member, costumes in comp_stats.items() %}
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapse-comp-{{ loop.index }}">
+                {{ member }}
+              </button>
+            </h2>
+            <div id="collapse-comp-{{ loop.index }}" class="accordion-collapse collapse">
+              <div class="accordion-body">
+                {% if costumes %}
+                <ul class="list-group">
+                  {% for item in costumes %}
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ item.costume }}
+                    <span>
+                      {{ item.owned }}/{{ item.total }}
+                      <span class="badge {% if item.is_complete %}bg-success{% else %}bg-secondary{% endif %}">
+                        {{ 'コンプ' if item.is_complete else '未コンプ' }}
                       </span>
-                    </li>
-                    {% endfor %}
-                  </ul>
-                  {% else %}
-                  <p class="text-muted">データがありません。</p>
-                  {% endif %}
-
-                </div>
+                    </span>
+                  </li>
+                  {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">データがありません。</p>
+                {% endif %}
               </div>
             </div>
-            {% endfor %}
           </div>
-          {% else %}
-          <p class="text-muted">コンプ詳細データがありません。</p>
-          {% endif %}
-
+          {% endfor %}
         </div>
+        {% else %}
+        <p class="text-muted">コンプ詳細データがありません。</p>
+        {% endif %}
       </div>
-
     </div>
 
   </div>
-
 </div>
 {% endblock %}
