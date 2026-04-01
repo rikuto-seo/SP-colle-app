@@ -183,6 +183,15 @@
           body: JSON.stringify({ plan })
         });
 
+        // 👇これ追加
+        if (!res.ok) {
+          const text = await res.text();
+          console.error("SERVER ERROR:", text);
+          showToast("サーバーエラー");
+          loading = false;
+          return;
+        }
+
         const data = await res.json();
 
         if (data.url) {
