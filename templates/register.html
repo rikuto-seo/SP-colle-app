@@ -1,41 +1,136 @@
 {% extends "base.html" %}
-
 {% block title %}ユーザー登録{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
-    <div class="card p-4 shadow-sm" style="max-width: 500px; margin: 0 auto;">
-        <h2 class="text-center mb-4">ユーザー登録</h2>
+  <div class="card p-4 shadow-sm" style="max-width: 500px; margin: 0 auto;">
+    <h2 class="text-center mb-4">ユーザー登録</h2>
 
-        {# フラッシュメッセージの表示 #}
-        {% with messages = get_flashed_messages() %}
-          {% if messages %}
-            <div class="alert alert-danger">
-              {% for message in messages %}
-                <div>{{ message }}</div>
-              {% endfor %}
-            </div>
-          {% endif %}
-        {% endwith %}
+    <div id="errorMessage" class="alert alert-danger d-none" role="alert"></div>
 
-        <form method="POST" action="{{ url_for('register') }}">
-           
-            <div class="mb-3">
-                <label for="username" class="form-label">ユーザー名</label>
-                <input type="text" class="form-control" id="username" name="username" placeholder="ユーザー名を入力" required>
-            </div>
-            <div class="mb-3">
-                <label for="password" class="form-label">パスワード</label>
-                <input type="password" class="form-control" id="password" name="password" placeholder="パスワードを入力" required>
-            </div>
-            <div class="d-grid">
-                <button type="submit" class="btn btn-primary">登録する</button>
-            </div>
-        </form>
-
-        <div class="mt-3 text-center">
-            <a href="{{ url_for('login') }}">すでにアカウントをお持ちの方はこちら</a>
-        </div>
+    <form id="registerForm">
+      <div class="mb-3">
+        <label class="form-label">メールアドレス</label>
+        <input type="email" id="email" class="form-control" placeholder="example@mail.com" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">ユーザー名</label>
+        <input type="text" id="username" class="form-control" placeholder="坂道太郎" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">パスワード</label>
+        <input type="password" id="password" class="form-control" placeholder="6文字以上" required>
+      </div>
+      <div class="d-grid">
+        <button type="submit" id="registerBtn" class="btn btn-primary">
+          <span id="registerText">登録する</span>
+          <span id="registerSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+        </button>
+      </div>
+    </form>
+    <div class="mt-3 text-center">
+      <a href="/login" class="text-decoration-none">ログインはこちら</a>
     </div>
+  </div>
 </div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAJNWrQTo4R78rygPdugp6G7LXlJ0jggLo",
+    authDomain: "sakamichi-photo-app.firebaseapp.com",
+    projectId: "sakamichi-photo-app",
+    storageBucket: "sakamichi-photo-app.appspot.com",
+    messagingSenderId: "873667254289",
+    appId: "1:873667254289:web:4441f862542e9c4c9bb9b0",
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  function getJapaneseRegisterMessage(errorCode) {
+    switch (errorCode) {
+      case "auth/email-already-in-use":
+        return "このメールアドレスは既に登録されています。";
+      case "auth/invalid-email":
+        return "メールアドレスの形式が正しくありません。";
+      case "auth/operation-not-allowed":
+        return "現在、新規登録は許可されていません。";
+      case "auth/weak-password":
+        return "パスワードが短すぎます。6文字以上で設定してください。";
+      default:
+        return "登録に失敗しました。内容を確認してください。";
+    }
+  }
+
+  document.getElementById("registerForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const btn = document.getElementById("registerBtn");
+    const registerText = document.getElementById("registerText");
+    const registerSpinner = document.getElementById("registerSpinner");
+    const errorDiv = document.getElementById("errorMessage");
+
+    errorDiv.classList.add("d-none");
+    btn.disabled = true;
+    registerText.textContent = "登録中...";
+    registerSpinner.classList.remove("d-none");
+
+    const email = document.getElementById("email").value;
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    try {
+      // 1. Firebase登録
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+      // 2. displayName設定
+      await updateProfile(userCredential.user, { displayName: username });
+
+      // 3. トークン取得
+      const token = await userCredential.user.getIdToken();
+
+      // 4. バックエンド同期（←ここ修正）
+      const res = await fetch("/api/me", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + token,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          username: username
+        })
+      });
+
+      if (!res.ok) {
+        let message = "サーバーエラー";
+
+        try {
+          const data = await res.json();
+          message = data.error || message;
+        } catch {
+          const text = await res.text();
+          message = text || message;
+        }
+
+        throw new Error(message);
+      }
+
+      // 成功
+      window.location.href = "/";
+
+    } catch (err) {
+      console.error(err);
+
+      errorDiv.textContent = getJapaneseRegisterMessage(err.code) || err.message;
+      errorDiv.classList.remove("d-none");
+
+      btn.disabled = false;
+      registerText.textContent = "登録する";
+      registerSpinner.classList.add("d-none");
+    }
+  });
+</script>
 {% endblock %}

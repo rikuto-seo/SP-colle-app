@@ -2,82 +2,206 @@
 {% block content %}
 
 {% set group_names = {
-    'nogizaka': '乃木坂46',
-    'sakurazaka': '櫻坂46',
-    'hinatazaka': '日向坂46'
+'nogizaka': '乃木坂46',
+'sakurazaka': '櫻坂46',
+'hinatazaka': '日向坂46'
 } %}
 
-<h2>欲しい写真を追加（{{ group_names.get(group_key, group_key) }}）</h2>
+<div class="container mt-5" style="max-width: 500px;">
 
-<input type="hidden" id="group_key" value="{{ group_key }}">
-
-<form method="POST">
-  <div class="mb-3">
-    <label class="form-label">メンバー</label>
-    <select name="member" id="member" class="form-select" required>
-      <option value="">選択してください</option>
-    </select>
+  <div class="text-center mb-4">
+    <h2 class="fw-bold section-title p-2 rounded">
+      欲しい生写真を追加
+    </h2>
+    <p class="text-muted small">
+      {{ group_names.get(group_key, group_key) }} の欲しい生写真を登録します
+    </p>
   </div>
 
-  <div class="mb-3">
-    <label class="form-label">衣装</label>
-    <select name="costume" id="costume" class="form-select" required>
-      <option value="">選択してください</option>
-    </select>
+  <input type="hidden" id="group_key" value="{{ group_key }}">
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+
+      <form method="POST">
+
+        <!-- ★ CSRF追加 -->
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">メンバー</label>
+          <select name="member" id="member"></select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">衣装</label>
+          <select name="costume" id="costume"></select>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-bold">種類</label>
+          <select name="photo_type" id="photo_type"></select>
+        </div>
+
+        <button type="submit" class="btn btn-success w-100 fw-bold">
+          ＋ 追加する
+        </button>
+
+      </form>
+
+    </div>
   </div>
 
-  <div class="mb-3">
-    <label class="form-label">種類</label>
-    <select name="photo_type" id="photo_type" class="form-select" required>
-      <option value="">選択してください</option>
-      <option value="ヨリ">ヨリ</option>
-      <option value="チュウ">チュウ</option>
-      <option value="ヒキ">ヒキ</option>
-      <option value="座り">座り</option>
-    </select>
+  <div class="text-center mt-3">
+    <button onclick="history.back()" class="btn btn-outline-secondary btn-sm">
+      ← 戻る
+    </button>
   </div>
 
-  <button type="submit" class="btn btn-primary w-100">
-    追加
-  </button>
-</form>
+</div>
+
+<style>
+  .section-title {
+    background-color: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+  }
+</style>
+
+<!-- Tom Select -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const groupKey = document.getElementById('group_key').value;
-  const memberSelect = document.getElementById('member');
-  const costumeSelect = document.getElementById('costume');
+  document.addEventListener("DOMContentLoaded", () => {
 
-  // メンバー取得
-  fetch(`/get_members?group=${encodeURIComponent(groupKey)}`)
-    .then(res => res.json())
-    .then(data => {
-      data.members.forEach(m => {
-        const opt = document.createElement('option');
-        opt.value = m;
-        opt.textContent = m;
-        memberSelect.appendChild(opt);
-      });
+    const groupKey = document.getElementById('group_key').value;
+
+    // =========================
+    // TomSelect初期化
+    // =========================
+    const memberTS = new TomSelect("#member", {
+      create: false,
+      maxItems: 1,
+      placeholder: "メンバーを選択"
     });
 
-  // メンバー選択 → 衣装取得
-  memberSelect.addEventListener('change', () => {
-    costumeSelect.innerHTML = '<option value="">選択してください</option>';
+    const costumeTS = new TomSelect("#costume", {
+      create: false,
+      maxItems: 1,
+      placeholder: "衣装を選択"
+    });
 
-    if (!memberSelect.value) return;
+    const typeTS = new TomSelect("#photo_type", {
+      create: false,
+      maxItems: 1,
+      placeholder: "種類を選択"
+    });
 
-    fetch(`/get_costumes?group=${encodeURIComponent(groupKey)}&member=${encodeURIComponent(memberSelect.value)}`)
+    // 初期状態
+    costumeTS.disable();
+    typeTS.disable();
+
+    // =========================
+    // メンバー取得
+    // =========================
+    fetch(`/get_members?group=${encodeURIComponent(groupKey)}`)
       .then(res => res.json())
       .then(data => {
-        data.costumes.forEach(c => {
-          const opt = document.createElement('option');
-          opt.value = c;
-          opt.textContent = c;
-          costumeSelect.appendChild(opt);
+
+        memberTS.clearOptions();
+
+        memberTS.addOption({ value: "", text: "選択してください" });
+
+        data.members.forEach(m => {
+          memberTS.addOption({ value: m, text: m });
         });
+
+        memberTS.refreshOptions(false);
       });
+
+    // =========================
+    // メンバー選択 → 衣装
+    // =========================
+    memberTS.on("change", (member) => {
+
+      // リセット
+      costumeTS.clear();
+      costumeTS.clearOptions();
+      costumeTS.disable();
+
+      typeTS.clear();
+      typeTS.clearOptions();
+      typeTS.disable();
+
+      if (!member) return;
+
+      costumeTS.addOption({ value: "", text: "読み込み中..." });
+      costumeTS.refreshOptions(false);
+
+      fetch(`/get_costumes?group=${encodeURIComponent(groupKey)}&member=${encodeURIComponent(member)}`)
+        .then(res => res.json())
+        .then(data => {
+
+          costumeTS.clearOptions();
+
+          costumeTS.addOption({ value: "", text: "選択してください" });
+
+          data.costumes.forEach(c => {
+            costumeTS.addOption({ value: c, text: c });
+          });
+
+          costumeTS.enable();
+          costumeTS.refreshOptions(false);
+        })
+        .catch(err => {
+          console.error("衣装取得失敗", err);
+        });
+    });
+
+    // =========================
+    // 衣装選択 → 種類
+    // =========================
+    costumeTS.on("change", (costume) => {
+
+      typeTS.clear();
+      typeTS.clearOptions();
+      typeTS.disable();
+
+      if (!costume) return;
+
+      typeTS.addOption({ value: "", text: "読み込み中..." });
+      typeTS.refreshOptions(false);
+
+      fetch(`/get_types?group=${encodeURIComponent(groupKey)}&member=${encodeURIComponent(memberTS.getValue())}&costume=${encodeURIComponent(costume)}`)
+        .then(res => res.json())
+        .then(data => {
+
+          const TYPE_LABEL_MAP = {
+            "04": "ヨリ",
+            "05": "チュウ",
+            "06": "ヒキ"
+          };
+
+          typeTS.clearOptions();
+
+          typeTS.addOption({ value: "", text: "選択してください" });
+
+          data.types.forEach(t => {
+            typeTS.addOption({
+              value: t,
+              text: TYPE_LABEL_MAP[t] || t
+            });
+          });
+
+          typeTS.enable();
+          typeTS.refreshOptions(false);
+        })
+        .catch(err => {
+          console.error("type取得失敗", err);
+        });
+    });
+
   });
-});
 </script>
 
 {% endblock %}

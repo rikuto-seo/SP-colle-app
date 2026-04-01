@@ -8,8 +8,8 @@
         <img src="{{ image_url }}" alt="{{ group_name }}" class="img-fluid my-4" style="max-height: 300px;">
         
         <div class="d-grid gap-2 col-6 mx-auto mt-4">
-            <a href="{{ url_for('stats', group_key=group_key) }}" class="btn btn-primary btn-lg">統計を見る</a>
-            <a href="{{ url_for('gallery') }}" class="btn btn-outline-primary btn-lg">生写真リストへ</a>
+            <a href="{{ url_for('stats.stats', group_key=group_key) }}" class="btn btn-primary btn-lg">統計を見る</a>
+            <a href="{{ url_for('photo.gallery') }}" class="btn btn-outline-primary btn-lg">生写真リストへ</a>
         </div>
     </div>
 </div>

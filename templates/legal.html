@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}特定商取引法に基づく表示{% endblock %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 800px;">
+
+  <h2 class="mb-4">特定商取引法に基づく表示</h2>
+
+  <h5>事業者</h5>
+  <p>
+    SP Colle運営（個人）
+  </p>
+
+  <h5>所在地</h5>
+  <p>
+    請求があった場合、遅滞なく開示いたします
+  </p>
+
+  <h5>連絡先</h5>
+  <p>
+    メールアドレス：spcolle.app@gmail.com
+  </p>
+
+  <h5>販売価格</h5>
+  <p>
+    各プランに表示された金額（税込）
+  </p>
+
+  <h5>支払方法</h5>
+  <p>
+    クレジットカード（Stripe）
+  </p>
+
+  <h5>支払時期</h5>
+  <p>
+    申込時および以降毎月自動更新
+  </p>
+
+  <h5>サービス提供時期</h5>
+  <p>
+    決済完了後、直ちに利用可能
+  </p>
+
+  <h5>解約について</h5>
+  <p>
+    プラン変更ページよりいつでも解約可能です。<br>
+    次回請求日の前日までに解約手続きを行うことで、翌月以降の課金は発生しません。
+  </p>
+
+  <h5>返金について</h5>
+  <p>
+    サービスの性質上、原則として返金は行いません。
+  </p>
+
+  <div class="mt-4">
+    <button onclick="history.back()" class="btn btn-secondary">
+      戻る
+    </button>
+  </div>
+
+</div>
+{% endblock %}

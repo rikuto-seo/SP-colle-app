@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}グループ選択{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+
+  <!-- ヘッダー -->
+  <div class="text-center mb-5">
+    <h2 class="fw-bold">推しグループを選択</h2>
+    <p class="text-muted mb-0">
+      無料プランでは1グループのみ選択できます
+    </p>
+  </div>
+
+  <!-- フォーム -->
+  <form method="POST" id="groupForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="group" id="selectedGroup">
+
+    <div class="row g-3">
+
+      <!-- 乃木坂 -->
+      <div class="col-md-4">
+        <div class="group-card" data-value="nogizaka" style="background-color: #e4dcf1">
+          <h5>乃木坂46</h5>
+        </div>
+      </div>
+
+      <!-- 櫻坂 -->
+      <div class="col-md-4">
+        <div class="group-card" data-value="sakurazaka" style="background-color: #f9d6e5">
+          <h5>櫻坂46</h5>
+        </div>
+      </div>
+
+      <!-- 日向坂 -->
+      <div class="col-md-4">
+        <div class="group-card" data-value="hinatazaka" style="background-color: #d4f4ff">
+          <h5>日向坂46</h5>
+        </div>
+      </div>
+
+    </div>
+  </form>
+
+  <div class="text-center mt-4 text-warning small">
+    ※この選択は後から変更できません
+  </div>
+
+</div>
+
+<!-- モーダル -->
+<div id="confirmModal" class="custom-modal">
+  <div class="custom-modal-content text-center">
+    <h5 class="fw-bold mb-3">このグループで確定しますか？</h5>
+
+    <div id="selectedText" class="fs-5 fw-bold mb-3"></div>
+
+    <div class="d-flex gap-2">
+      <button id="cancelBtn" class="btn btn-light w-50">戻る</button>
+      <button id="confirmBtn" class="btn btn-dark w-50">確定</button>
+    </div>
+  </div>
+</div>
+
+<style>
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px);}
+  to { opacity: 1; transform: translateY(0);}
+}
+</style>
+
+<script>
+const cards = document.querySelectorAll(".group-card");
+const modal = document.getElementById("confirmModal");
+const selectedText = document.getElementById("selectedText");
+
+const confirmBtn = document.getElementById("confirmBtn");
+const cancelBtn = document.getElementById("cancelBtn");
+
+const form = document.getElementById("groupForm");
+const selectedInput = document.getElementById("selectedGroup");
+
+let selectedValue = null;
+
+const groupMap = {
+  nogizaka: "乃木坂46",
+  sakurazaka: "櫻坂46",
+  hinatazaka: "日向坂46"
+};
+
+// カード選択
+cards.forEach(card => {
+  card.addEventListener("click", () => {
+
+    // UIリセット
+    cards.forEach(c => c.classList.remove("active"));
+
+    // 選択状態
+    card.classList.add("active");
+
+    selectedValue = card.dataset.value;
+    selectedText.textContent = groupMap[selectedValue];
+
+    modal.style.display = "flex";
+  });
+});
+
+// モーダル
+cancelBtn.addEventListener("click", () => {
+  modal.style.display = "none";
+});
+
+confirmBtn.addEventListener("click", () => {
+  selectedInput.value = selectedValue;
+  modal.style.display = "none";
+  form.submit();
+});
+</script>
+
+{% endblock %}

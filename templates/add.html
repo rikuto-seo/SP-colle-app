@@ -2,109 +2,208 @@
 {% block title %}生写真を追加{% endblock %}
 
 {% block content %}
-<div class="container mt-5 {{ group_color }}">
+<div class="container mt-5">
+
   <div class="text-center mb-4">
-    <h1 class="display-5 fw-bold text-black p-3 rounded section-title">生写真を追加</h1>
+    <h1 class="display-5 fw-bold text-body p-3 rounded section-title">
+      生写真を追加
+    </h1>
+
+    <div class="mt-3">
+      <div class="form-check form-switch d-inline-block">
+        <input class="form-check-input" type="checkbox" id="continuous_mode" name="continuous_mode" form="add-form">
+        <label class="form-check-label text-body" for="continuous_mode">
+          連続追加モード
+        </label>
+      </div>
+    </div>
   </div>
 
-  <div class="card shadow-sm">
+  <div class="card shadow-sm bg-body text-body">
     <div class="card-body">
-      <form method="post" action="{{ url_for('add', group_key=group_key) }}">
-         
-        <!-- グループはURLで指定されるので非表示でOK -->
+
+      <form method="post" id="add-form" action="{{ url_for('photo.add', group_key=group_key) }}">
+
+        {{ form.hidden_tag() }}
+
         <input type="hidden" id="group_key" value="{{ group_key }}">
+        <input type="hidden" name="member" id="member-hidden">
+        <input type="hidden" name="costume" id="costume-hidden">
 
         <div class="row g-4">
-          <!-- メンバー -->
+
           <div class="col-md-6">
-            {{ form.member.label(class="form-label text-black") }}
-            {{ form.member(class="form-select", id="member") }}
+            <label class="form-label text-body">メンバー</label>
+            <select id="member"></select>
           </div>
 
-          <!-- 衣装 -->
           <div class="col-md-6">
-            {{ form.costume.label(class="form-label text-black") }}
-            {{ form.costume(class="form-select", id="costume") }}
+            <label class="form-label text-body">衣装</label>
+            <select id="costume"></select>
           </div>
 
-          <!-- 種類 -->
           <div class="col-md-4">
-            {{ form.photo_type.label(class="form-label text-black") }}
-            {{ form.photo_type(class="form-select") }}
+            {{ form.photo_type.label(class="form-label text-body") }}
+            {{ form.photo_type(id="photo_type") }}
           </div>
 
-          <!-- 枚数 -->
           <div class="col-md-4">
-            {{ form.quantity.label(class="form-label text-black") }}
+            <label class="form-label text-body">枚数</label>
             {{ form.quantity(class="form-control") }}
           </div>
 
-          <!-- 入手日 -->
           <div class="col-md-4">
-            {{ form.date_acquired.label(class="form-label text-black") }}
+            <label class="form-label text-body">入手日</label>
             {{ form.date_acquired(class="form-control") }}
           </div>
 
-          <!-- メモ -->
           <div class="col-12">
-            {{ form.memo.label(class="form-label text-black") }}
-            {{ form.memo(class="form-control", rows="2", placeholder="例：2024年9月全握でゲット！") }}
+            <label class="form-label text-body">メモ</label>
+            {{ form.memo(class="form-control", rows="2") }}
           </div>
 
-          <!-- 送信ボタン -->
           <div class="col-12 text-center mt-3">
-            <button type="submit" class="btn btn-success px-5 py-2">追加</button>
+            <button type="submit" class="btn btn-success px-5 py-2">
+              追加
+            </button>
           </div>
+
         </div>
       </form>
+
     </div>
   </div>
 </div>
 
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-  const groupKey = document.getElementById('group_key').value;
-  const memberSelect = document.getElementById('member');
-  const costumeSelect = document.getElementById('costume');
+<!-- Tom Select -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 
-  // メンバー一覧を取得
-  fetch(`/get_members?group=${encodeURIComponent(groupKey)}`)
-    .then(response => response.json())
-    .then(data => {
-      memberSelect.innerHTML = '<option value="">選択してください</option>';
-      data.members.forEach(member => {
-        const option = document.createElement('option');
-        option.value = member;
-        option.textContent = member;
-        memberSelect.appendChild(option);
-      });
-    })
-    .catch(error => {
-      memberSelect.innerHTML = '<option value="">読み込み失敗</option>';
-      console.error('メンバー取得エラー:', error);
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+
+    const groupKey = document.getElementById('group_key').value;
+
+    const memberHidden = document.getElementById('member-hidden');
+    const costumeHidden = document.getElementById('costume-hidden');
+    const toggle = document.getElementById("continuous_mode");
+
+    // ------------------------
+    // TomSelect初期化
+    // ------------------------
+    const memberTS = new TomSelect("#member", {
+      create: false,
+      maxItems: 1,
+      placeholder: "メンバーを選択",
+      onChange: value => memberHidden.value = value
     });
 
-  // メンバー選択時に衣装一覧を取得
-  memberSelect.addEventListener('change', function () {
-    const member = this.value;
-    costumeSelect.innerHTML = '<option value="">読み込み中...</option>';
+    const costumeTS = new TomSelect("#costume", {
+      create: false,
+      maxItems: 1,
+      placeholder: "衣装を選択",
+      onChange: value => costumeHidden.value = value
+    });
 
-    fetch(`/get_costumes?group=${encodeURIComponent(groupKey)}&member=${encodeURIComponent(member)}`)
-      .then(response => response.json())
+    const typeTS = new TomSelect("#photo_type", {
+      create: false,
+      maxItems: 1
+    });
+
+    // ------------------------
+    // トグル保存
+    // ------------------------
+    const saved = localStorage.getItem("continuous_mode");
+    if (saved === "true") toggle.checked = true;
+
+    toggle.addEventListener("change", function () {
+      localStorage.setItem("continuous_mode", toggle.checked);
+    });
+
+    // ------------------------
+    // メンバー取得
+    // ------------------------
+    fetch(`/get_members?group=${encodeURIComponent(groupKey)}`)
+      .then(res => res.json())
       .then(data => {
-        costumeSelect.innerHTML = '<option value="">選択してください</option>';
-        data.costumes.forEach(costume => {
-          const option = document.createElement('option');
-          option.value = costume;
-          option.textContent = costume;
-          costumeSelect.appendChild(option);
+
+        memberTS.clearOptions();
+
+        data.members.forEach(member => {
+          memberTS.addOption({ value: member, text: member });
         });
-      })
-      .catch(error => {
-        costumeSelect.innerHTML = '<option value="">読み込み失敗</option>';
-        console.error('衣装取得エラー:', error);
+
+        memberTS.refreshOptions(false);
+
+        const params = new URLSearchParams(window.location.search);
+        const memberParam = params.get("member");
+
+        if (memberParam) {
+          memberTS.setValue(memberParam);
+        }
       });
+
+    // ------------------------
+    // メンバー変更
+    // ------------------------
+    memberTS.on("change", function (member) {
+
+      costumeTS.clear();
+      costumeTS.clearOptions();
+
+      typeTS.clear();
+      typeTS.clearOptions();
+
+      if (!member) return;
+
+      fetch(`/get_costumes?group=${groupKey}&member=${encodeURIComponent(member)}`)
+        .then(res => res.json())
+        .then(data => {
+
+          data.costumes.forEach(costume => {
+            costumeTS.addOption({ value: costume, text: costume });
+          });
+
+          costumeTS.refreshOptions(false);
+
+          const params = new URLSearchParams(window.location.search);
+          const costumeParam = params.get("costume");
+
+          if (costumeParam) {
+            costumeTS.setValue(costumeParam);
+          }
+        });
+    });
+
+    // ------------------------
+    // 衣装変更
+    // ------------------------
+    costumeTS.on("change", function (costume) {
+
+      typeTS.clear();
+      typeTS.clearOptions();
+
+      if (!costume) return;
+
+      fetch(`/get_types?group=${groupKey}&member=${encodeURIComponent(memberTS.getValue())}&costume=${encodeURIComponent(costume)}`)
+        .then(res => res.json())
+        .then(data => {
+
+          data.types.forEach(type => {
+            typeTS.addOption({
+              value: type,
+              text: type
+            });
+          });
+
+          typeTS.refreshOptions(false);
+        })
+        .catch(err => {
+          console.error("type取得失敗", err);
+        });
+    });
+
   });
-});
 </script>
+
 {% endblock %}

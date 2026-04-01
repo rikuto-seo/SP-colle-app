@@ -18,7 +18,7 @@ def index(group_key):
     qr_base64 = None
     public_url = None
 
-    if current_user.is_want_shared(group_key):
+    if current_user.is_want_share_enabled(group_key):
         public_url = url_for(
             'want.public_want',
             public_uuid=current_user.public_uuid,

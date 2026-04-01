@@ -2,19 +2,35 @@
 {% block title %}{{ username }}さんのコレクション（非公開）{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-  <div class="text-center mb-4">
-    <h2 class="display-6 fw-bold text-dark">{{ username }}さんのコレクション</h2>
+<div class="container mt-4">
+
+  <!-- タイトル（統一） -->
+  <div class="text-center mb-3">
+    <h1 class="fw-bold text-body p-2 rounded section-title">
+      {{ username }}さんのコレクション
+    </h1>
   </div>
 
-  <div class="card shadow-sm border-warning">
-    <div class="card-body text-center">
-      <i class="fa-solid fa-lock fa-3x text-warning mb-3"></i>
-      <h4 class="card-title text-warning">このコレクションは非公開です</h4>
-      <p class="card-text text-muted">
-        所有者がこのコレクションを非公開にしているため、内容は表示できません。
-      </p>
+  <!-- 非公開メッセージ -->
+  <div class="card shadow-sm p-3 text-center bg-body text-body">
+
+    <div class="mb-2" style="font-size: 1.5rem;">🔒</div>
+
+    <div class="fw-bold small mb-1">
+      このコレクションは非公開です
     </div>
+
+    <div class="text-secondary small mb-3">
+      所有者が非公開に設定しているため、内容は表示できません。
+    </div>
+
+    <!-- 戻るボタン -->
+    <button class="btn btn-outline-secondary btn-sm w-100"
+            onclick="history.back()">
+      ← 前のページに戻る
+    </button>
+
   </div>
+
 </div>
 {% endblock %}

@@ -8,33 +8,27 @@
   </div>
 
   <!-- 検索フォーム -->
-  <div class="card shadow-sm mb-4">
+  <div class="card shadow-sm mb-4 rounded-4 border-0">
     <div class="card-body">
-      <form method="get" action="{{ url_for('missing', group_key=group_key) }}">
+      <form method="get" action="{{ url_for('stats.missing', group_key=group_key) }}">
         <div class="row g-3">
+
+          <!-- メンバー -->
           <div class="col-md-6">
             <label for="member" class="form-label text-black">メンバー</label>
-            <select id="member" name="member" class="form-select select2">
-              <option value="">全て</option>
-              {% for member in grouped_missing.keys()|sort %}
-                <option value="{{ member }}" {% if search_member.lower() == member.lower() %}selected{% endif %}>{{ member }}</option>
-              {% endfor %}
-            </select>
+            <select id="member" name="member"></select>
           </div>
 
+          <!-- 衣装 -->
           <div class="col-md-6">
             <label for="costume" class="form-label text-black">衣装</label>
-            <select id="costume" name="costume" class="form-select">
-              <option value="">全て</option>
-              {% for costume in costume_list %}
-                <option value="{{ costume }}" {% if search_costume == costume %}selected{% endif %}>{{ costume }}</option>
-              {% endfor %}
-            </select>
+            <select id="costume" name="costume"></select>
           </div>
+
         </div>
 
         <div class="mt-3">
-          <button type="submit" class="btn btn-primary w-100">検索</button>
+          <button type="submit" class="btn btn-primary w-100 rounded-pill">検索</button>
         </div>
       </form>
     </div>
@@ -42,41 +36,52 @@
 
   <!-- 未所持表示 -->
   {% if not grouped_missing %}
-    <div class="alert alert-success text-center">
+    <div class="alert alert-success text-center rounded-4">
       🎉 全ての生写真を所持しています！
     </div>
   {% else %}
-    <div class="accordion" id="accordionMissingList">
+    <div class="accordion custom-accordion" id="accordionMissingList">
       {% for member, photos in grouped_missing.items() %}
         {% if photos %}
-          <div class="accordion-item">
-            <h2 class="accordion-header" id="heading-{{ loop.index }}">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                      data-bs-target="#collapse-{{ loop.index }}" aria-expanded="false"
-                      aria-controls="collapse-{{ loop.index }}">
-                {{ member }}（{{ photos|length }}件）
+          <div class="accordion-item mb-3 shadow-sm rounded-4 border-0">
+
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed d-flex align-items-center"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#collapse-{{ loop.index }}">
+
+                <div class="d-flex align-items-center gap-2">
+                  <span class="fw-bold">{{ member }}</span>
+
+                  <span class="badge
+                    {% if photos|length > 10 %}bg-danger
+                    {% elif photos|length > 5 %}bg-warning text-dark
+                    {% else %}bg-secondary{% endif %}
+                    rounded-pill">
+                    {{ photos|length }}
+                  </span>
+                </div>
               </button>
             </h2>
-            <div id="collapse-{{ loop.index }}" class="accordion-collapse collapse"
-                 aria-labelledby="heading-{{ loop.index }}" data-bs-parent="#accordionMissingList">
-              <div class="accordion-body p-0">
-                <table class="table table-bordered table-striped mb-0">
-                  <thead class="table-light">
-                    <tr>
-                      <th>衣装</th>
-                      <th>種類</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for photo in photos %}
-                      <tr>
-                        <td>{{ photo.costume }}</td>
-                        <td>{{ photo.type }}</td>
-                      </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
+
+            <div id="collapse-{{ loop.index }}"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#accordionMissingList">
+
+              <div class="accordion-body bg-light rounded-bottom-4 p-3">
+
+                <div class="d-flex flex-wrap gap-2">
+                  {% for photo in photos %}
+                    <div class="missing-item">
+                      <span class="costume">{{ photo.costume }}</span>
+                      <span class="type">{{ photo.type }}</span>
+                    </div>
+                  {% endfor %}
+                </div>
+
               </div>
+
             </div>
           </div>
         {% endif %}
@@ -84,4 +89,101 @@
     </div>
   {% endif %}
 </div>
+
+<!-- Tom Select -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+
+<!-- JS -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  const memberEl = document.getElementById("member");
+  const costumeEl = document.getElementById("costume");
+
+  const members = {{ member_list | tojson }};
+  const initialCostumes = {{ costume_list | tojson }};
+
+  const selectedMember = "{{ search_member or '' }}";
+  const selectedCostume = "{{ search_costume or '' }}";
+
+  // ------------------------
+  // TomSelect初期化
+  // ------------------------
+  const memberTS = new TomSelect(memberEl, {
+    create: false,
+    maxItems: 1,
+    placeholder: "メンバーを選択",
+  });
+
+  const costumeTS = new TomSelect(costumeEl, {
+    create: false,
+    maxItems: 1,
+    placeholder: "衣装を選択",
+  });
+
+  // ------------------------
+  // メンバー初期化
+  // ------------------------
+  memberTS.clearOptions();
+  memberTS.addOption({ value: "", text: "全て" });
+
+  members.forEach(m => {
+    memberTS.addOption({ value: m, text: m });
+  });
+
+  memberTS.refreshOptions(false);
+
+  if (selectedMember) {
+    memberTS.setValue(selectedMember);
+  }
+
+  // ------------------------
+  // 衣装初期化
+  // ------------------------
+  costumeTS.clearOptions();
+  costumeTS.addOption({ value: "", text: "全て" });
+
+  initialCostumes.forEach(c => {
+    costumeTS.addOption({ value: c, text: c });
+  });
+
+  costumeTS.refreshOptions(false);
+
+  if (selectedCostume) {
+    costumeTS.setValue(selectedCostume);
+  }
+
+  // ------------------------
+  // メンバー変更 → 衣装更新
+  // ------------------------
+  memberTS.on("change", function (member) {
+
+    costumeTS.clear();
+    costumeTS.clearOptions();
+    costumeTS.addOption({ value: "", text: "全て" });
+
+    if (!member) {
+      costumeTS.refreshOptions(false);
+      return;
+    }
+
+    fetch(`/get_costumes?group={{ group_key }}&member=${encodeURIComponent(member)}`)
+      .then(res => res.json())
+      .then(data => {
+
+        data.costumes.forEach(c => {
+          costumeTS.addOption({ value: c, text: c });
+        });
+
+        costumeTS.refreshOptions(false);
+      })
+      .catch(err => {
+        console.error("衣装取得失敗", err);
+      });
+  });
+
+});
+</script>
+
 {% endblock %}

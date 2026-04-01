@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5 text-center" style="max-width:600px;">
+
+  <h3 class="fw-bold">プラン変更が検出されました</h3>
+
+  <p class="text-muted">
+    現在のプランでは <b>{{ allowed }}グループ選択してください</b><br>
+    利用するグループを選択してください。
+  </p>
+
+  <form method="POST" id="groupForm">
+    <div class="mt-4 text-start">
+
+      {% set all_groups = [
+        ('nogizaka', '乃木坂46'),
+        ('sakurazaka', '櫻坂46'),
+        ('hinatazaka', '日向坂46')
+      ] %}
+
+      {% for key, name in all_groups %}
+      <div class="form-check mb-2">
+        <input class="form-check-input group-checkbox"
+               type="checkbox"
+               name="groups"
+               value="{{ key }}"
+               id="{{ key }}"
+               {% if key in current_selected %}checked{% endif %}>
+
+        <label class="form-check-label" for="{{ key }}">
+          {{ name }}
+        </label>
+      </div>
+      {% endfor %}
+
+    </div>
+
+    <button type="submit" class="btn btn-primary mt-4 w-100">
+      決定
+    </button>
+  </form>
+
+  <hr>
+
+  <div class="mt-3">
+    <p class="small text-muted">制限を解除したい場合</p>
+    <a href="{{ url_for('user.upgrade') }}" class="btn btn-warning w-100">
+      プランをアップグレード
+    </a>
+  </div>
+
+</div>
+
+<!-- =========================
+ モーダル（確認ポップアップ）
+========================= -->
+<div id="confirmModal" class="custom-modal">
+  <div class="custom-modal-content">
+    <h5 class="fw-bold mb-3">この内容で確定しますか？</h5>
+
+    <ul id="selectedList" class="text-start mb-3"></ul>
+
+    <div class="d-flex gap-2">
+      <button id="cancelBtn" class="btn btn-secondary w-50">戻る</button>
+      <button id="confirmBtn" class="btn btn-primary w-50">確定</button>
+    </div>
+  </div>
+</div>
+
+<style>
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px);}
+  to { opacity: 1; transform: translateY(0);}
+}
+</style>
+
+<script>
+const max = {{ allowed }};
+const form = document.getElementById("groupForm");
+const modal = document.getElementById("confirmModal");
+const selectedList = document.getElementById("selectedList");
+
+const confirmBtn = document.getElementById("confirmBtn");
+const cancelBtn = document.getElementById("cancelBtn");
+
+const checkboxes = document.querySelectorAll(".group-checkbox");
+
+const groupMap = {
+  nogizaka: "乃木坂46",
+  sakurazaka: "櫻坂46",
+  hinatazaka: "日向坂46"
+};
+
+// =========================
+// チェック制御（上限）
+// =========================
+checkboxes.forEach(cb => {
+  cb.addEventListener("change", () => {
+    const checked = document.querySelectorAll(".group-checkbox:checked");
+
+    if (checked.length > max) {
+      cb.checked = false;
+    }
+  });
+});
+
+// =========================
+// 送信時処理
+// =========================
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+
+  const checked = document.querySelectorAll(".group-checkbox:checked");
+
+  // 必須数チェック
+  if (checked.length !== max) {
+    showTempMessage("必ず " + max + " グループ選択してください");
+    return;
+  }
+
+  // モーダルに表示
+  selectedList.innerHTML = "";
+  checked.forEach(cb => {
+    const li = document.createElement("li");
+    li.textContent = groupMap[cb.value];
+    selectedList.appendChild(li);
+  });
+
+  modal.style.display = "flex";
+});
+
+// =========================
+// モーダル操作
+// =========================
+cancelBtn.addEventListener("click", () => {
+  modal.style.display = "none";
+});
+
+confirmBtn.addEventListener("click", () => {
+  modal.style.display = "none";
+  form.submit();
+});
+
+// =========================
+// 軽量トースト（alert代替）
+// =========================
+function showTempMessage(msg) {
+  const div = document.createElement("div");
+  div.textContent = msg;
+  div.style.position = "fixed";
+  div.style.bottom = "20px";
+  div.style.left = "50%";
+  div.style.transform = "translateX(-50%)";
+  div.style.background = "#333";
+  div.style.color = "#fff";
+  div.style.padding = "10px 20px";
+  div.style.borderRadius = "8px";
+  div.style.zIndex = "9999";
+
+  document.body.appendChild(div);
+
+  setTimeout(() => {
+    div.remove();
+  }, 2000);
+}
+</script>
+
+{% endblock %}

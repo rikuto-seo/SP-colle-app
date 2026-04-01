@@ -3,191 +3,293 @@
 {% block title %}生写真一覧{% endblock %}
 
 {% block content %}
-<div class="container mt-4 {{ group_color }}">
+<div class="container mt-4">
 
-  <!-- タイトル -->
-  <div class="text-center mb-4">
-    <h1 class="fw-bold text-black p-3 rounded section-title">
-      生写真一覧
-    </h1>
+  {% set is_free = current_user.plan_type == "free" %}
+  {% set is_search_locked = is_free %}
+
+  <div class="text-center mb-3">
+    <h1 class="fw-bold text-body p-2 rounded section-title">生写真一覧</h1>
   </div>
 
-  <div class="row g-4">
+  <div class="col-12 position-relative">
 
-    <!-- 検索フォーム -->
-    <div class="col-12">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title mb-3">検索フォーム</h5>
+    <!-- 🔍 検索カード -->
+    <div class="card shadow-sm bg-body text-body position-relative">
 
-          <form method="get" action="{{ url_for('index', group_key=group_key) }}">
-            <div class="row g-3">
+      <!-- 🔒 オーバーレイ -->
+      {% if is_search_locked %}
+      <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+        style="background: rgba(255,255,255,0.6); z-index:10; backdrop-filter: blur(2px);">
 
-              <div class="col-12 col-md-3">
-                <label class="form-label">検索</label>
-                <input type="text" name="query" value="{{ request.args.get('query', '') }}"
-                       class="form-control" placeholder="キーワード">
-              </div>
-
-              <div class="col-12 col-md-3">
-                <label class="form-label">メンバー</label>
-                <select class="form-select" name="member">
-                  <option value="">選択してください</option>
-                  {% for m in members %}
-                    <option value="{{ m }}" {% if m == request.args.get('member') %}selected{% endif %}>{{ m }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-
-              <div class="col-12 col-md-3">
-                <label class="form-label">衣装</label>
-                <select class="form-select" name="costume">
-                  <option value="">選択してください</option>
-                  {% for c in costumes %}
-                    <option value="{{ c }}" {% if c == request.args.get('costume') %}selected{% endif %}>{{ c }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-
-              <div class="col-12 col-md-3">
-                <label class="form-label">種類</label>
-                <select class="form-select" name="type">
-                  <option value="">すべて</option>
-                  {% for t in types %}
-                    <option value="{{ t }}" {% if t == request.args.get('type') %}selected{% endif %}>{{ t }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-
-              <div class="col-12">
-                <button class="btn {{ group_color }} w-100 mt-2">検索</button>
-              </div>
-
-            </div>
-          </form>
+        <div class="text-center p-3 bg-white rounded shadow">
+          <h6 class="fw-bold mb-1">🔒 プレミアム機能</h6>
+          <p class="text-muted small mb-2">
+            検索・メンバー・衣装フィルターはアップグレードで解放されます
+          </p>
+          <a href="{{ url_for('user.upgrade') }}" class="btn btn-warning btn-sm">
+            アップグレード
+          </a>
         </div>
+
       </div>
-    </div>
-
-    <!-- 表示切替（PCのみ） -->
-    <div class="col-12 d-none d-md-flex justify-content-end">
-      <div class="btn-group btn-group-sm">
-        <button id="btn-card" class="btn btn-outline-primary active" onclick="switchView('card')" type="button">
-          カード
-        </button>
-        <button id="btn-table" class="btn btn-outline-primary" onclick="switchView('table')" type="button">
-          表
-        </button>
-      </div>
-    </div>
-
-    <!-- カード表示（デフォルト・モバイル最適） -->
-    <div id="view-card" class="row row-cols-1 row-cols-md-3 g-3">
-
-      {% for photo in photos %}
-      <div class="col">
-        <div class="card shadow-sm h-100">
-
-          {% if photo.image_exists %}
-            <img src="{{ url_for('static', filename='member_images/' ~ group_key ~ '/' ~ photo.member ~ '/' ~ photo.member ~ '_' ~ photo.costume ~ '_' ~ photo.photo_type ~ '.jpg') }}"
-                 class="card-img-top" loading="lazy">
-          {% else %}
-            <img src="{{ url_for('static', filename='member_images/no_photo.jpg') }}"
-                 class="card-img-top">
-          {% endif %}
-
-          <div class="card-body">
-            <h5 class="fw-bold mb-2">{{ photo.member }}</h5>
-
-            <div class="small text-muted mb-1">衣装</div>
-            <div class="mb-2">{{ photo.costume }}</div>
-
-            <div class="small text-muted mb-1">種類</div>
-            <div class="mb-2">{{ photo.photo_type }}</div>
-
-            <div class="small text-muted mb-1">枚数</div>
-            <div class="mb-2">{{ photo.quantity }}</div>
-
-            <div class="small text-muted mb-1">入手日</div>
-            <div class="mb-2">{{ photo.date or '-' }}</div>
-
-            {% if photo.memo %}
-              <div class="small text-muted mb-1">メモ</div>
-              <div class="mb-2">{{ photo.memo }}</div>
-            {% endif %}
-
-            <form method="POST" action="{{ url_for('delete_user_photo', photo_id=photo.id, group_key=group_key) }}">
-              <button class="btn btn-danger btn-sm w-100"
-                      onclick="return confirm('本当に削除しますか？')">
-                削除
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-      {% endfor %}
-
-      {% if photos|length == 0 %}
-        <p class="text-center">該当する写真がありません。</p>
       {% endif %}
+
+      <!-- 🔍 中身 -->
+      <div class="card-body p-3"
+        style="{% if is_search_locked %}filter: blur(6px); pointer-events:none; user-select:none;{% endif %}">
+
+        <form method="get" action="{{ url_for('photo.index', group_key=group_key) }}">
+          <div class="row g-2">
+
+            <div class="col-6 col-md-4">
+              <input type="text" name="query" value="{{ request.args.get('query', '') }}"
+                class="form-control form-control-sm" placeholder="検索">
+            </div>
+
+            <div class="col-6 col-md-4">
+              <select class="form-select form-select-sm" name="member">
+                <option value="">メンバー</option>
+                {% for m in members %}
+                <option value="{{ m }}" {% if m==request.args.get('member') %}selected{% endif %}>
+                  {{ m }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-6 col-md-4">
+              <select class="form-select form-select-sm" name="costume">
+                <option value="">衣装</option>
+                {% for c in costumes %}
+                <option value="{{ c }}" {% if c==request.args.get('costume') %}selected{% endif %}>
+                  {{ c }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-12 mt-1">
+              <button class="btn btn-outline-secondary w-100 mb-1">検索</button>
+              <a href="{{ url_for('photo.index', group_key=group_key) }}" class="btn btn-danger w-100 btn-sm">条件クリア</a>
+            </div>
+
+          </div>
+        </form>
+
+      </div>
     </div>
 
-    <!-- 表表示（PC専用） -->
-    <div id="view-table" class="table-responsive d-none d-md-block mt-3">
-      <table class="table table-sm table-bordered align-middle">
-        <thead class="table-light">
-          <tr>
-            <th>メンバー</th>
-            <th>衣装</th>
-            <th>種類</th>
-            <th>画像</th>
-            <th>枚数</th>
-            <th>入手日</th>
-            <th>メモ</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for photo in photos %}
-          <tr>
-            <td>{{ photo.member }}</td>
-            <td>{{ photo.costume }}</td>
-            <td>{{ photo.photo_type }}</td>
-            <td>
-              <img src="{{ url_for('static', filename='member_images/' ~ group_key ~ '/' ~ photo.member ~ '/' ~ photo.member ~ '_' ~ photo.costume ~ '_' ~ photo.photo_type ~ '.jpg') if photo.image_exists else url_for('static', filename='member_images/no_photo.jpg') }}"
-                   width="80" loading="lazy">
-            </td>
-            <td>{{ photo.quantity }}</td>
-            <td>{{ photo.date or '-' }}</td>
-            <td>{{ photo.memo or '-' }}</td>
-            <td>
-              <form method="POST" action="{{ url_for('delete_user_photo', photo_id=photo.id, group_key=group_key) }}">
-                <button class="btn btn-danger btn-sm">削除</button>
-              </form>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+  </div>
 
+  <br>
+
+  <!-- ========================= -->
+  <!-- 🧩 カード（無制限表示） -->
+  <!-- ========================= -->
+  <div class="row row-cols-2 row-cols-md-3 g-2">
+
+    {% for card in cards %}
+    <div class="col">
+      <div class="card shadow-sm p-2 h-100 bg-body text-body card-item" style="cursor:pointer"
+        data-card='{{ card | tojson | safe }}'>
+
+        {% if card.has_favorite %}
+        <div style="position:absolute; top:6px; right:8px; font-size:16px;">
+          ⭐
+        </div>
+        {% endif %}
+
+        <div class="fw-bold small text-truncate">{{ card.member }}</div>
+        <div class="small text-muted text-truncate">{{ card.costume }}</div>
+
+        <div class="mt-1 small">
+          {{ card.owned }} / {{ card.total }}
+        </div>
+
+        <div class="progress mt-1" style="height:6px;">
+          <div class="progress-bar" style="width: {{ card.rate }}%"></div>
+        </div>
+
+        {% if card.is_complete %}
+        <div class="mt-1">
+          <span class="badge bg-success">コンプ</span>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+    {% endfor %}
+
+    {% if cards|length == 0 %}
+    <p class="text-center text-secondary">データがありません。</p>
+    {% endif %}
+
+  </div>
+
+</div>
+</div>
+
+<!-- ========================= -->
+<!-- ページネーション -->
+<!-- ========================= -->
+<nav class="mt-4">
+  <ul class="pagination justify-content-center">
+
+    {% if pagination.has_prev %}
+    <li class="page-item">
+      <a class="page-link" href="{{ url_for('photo.index',
+           group_key=group_key,
+           page=pagination.prev_num
+         ) }}">
+        前へ
+      </a>
+    </li>
+    {% endif %}
+
+    {% for p in pagination.iter_pages() %}
+    <li class="page-item {% if p == pagination.page %}active{% endif %}">
+      <a class="page-link" href="{{ url_for('photo.index',
+           group_key=group_key,
+           page=p
+         ) }}">
+        {{ p }}
+      </a>
+    </li>
+    {% endfor %}
+
+    {% if pagination.has_next %}
+    <li class="page-item">
+      <a class="page-link" href="{{ url_for('photo.index',
+           group_key=group_key,
+           page=pagination.next_num
+         ) }}">
+        次へ
+      </a>
+    </li>
+    {% endif %}
+
+  </ul>
+</nav>
+
+<!-- モーダル -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="detailTitle"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body" id="detailList"></div>
+
+    </div>
   </div>
 </div>
 
-<script>
-function switchView(mode) {
-  const card = document.getElementById('view-card');
-  const table = document.getElementById('view-table');
-  document.getElementById('btn-card').classList.toggle('active', mode === 'card');
-  document.getElementById('btn-table').classList.toggle('active', mode === 'table');
-  card.classList.toggle('d-none', mode !== 'card');
-  table.classList.toggle('d-none', mode !== 'table');
-  localStorage.setItem('photoViewMode', mode);
-}
+<form method="POST" id="deleteForm">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+</form>
 
-document.addEventListener('DOMContentLoaded', () => {
-  const mode = localStorage.getItem('photoViewMode') || 'card';
-  switchView(mode);
-});
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const groupKey = "{{ group_key }}";
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".card-item").forEach(el => {
+      el.addEventListener("click", () => {
+        const card = JSON.parse(el.dataset.card);
+        openGroupModal(card);
+      });
+    });
+  });
+  
+  // =========================
+  // モーダル（グループ詳細）
+  // =========================
+  function openGroupModal(card) {
+    const container = document.getElementById("detailList");
+    container.innerHTML = "";
+
+    document.getElementById("detailTitle").textContent =
+      `${card.member} / ${card.costume}`;
+
+    (card.details || []).forEach(d => {
+      const html = `
+            <form method="POST"
+                  action="/update_user_photo/${groupKey}/${d.id}"
+                  class="border p-2 mb-2 rounded">
+
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="d-flex justify-content-between">
+                    <strong>${d.type}</strong>
+                    ${d.is_favorite ? '★' : ''}
+                </div>
+
+                <div>所持数</div>
+                <input type="number" name="quantity"
+                       value="${d.quantity ?? 0}"
+                       class="form-control mt-1">
+
+                <div>交換可能数</div>
+                <input type="number" name="available_quantity"
+                       value="${d.available ?? 0}"
+                       class="form-control mt-1">
+
+                <div>メモ</div>
+                <input type="text" name="memo"
+                       value="${d.memo ?? ''}"
+                       class="form-control mt-1">
+
+                <div>入手日</div>
+                <input type="date" name="date"
+                       value="${d.date ?? ''}"
+                       class="form-control mt-1">
+
+                <div class="form-check mt-2">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           name="is_favorite"
+                           ${d.is_favorite ? 'checked' : ''}>
+                    <label class="form-check-label">お気に入り</label>
+                </div>
+
+                <div class="d-flex gap-2 mt-3">
+                    <button type="submit"
+                            class="btn btn-primary btn-sm w-100">
+                        更新
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-danger btn-sm w-100"
+                            onclick="deletePhoto(${d.id})">
+                        削除
+                    </button>
+                </div>
+            </form>
+        `;
+
+      container.insertAdjacentHTML("beforeend", html);
+    });
+
+    new bootstrap.Modal(
+      document.getElementById("detailModal")
+    ).show();
+  }
+
+  // =========================
+  // 削除（確認付き）
+  // =========================
+  function deletePhoto(id) {
+    if (!confirm("本当に削除しますか？")) return;
+
+    const form = document.getElementById("deleteForm");
+    form.action = `/delete_user_photo/${groupKey}/${id}`;
+    form.submit();
+  }
 </script>
 {% endblock %}

@@ -3,43 +3,115 @@
 {% block title %}アイコン設定{% endblock %}
 
 {% block content %}
-<div class="container mt-5" style="max-width: 600px;">
-  <h1>アイコン設定</h1>
+<div class="container py-5" style="max-width: 700px;">
 
-  <form method="post" enctype="multipart/form-data">
-     
+  <!-- タイトル -->
+  <div class="text-center mb-4">
+    <h2 class="fw-bold">アイコン設定</h2>
+    <p class="text-muted">プロフィール画像を変更できます</p>
+  </div>
 
-    <div class="mb-3">
-      {{ form.icon.label(class="form-label") }}
-      {{ form.icon(class="form-control", id="icon-input") }}
+  <!-- 現在のアイコン -->
+  <div class="card shadow-sm mb-4 text-center">
+    <div class="card-body">
+      <h5 class="mb-3">現在のアイコン</h5>
+      <img src="{{ current_user.icon_url if current_user.icon_url else url_for('static', filename='images/default_icon.png') }}"
+           class="rounded-circle mb-3"
+           style="width:100px;height:100px;object-fit:cover;">
     </div>
+  </div>
 
-    <div class="mb-3">
-      <label class="form-label">トリミングプレビュー</label>
-      <img id="cropper-image" style="max-width: 100%; display: none;">
+  <!-- アップロード -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="mb-3">新しい画像をアップロード</h5>
+
+      <form method="post" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+
+        <div class="mb-3">
+          {{ form.icon(class="form-control", id="icon-input") }}
+        </div>
+
+        <!-- プレビュー -->
+        <div class="text-center mb-3">
+          <img id="cropper-image" class="img-fluid rounded" style="display:none; max-height:300px;">
+        </div>
+
+        <input type="hidden" name="cropped_data" id="cropped-data">
+
+        <div class="d-grid">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-upload me-1"></i>アップロード
+          </button>
+        </div>
+      </form>
     </div>
+  </div>
 
-    <!-- トリミングされた画像を送る hidden input -->
-    <input type="hidden" name="cropped_data" id="cropped-data">
+  <!-- 削除 -->
+  <div class="card border-danger shadow-sm">
+    <div class="card-body text-center">
+      <h6 class="text-danger mb-2">危険操作</h6>
+      <p class="text-muted small">アイコンを完全に削除します</p>
 
-    <button type="submit" class="btn btn-primary">アップロード</button>
-  </form>
+      <button class="btn btn-outline-danger"
+              data-bs-toggle="modal"
+              data-bs-target="#deleteModal">
+        <i class="fas fa-trash me-1"></i>削除する
+      </button>
+    </div>
+  </div>
 
-  <a href="{{ url_for('mypage') }}" class="btn btn-secondary mt-3">← 戻る</a>
+  <!-- 戻る -->
+  <div class="text-center mt-4">
+    <a href="{{ url_for('user.mypage') }}" class="btn btn-link text-decoration-none">
+      ← マイページに戻る
+    </a>
+  </div>
+
 </div>
 
-<!-- 🔥 削除ボタンを別フォームで追加 -->
-<form method="post" action="{{ url_for('delete_icon') }}">
-   
-  <button type="submit" class="btn btn-danger mt-3" onclick="return confirm('本当に削除しますか？')">アイコンを削除</button>
-</form>
+<!-- モーダル -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
 
-<!-- JavaScript -->
+      <div class="modal-header">
+        <h5 class="modal-title text-danger">アイコン削除</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body text-center">
+        本当に削除しますか？<br>
+        <small class="text-muted">この操作は元に戻せません</small>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+
+        <form method="post" action="{{ url_for('user.delete_icon') }}">
+          <button type="submit" class="btn btn-danger">削除する</button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<link href="https://unpkg.com/cropperjs@1.5.13/dist/cropper.min.css" rel="stylesheet">
+<script src="https://unpkg.com/cropperjs@1.5.13/dist/cropper.min.js"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const iconInput = document.getElementById('icon-input');
   const cropperImage = document.getElementById('cropper-image');
   const croppedDataInput = document.getElementById('cropped-data');
+
   let cropper;
 
   iconInput.addEventListener('change', (e) => {
@@ -51,28 +123,41 @@ document.addEventListener('DOMContentLoaded', () => {
       cropperImage.src = event.target.result;
       cropperImage.style.display = 'block';
 
-      if (cropper) {
-        cropper.destroy();
-      }
+      if (cropper) cropper.destroy();
 
       cropper = new Cropper(cropperImage, {
         aspectRatio: 1,
-        viewMode: 1,
-        autoCropArea: 1,
-        responsive: true,
-        background: false
+        viewMode: 1
       });
     };
+
     reader.readAsDataURL(file);
   });
 
-  const form = document.querySelector('form');
+  const form = document.querySelector('form[enctype="multipart/form-data"]');
+
   form.addEventListener('submit', (e) => {
-    if (cropper) {
-      const canvas = cropper.getCroppedCanvas({ width: 256, height: 256 });
-      croppedDataInput.value = canvas.toDataURL('image/png');
+    e.preventDefault();
+
+    if (!cropper) {
+      alert("画像を選択してください");
+      return;
     }
+
+    const canvas = cropper.getCroppedCanvas({ width: 256, height: 256 });
+
+    canvas.toBlob((blob) => {
+      const reader = new FileReader();
+
+      reader.onloadend = () => {
+        croppedDataInput.value = reader.result;
+        form.submit();
+      };
+
+      reader.readAsDataURL(blob);
+    });
   });
 });
 </script>
+
 {% endblock %}

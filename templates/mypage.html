@@ -3,94 +3,224 @@
 
 {% block content %}
 <div class="container mt-5" style="max-width: 800px;">
+
   <!-- タイトル -->
   <div class="text-center mb-4">
     <h1 class="display-5 fw-bold text-black p-3 rounded section-title">マイページ</h1>
-    <p class="text-muted">アカウント情報と共有設定</p>
   </div>
 
-  <!-- ユーザー挨拶カード -->
-    <div class="card mb-4">
-        <div class="card-body d-flex align-items-center gap-3">
-            {% set icon_url = user.icon_url if user.icon_url else url_for('static', filename='img/default_icon.png') %}
-            <img src="{{ icon_url }}"
-                alt="ユーザーアイコン"
-                style="width: 64px; height: 64px; object-fit: cover; border-radius: 50%;">
-            <div>
-                <h5 class="card-title mb-1">こんにちは、{{ user.username }} さん</h5>
-                <p class="card-text">アカウント情報や表示設定を確認・変更できます。</p>
+  <!-- =========================
+     プロフィール + プラン統合
+========================== -->
+  <div class="card mb-4 border-warning">
+    <div class="card-body d-flex justify-content-between align-items-center">
+
+      <!-- 左：プロフィール -->
+      <div class="d-flex align-items-center gap-3">
+        <img src="{{ icon_url }}" style="width:64px;height:64px;object-fit:cover;border-radius:50%;">
+
+        <div>
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <h5 class="card-title mb-0">
+              {{ current_user.username if current_user.username else 'ゲスト' }}
+            </h5>
+
+            <div class="ms-2 d-flex gap-2">
+              {% if current_user.twitter_id %}
+              <a href="https://x.com/{{ current_user.twitter_id }}" target="_blank">
+                <i class="fa-brands fa-x-twitter" style="color: black;"></i>
+              </a>
+              {% endif %}
+
+              {% if current_user.instagram_id %}
+              <a href="https://www.instagram.com/{{ current_user.instagram_id }}" target="_blank">
+                <i class="fa-brands fa-instagram" style="color: rgb(240, 39, 73);"></i>
+              </a>
+              {% endif %}
             </div>
+          </div>
         </div>
-    </div>
+      </div>
 
-  <!-- 👥 フレンド一覧リンク -->
-  <div class="card mb-4">
-    <div class="card-body">
-      <h5 class="card-title"><i class="fas fa-user-friends me-2"></i>フレンド管理</h5>
-      <a href="{{ url_for('friend.friend_list') }}" class="btn btn-outline-primary">フレンド一覧を見る</a>
+      <!-- 右：プラン -->
+      <div class="text-end">
+        <div class="text-muted small">現在のプラン</div>
+
+        <div class="fw-bold">
+          {% if current_user.plan_type == "free" %}
+          無料プラン
+          {% elif current_user.plan_type == "lite" %}
+          ライトプラン（1グループ）
+          {% elif current_user.plan_type == "standard" %}
+          スタンダードプラン（2グループ）
+          {% else %}
+          プレミアムプラン（全グループ）
+          {% endif %}
+        </div>
+
+        <div class="text-muted small">
+          {% if cancel_at_period_end %}
+          ※このプランは{{ next_billing }}で終了します
+          {% else %}
+          次回請求日：{{ next_billing }}
+          {% endif %}
+        </div>
+
+        <a href="{{ url_for('user.upgrade') }}" class="btn btn-warning btn-sm mt-2">
+          プラン変更
+        </a>
+      </div>
+
     </div>
   </div>
 
-  <!-- 📱 QRコード共有セクション -->
+  <!-- =========================
+       QR共有
+  ========================== -->
   <div class="mb-4">
-    <h4 class="fw-bold mb-3"><i class="fa-solid fa-qrcode me-2"></i>所持一覧のQRコード共有</h4>
+    <h4 class="fw-bold mb-3">
+      <i class="fa-solid fa-qrcode me-2"></i>所持一覧のQRコード共有
+    </h4>
 
-    {% set group_names = {'nogizaka': '乃木坂46', 'sakurazaka': '櫻坂46', 'hinatazaka': '日向坂46'} %}
+    {% set group_names = {
+    'nogizaka':'乃木坂46',
+    'sakurazaka':'櫻坂46',
+    'hinatazaka':'日向坂46'
+    } %}
 
-    {% for key, name in group_names.items() %}
-    <div class="card mb-3">
-      <div class="card-body">
-        <h5 class="card-title">{{ name }}</h5>
-        <div class="d-flex align-items-center gap-3">
-          <img src="data:image/png;base64,{{ qr_codes[key] }}" alt="{{ name }}のQRコード" class="border rounded" style="width: 120px; height: 120px;">
-          <form method="post" action="{{ url_for('toggle_share', group_key=key) }}">     
-            <button type="submit" class="btn {% if share_statuses[key] %}btn-success{% else %}btn-outline-secondary{% endif %}">
-              {% if share_statuses[key] %}
-                <i class="fa-solid fa-eye-slash"></i> 公開中 → 非公開にする
+    <div class="card">
+      <div class="card-body d-flex flex-column flex-md-row">
+
+        <!-- 左：グループ -->
+        <div class="d-flex flex-md-column gap-2 me-md-4 mb-3 mb-md-0">
+          {% for key, name in group_names.items() %}
+          {% if key in selected_groups %}
+          <button class="btn btn-outline-primary group-btn" data-group="{{ key }}">
+            {{ name }}
+          </button>
+          {% else %}
+          <button class="btn btn-outline-secondary" disabled>
+            🔒 {{ name }}
+          </button>
+          {% endif %}
+          {% endfor %}
+        </div>
+
+        <!-- 右：QR -->
+        <div class="flex-grow-1 text-center">
+
+          {% if selected_groups %}
+          {% set default_group = selected_groups[0] %}
+
+          <h5 id="group-title">{{ group_names[default_group] }}</h5>
+
+          <!-- QR表示 -->
+          <div id="qr-wrapper">
+            {% if share_statuses[default_group] %}
+            <img id="qr-image" src="data:image/png;base64,{{ qr_codes.get(default_group, '') }}" class="mb-3"
+              style="height:120px;">
+            {% else %}
+            <div class="text-muted mt-3">
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- ボタン -->
+          <form id="share-form" method="post" action="{{ url_for('user.toggle_share', group_key=default_group) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <button id="share-btn"
+              class="btn {% if share_statuses[default_group] %}btn-success{% else %}btn-outline-secondary{% endif %}">
+              {% if share_statuses[default_group] %}
+              <i class="fa-solid fa-eye"></i> 公開中
               {% else %}
-                <i class="fa-solid fa-eye"></i> 非公開 → 公開にする
+              <i class="fa-solid fa-eye-slash"></i> 非公開
               {% endif %}
             </button>
           </form>
+
+          {% else %}
+          <div class="text-muted mt-4">
+            🔒 QR機能は有料プランで利用できます
+          </div>
+          {% endif %}
+
         </div>
       </div>
     </div>
-    {% endfor %}
   </div>
 
-  <!-- ⚙️ 各種設定メニュー -->
-    <div class="card">
+  <!-- =========================
+       設定
+  ========================== -->
+  <div class="card">
     <div class="card-body">
-        <h5 class="card-title"><i class="fas fa-cog me-2"></i>設定</h5>
 
-        <div class="setting-links">
-        <a href="{{ url_for('edit_profile') }}">
-            <i class="fas fa-user-edit me-2"></i>プロフィール編集
-        </a>
-        <a href="{{ url_for('set_default_group') }}">
-            <i class="fas fa-sliders-h me-2"></i>初期表示グループの設定
-        </a>
-        <a href="{{ url_for('icon_setting') }}">
-            <i class="fas fa-image me-2"></i>アイコン設定
-        </a>
-        <a href="{{ url_for('change_password') }}">
-        <i class="fas fa-key me-2"></i>パスワード変更
-        </a>
-        <form action="{{ url_for('toggle_dark_mode') }}" method="post" style="display: inline;">
-            <button type="submit" class="sidebar-like-link">
+      <h5><i class="fas fa-cog me-2"></i>設定</h5>
+
+      <div class="setting-links">
+        <a href="{{ url_for('user.edit_profile') }}"><i class="fas fa-user-edit me-2"></i>プロフィール編集</a>
+        <a href="{{ url_for('user.icon_setting') }}"><i class="fas fa-image me-2"></i>アイコン設定</a>
+        <a href="{{ url_for('user.change_password') }}"><i class="fas fa-key me-2"></i>パスワード変更</a>
+
+        <form action="{{ url_for('user.toggle_dark_mode') }}" method="post">
+          <button type="submit" class="sidebar-like-link">
             <i class="fas fa-moon me-2"></i>
-            {% if user.dark_mode %}ダークモードを解除{% else %}ダークモードを有効にする{% endif %}
-            </button>
+            {% if current_user.dark_mode %}ダークモード解除{% else %}ダークモード有効{% endif %}
+          </button>
         </form>
-        <!-- ✅ 追加：ログアウトリンク -->
-        <a href="{{ url_for('logout') }}">
-            <i class="fas fa-sign-out-alt me-2"></i>ログアウト
+
+        <a href="{{ url_for('user.logout') }}"><i class="fas fa-sign-out-alt me-2"></i>ログアウト</a>
+        <a href="{{ url_for('user.confirm_delete_account') }}" class="text-danger">
+          <i class="fas fa-user-slash me-2"></i>アカウント削除
         </a>
-        <a href="{{ url_for('confirm_delete_account') }}" class="text-danger">
-            <i class="fas fa-user-slash me-2"></i>アカウント削除
-        </a>
-        </div>
+      </div>
+
     </div>
-    </div>
+  </div>
+
 </div>
+
+<!-- =========================
+     JS
+========================== -->
+<script>
+  const qrCodes = {{ qr_codes | tojson }};
+  const shareStatuses = {{ share_statuses | tojson }};
+
+  const groupNames = {
+    nogizaka: "乃木坂46",
+    sakurazaka: "櫻坂46",
+    hinatazaka: "日向坂46"
+  };
+
+  const toggleShareBase = "{{ url_for('user.toggle_share', group_key='__GROUP__') }}";
+
+  const qrWrapper = document.getElementById("qr-wrapper");
+  const groupTitle = document.getElementById("group-title");
+  const shareForm = document.getElementById("share-form");
+  const shareBtn = document.getElementById("share-btn");
+
+  document.querySelectorAll(".group-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.group;
+
+      groupTitle.textContent = groupNames[key];
+      shareForm.action = toggleShareBase.replace('__GROUP__', key);
+
+      // QR表示制御
+      if (shareStatuses[key]) {
+        if (qrCodes[key]) {
+          qrWrapper.innerHTML = `<img src="data:image/png;base64,${qrCodes[key]}" style="height:120px;" class="mb-3">`;
+        }
+        shareBtn.className = "btn btn-success";
+        shareBtn.innerHTML = '<i class="fa-solid fa-eye"></i> 公開中';
+      } else {
+        qrWrapper.innerHTML = `<div class="text-muted mt-3">🔒 非公開中です</div>`;
+        shareBtn.className = "btn btn-outline-secondary";
+        shareBtn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> 非公開';
+      }
+    });
+  });
+</script>
 {% endblock %}

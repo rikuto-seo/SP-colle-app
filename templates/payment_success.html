@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5 text-center" style="max-width:600px;">
+
+  <h3 class="fw-bold">決済処理中...</h3>
+
+  <p class="text-muted mt-3" id="statusText">
+    プランを反映しています。しばらくお待ちください。
+  </p>
+
+  <div class="spinner-border mt-4" role="status"></div>
+
+</div>
+
+<script>
+const redirectUrl = "{{ url_for('user.force_group_select') }}";
+
+let retry = 0;
+const MAX_RETRY = 30; // 約30秒
+
+// =========================
+// プラン取得
+// =========================
+const params = new URLSearchParams(window.location.search);
+const plan = params.get("plan");
+
+// プランが無い場合は即リダイレクト（異常系）
+if (!plan) {
+  window.location.href = "{{ url_for('user.mypage') }}";
+}
+
+// =========================
+// 状態確認
+// =========================
+async function checkStatus() {
+
+  if (retry > MAX_RETRY) {
+    showError("反映に時間がかかっています。ページを再読み込みしてください。");
+    return;
+  }
+
+  retry++;
+
+  try {
+    const res = await fetch(`/api/check-plan?plan=${plan}`);
+    const data = await res.json();
+
+    if (data.ready) {
+      window.location.href = redirectUrl;
+      return;
+    }
+
+  } catch (e) {
+    // 通信エラーは無視して再試行
+  }
+
+  setTimeout(checkStatus, 1000);
+}
+
+// =========================
+// エラー表示
+// =========================
+function showError(msg) {
+  const text = document.getElementById("statusText");
+  text.textContent = msg;
+
+  const btn = document.createElement("button");
+  btn.textContent = "マイページへ戻る";
+  btn.className = "btn btn-primary mt-4";
+  btn.onclick = () => {
+    window.location.href = "{{ url_for('user.mypage') }}";
+  };
+
+  document.querySelector(".container").appendChild(btn);
+}
+
+// 初回実行
+checkStatus();
+</script>
+
+{% endblock %}

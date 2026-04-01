@@ -3,78 +3,87 @@
 {% block title %}欲しい写真一覧{% endblock %}
 
 {% block content %}
-<div class="container mt-5 {{ group_color }}">
+<div class="container mt-4 {{ group_color }}">
 
   <!-- タイトル -->
-  <div class="text-center mb-4">
-    <h1 class="display-5 fw-bold text-black p-3 rounded section-title">
+  <div class="text-center mb-3">
+    <h1 class="fw-bold text-body p-2 rounded section-title">
       欲しい写真一覧
     </h1>
   </div>
-  {% if current_user.is_want_shared(group_key) %}
-  <div class="card mb-4">
-    <div class="card-body text-center">
-      <p class="fw-bold mb-3">
-        欲しい写真 公開QR
-      </p>
 
-      <img src="data:image/png;base64,{{ qr_base64 }}" alt="Want QR Code" class="img-fluid" style="max-width:220px;">
-
-      <p class="text-muted mt-3 mb-0">
-        スマホで読み取って確認できます
-      </p>
+  {% if current_user.is_want_share_enabled(group_key) %}
+  <div class="card mb-3">
+    <div class="card-body text-center p-3">
+      <div class="fw-bold mb-2">公開QR</div>
+      <img src="data:image/png;base64,{{ qr_base64 }}" style="height:120px;">
     </div>
   </div>
   {% endif %}
 
-  <form method="POST" action="{{ url_for('want.toggle_want_share', group_key=group_key) }}">
-    <button class="btn btn-outline-primary">
-      {% if current_user.is_want_shared(group_key) %}
-      公開を停止
-      {% else %}
-      公開する
-      {% endif %}
-    </button>
-  </form>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <form method="POST" action="{{ url_for('want.toggle_want_share', group_key=group_key) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-sm btn-outline-primary">
+        {% if current_user.is_want_share_enabled(group_key) %}
+        公開停止
+        {% else %}
+        公開する
+        {% endif %}
+      </button>
+    </form>
 
-
-  <!-- 追加ボタン -->
-  <div class="d-flex justify-content-end mb-4">
-    <a href="{{ url_for('want.add_want', group_key=group_key) }}" class="btn btn-success">
-      ＋ 欲しい写真を追加
+    <a href="{{ url_for('want.add_want', group_key=group_key) }}"
+      class="btn btn-sm btn-success">
+      ＋追加
     </a>
   </div>
 
-  <!-- 一覧 -->
-  <div class="row row-cols-1 row-cols-md-3 g-4">
+  <!-- 一覧（コンパクト） -->
+  <div class="row row-cols-2 row-cols-md-3 g-2">
+
     {% for want in wants %}
     <div class="col">
-      <div class="card shadow-sm h-100">
-        <div class="card-body">
-          <h5 class="card-title fw-bold">{{ want.member }}</h5>
+      <div class="card shadow-sm p-2 position-relative h-100 small-card">
 
-          <p class="card-text">
-            <strong>衣装：</strong>{{ want.costume }}<br>
-            <strong>種類：</strong>{{ want.photo_type }}
-          </p>
+        <!-- ❌ 削除ボタン（右上） -->
+        <form method="POST"
+          action="{{ url_for('want.delete_want', want_id=want.id) }}"
+          class="position-absolute top-0 end-0 m-1">
 
-          <form method="POST" action="{{ url_for('want.delete_want', want_id=want.id) }}">
-            <button type="submit" class="btn btn-outline-danger btn-sm w-100"
-              onclick="return confirm('この欲しい写真を削除しますか？')">
-              削除
-            </button>
-          </form>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <button type="submit"
+            class="btn btn-sm btn-outline-danger border-0 p-1">
+            ✕
+          </button>
+        </form>
+
+        <!-- 内容 -->
+        <div class="fw-bold text-truncate small">
+          {{ want.member }}
         </div>
+
+        <div class="text-secondary text-truncate small">
+          {{ want.costume }}
+        </div>
+
+        <div class="d-flex justify-content-between small mt-1">
+          <span>{{ want.photo_type }}</span>
+        </div>
+
       </div>
     </div>
     {% endfor %}
+
+    {% if wants|length == 0 %}
+    <p class="text-center text-secondary mt-3">
+      まだ登録されていません
+    </p>
+    {% endif %}
+
   </div>
 
-  {% if wants|length == 0 %}
-  <p class="text-center mt-4">
-    まだ欲しい写真が登録されていません。
-  </p>
-  {% endif %}
-
 </div>
+
 {% endblock %}

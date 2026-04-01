@@ -11,11 +11,11 @@
             本当によろしいですか？
         </p>
 
-        <form method="POST" action="{{ url_for('confirm_delete_final') }}">
-             
+        {# Blueprint 名を追加して修正 #}
+        <form method="POST" action="{{ url_for('user.confirm_delete_final') }}">
             <div class="d-grid gap-2">
                 <button type="submit" class="btn btn-danger">はい、アカウントを削除します</button>
-                <a href="{{ url_for('index', group_key=group_key) }}" class="btn btn-secondary">キャンセル</a>
+                <a href="{{ url_for('photo.index', group_key=group_key) }}" class="btn btn-secondary">キャンセル</a>
             </div>
         </form>
     </div>

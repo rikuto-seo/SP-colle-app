@@ -5,7 +5,6 @@ from .photo_queries import (
     get_photo_types_for_member_and_costume,
 )
 
-from .image import build_image_path
 from .qr import generate_qr_base64
 
 __all__ = [

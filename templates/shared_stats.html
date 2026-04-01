@@ -1,16 +1,40 @@
-<!-- templates/shared_stats.html -->
 {% extends "base.html" %}
 {% block content %}
-  <h1>{{ user.username }}さんの{{ group_key | capitalize }}コレクション</h1>
+<div class="container mt-4">
 
-  <p>所持数: {{ stats.owned_count }} / {{ stats.total_count }} ({{ stats.percent }}%)</p>
+  <div class="text-center mb-3">
+    <h1 class="fw-bold text-body p-2 rounded section-title">
+      {{ user.username }}さんの{{ group_key | capitalize }}コレクション
+    </h1>
+  </div>
 
-  <!-- 簡易的なサムネイル表示 -->
-  <div class="row">
+  <div class="card shadow-sm bg-body text-body mb-3">
+    <div class="card-body text-center small">
+      所持数: {{ stats.owned_count }} / {{ stats.total_count }}
+      ({{ stats.percent }}%)
+    </div>
+  </div>
+
+  <div class="row row-cols-2 row-cols-md-3 g-2">
     {% for photo in all_photos %}
-      <div class="col-3 mb-2">
-        <img src="{{ photo.image_url }}" class="img-thumbnail {% if photo.id not in owned_photo_ids %}opacity-25{% endif %}">
+      <div class="col">
+        <div class="card shadow-sm p-2 h-100 bg-body text-body
+          {% if photo.id not in owned_photo_ids %}opacity-50{% endif %}">
+
+          <div class="fw-bold text-truncate small">{{ photo.member }}</div>
+          <div class="text-secondary text-truncate small">{{ photo.costume }}</div>
+
+          <div class="d-flex justify-content-between small mt-1">
+            <span>{{ photo.photo_type }}</span>
+            <span>
+              {% if photo.id in owned_photo_ids %}所持{% else %}未所持{% endif %}
+            </span>
+          </div>
+
+        </div>
       </div>
     {% endfor %}
   </div>
+
+</div>
 {% endblock %}

@@ -1,27 +1,104 @@
 {% extends "base.html" %}
+
 {% block title %}プロフィール編集{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-  <h1>プロフィール編集</h1>
+<div class="container py-5" style="max-width: 700px;">
 
-  <form method="post">
-     
-    <div class="mb-3">
-      <label for="username" class="form-label">ユーザー名</label>
-      <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}" required>
+  <!-- タイトル -->
+  <div class="text-center mb-4">
+    <h2 class="fw-bold">プロフィール編集</h2>
+    <p class="text-muted">アカウント情報を更新できます</p>
+  </div>
+
+  <!-- 基本情報 -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+
+      <h5 class="mb-3">基本情報</h5>
+
+      <form method="post">
+        {{ form.hidden_tag() }}
+
+        <!-- ユーザー名 -->
+        <div class="mb-3">
+          <label for="username" class="form-label">ユーザー名</label>
+          <input type="text"
+                 class="form-control"
+                 id="username"
+                 name="username"
+                 value="{{ user.username }}"
+                 required>
+        </div>
+
+        <!-- メール -->
+        <div class="mb-3">
+          <label class="form-label">メールアドレス</label>
+          <input type="email"
+                 class="form-control"
+                 value="{{ user.email }}"
+                 readonly
+                 style="background-color: #e9ecef;">
+          <small class="text-muted">※メールアドレスは変更できません</small>
+        </div>
+
+        <hr>
+
+        <h6 class="mb-3">SNS情報</h6>
+
+        <!-- Twitter -->
+        <div class="mb-3">
+          <label for="twitter_id" class="form-label">X (Twitter)</label>
+          <div class="input-group">
+            <span class="input-group-text">@</span>
+            <input type="text"
+                   class="form-control"
+                   id="twitter_id"
+                   name="twitter_id"
+                   value="{{ user.twitter_id or '' }}"
+                   placeholder="username">
+          </div>
+        </div>
+
+        <!-- Instagram -->
+        <div class="mb-4">
+          <label for="instagram_id" class="form-label">Instagram</label>
+          <input type="text"
+                 class="form-control"
+                 id="instagram_id"
+                 name="instagram_id"
+                 value="{{ user.instagram_id or '' }}"
+                 placeholder="username">
+        </div>
+
+        <!-- ボタン -->
+        <div class="d-grid">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-1"></i>更新する
+          </button>
+        </div>
+
+      </form>
     </div>
+  </div>
 
-    <div class="mb-3">
-      <label for="email" class="form-label">メールアドレス（任意）</label>
-      <input type="email" class="form-control" id="email" name="email" value="{{ user.email or '' }}">
+  <!-- 注意カード（任意） -->
+  <div class="card border-warning shadow-sm mb-4">
+    <div class="card-body text-center">
+      <h6 class="text-warning mb-2">注意</h6>
+      <p class="text-muted small mb-0">
+        ユーザー名は他ユーザーから見える公開情報です
+      </p>
     </div>
+  </div>
 
-    <button type="submit" class="btn btn-primary">更新する</button>
-    <a href="{{ url_for('mypage') }}" class="btn btn-secondary ms-2">キャンセル</a>
-  </form>
+  <!-- 戻る -->
+  <div class="text-center mt-4">
+    <a href="{{ url_for('user.mypage') }}"
+       class="btn btn-link text-decoration-none">
+      ← マイページに戻る
+    </a>
+  </div>
+
 </div>
-<a href="{{ url_for('mypage') }}" class="btn btn-secondary mt-3">
-  ← 戻る
-</a>
 {% endblock %}
