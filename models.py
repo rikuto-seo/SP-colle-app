@@ -361,3 +361,20 @@ class WantShare(db.Model):
     __table_args__ = (
         db.UniqueConstraint('user_id', 'group_key'),
     )
+
+    @staticmethod
+    def get_or_create(user_id, group_key):
+        share = WantShare.query.filter_by(
+            user_id=user_id,
+            group_key=group_key
+        ).first()
+
+        if not share:
+            share = WantShare(
+                user_id=user_id,
+                group_key=group_key,
+                is_public=False
+            )
+            db.session.add(share)
+
+        return share
