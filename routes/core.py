@@ -41,6 +41,21 @@ def terms():
 def legal():
     return render_template('legal.html')
 
+@core_bp.route('/switch/<group_key>')
+def group_switch(group_key):
+
+    endpoint = request.endpoint
+    view_args = dict(request.view_args or {})
+
+    # group_keyだけ置き換え
+    view_args['group_key'] = group_key
+
+    try:
+        return redirect(url_for(endpoint, **view_args))
+    except Exception:
+        # 失敗したら安全にトップへ
+        return redirect(url_for('photo.index', group_key=group_key))
+    
 @core_bp.route('/privacy')
 def privacy():
     return render_template('privacy.html')

@@ -1,15 +1,24 @@
 # sakamichi_photo_app/want/routes.py
 from flask import render_template, request, redirect, url_for, flash, abort
 from flask_login import login_required, current_user
-import io,base64,qrcode
+import io, base64, qrcode
 from extensions import db
-from models import User,WantPhoto, UserPhoto, WantShare
+from models import User, WantPhoto, UserPhoto, WantShare
 from . import want_bp
 from utils.qr import generate_qr_base64
 
+ALLOWED_GROUPS = {"nogizaka", "sakurazaka", "hinatazaka"}
+
+# =========================
+# 一覧
+# =========================
 @want_bp.route('/<group_key>')
 @login_required
 def index(group_key):
+
+    if group_key not in ALLOWED_GROUPS:
+        abort(404)
+
     wants = WantPhoto.query.filter_by(
         user_id=current_user.id,
         group_key=group_key
@@ -35,9 +44,16 @@ def index(group_key):
         qr_base64=qr_base64
     )
 
+# =========================
+# 追加
+# =========================
 @want_bp.route('/<group_key>/add', methods=['GET', 'POST'])
 @login_required
 def add_want(group_key):
+
+    if group_key not in ALLOWED_GROUPS:
+        abort(404)
+
     if request.method == 'POST':
         want = WantPhoto(
             user_id=current_user.id,
@@ -57,17 +73,9 @@ def add_want(group_key):
 
         return redirect(url_for('want.index', group_key=group_key))
 
-    # ✅ 正しい：Photoマスタから取得
     from models import Photo
 
-    photos = Photo.query.filter_by(
-        group_key=group_key
-    ).all()
-
-    members = sorted({p.member for p in photos})
-    costumes = sorted({p.costume for p in photos})
-    photo_types = sorted({p.photo_type for p in photos})
-
+    photos = Photo.query.filter_by(group_key=group_key).all()
 
     members = sorted({p.member for p in photos})
     costumes = sorted({p.costume for p in photos})
@@ -81,6 +89,9 @@ def add_want(group_key):
         photo_types=photo_types
     )
 
+# =========================
+# タイプ取得
+# =========================
 @want_bp.route('/get_types')
 @login_required
 def get_types():
@@ -102,10 +113,11 @@ def get_types():
         .all()
     )
 
-    return {
-        'types': [t[0] for t in types]
-    }
+    return {'types': [t[0] for t in types]}
 
+# =========================
+# 削除
+# =========================
 @want_bp.route('/delete/<int:want_id>', methods=['POST'])
 @login_required
 def delete_want(want_id):
@@ -121,28 +133,34 @@ def delete_want(want_id):
 
     return redirect(url_for('want.index', group_key=group_key))
 
+# =========================
+# 🔥 公開ページ（ここ重要）
+# =========================
 @want_bp.route('/share/<public_uuid>/<group_key>')
 def public_want(public_uuid, group_key):
-    # 公開用のユーザーを取得
+
+    if group_key not in ALLOWED_GROUPS:
+        abort(404)
+
     user = User.query.filter_by(public_uuid=public_uuid).first_or_404()
 
-    # 公開設定がOFFなら404
     if not user.is_want_share_enabled(group_key):
         abort(404)
 
-    # 欲しい写真リスト
     wants = WantPhoto.query.filter_by(
         user_id=user.id,
         group_key=group_key
     ).all()
 
-    # 照合チェックフラグ
+    # 🔥 ここ追加：テンプレ対策
+    for w in wants:
+        w.is_owned = False
+
     is_check = (
         current_user.is_authenticated
         and request.args.get('check') == '1'
     )
 
-    # 自分の所持写真との照合
     if is_check:
         owned_keys = {
             (p.member, p.costume, p.photo_type)
@@ -159,9 +177,8 @@ def public_want(public_uuid, group_key):
                 want.photo_type
             ) in owned_keys
 
-    # 統合テンプレートでレンダリング
     return render_template(
-        'want/public_base.html',  # ← public.html ではなく統合版
+        'want/public_base.html',
         owner=user,
         wants=wants,
         group_key=group_key,
@@ -169,9 +186,33 @@ def public_want(public_uuid, group_key):
         is_check=is_check
     )
 
+# =========================
+# 🔥 追加：安全なグループ切替用ルート
+# =========================
+@want_bp.route('/share_redirect/<group_key>')
+def public_want_redirect(group_key):
+
+    if group_key not in ALLOWED_GROUPS:
+        abort(404)
+
+    public_uuid = request.view_args.get('public_uuid') or request.args.get('uuid')
+
+    if not public_uuid:
+        return redirect(url_for('photo.index', group_key=group_key))
+
+    return redirect(url_for(
+        'want.public_want',
+        public_uuid=public_uuid,
+        group_key=group_key
+    ))
+
+# =========================
+# 共有設定
+# =========================
 @want_bp.route('/share_setting/<group_key>', methods=['GET', 'POST'])
 @login_required
 def share_setting(group_key):
+
     share = WantShare.query.filter_by(
         user_id=current_user.id,
         group_key=group_key
@@ -199,6 +240,9 @@ def share_setting(group_key):
         share=share
     )
 
+# =========================
+# QR
+# =========================
 @want_bp.route('/qr_image/<group_key>')
 @login_required
 def want_qr_image(group_key):
@@ -219,6 +263,9 @@ def want_qr_image(group_key):
         'qr_base64': base64.b64encode(buf.read()).decode()
     }
 
+# =========================
+# トグル
+# =========================
 @want_bp.route('/share_toggle/<group_key>', methods=['POST'])
 @login_required
 def toggle_want_share(group_key):
