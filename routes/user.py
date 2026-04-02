@@ -57,21 +57,23 @@ def mypage():
     # 課金
     # -------------------------
     next_billing = None
+    cancel_at_period_end = False
 
     if current_user.stripe_subscription_id:
-        sub = stripe.Subscription.retrieve(
-            current_user.stripe_subscription_id
-        )
-        next_billing = datetime.fromtimestamp(
-            sub["current_period_end"]
-        )
-        cancel_at_period_end = sub["cancel_at_period_end"]
+        try:
+            sub = stripe.Subscription.retrieve(
+                current_user.stripe_subscription_id
+            )
 
-        return render_template(
-            "mypage.html",
-            next_billing=next_billing,
-            cancel_at_period_end=cancel_at_period_end
-        )
+            period_end = sub.get("current_period_end")
+
+            if period_end:
+                next_billing = datetime.fromtimestamp(period_end)
+
+            cancel_at_period_end = sub.get("cancel_at_period_end", False)
+
+        except Exception as e:
+            current_app.logger.error(f"Stripe取得失敗: {e}")
 
     # -------------------------
     # QR生成
@@ -137,7 +139,9 @@ def mypage():
         share_statuses=share_statuses,
         selected_group=selected_group,
         selected_groups=selected_groups,
-
+        next_billing=next_billing,
+        cancel_at_period_end=cancel_at_period_end,
+        
         # 👇 追加（テンプレで使える）
         is_free=is_free(),
         is_lite=is_lite(),

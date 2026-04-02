@@ -1,7 +1,7 @@
 # sakamichi_photo_app/want/routes.py
 from flask import render_template, request, redirect, url_for, flash, abort
 from flask_login import login_required, current_user
-
+import io,base64,qrcode
 from extensions import db
 from models import User,WantPhoto, UserPhoto, WantShare
 from . import want_bp
@@ -198,6 +198,26 @@ def share_setting(group_key):
         group_key=group_key,
         share=share
     )
+
+@want_bp.route('/qr_image/<group_key>')
+@login_required
+def want_qr_image(group_key):
+
+    url = url_for(
+        'want.public_want',
+        public_uuid=current_user.public_uuid,
+        group_key=group_key,
+        _external=True
+    )
+
+    img = qrcode.make(url)
+    buf = io.BytesIO()
+    img.save(buf, format='PNG')
+    buf.seek(0)
+
+    return {
+        'qr_base64': base64.b64encode(buf.read()).decode()
+    }
 
 @want_bp.route('/share_toggle/<group_key>', methods=['POST'])
 @login_required
