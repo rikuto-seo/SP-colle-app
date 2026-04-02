@@ -110,7 +110,7 @@
         <div class="flex-grow-1 text-center">
 
           {% if selected_groups %}
-          {% set default_group = selected_groups[0] %}
+          {% set default_group = selected_group %}
 
           <h5 id="group-title">{{ group_names[default_group] }}</h5>
 
@@ -121,6 +121,7 @@
               style="height:120px;">
             {% else %}
             <div class="text-muted mt-3">
+              🔒 非公開中です
             </div>
             {% endif %}
           </div>
@@ -213,7 +214,8 @@
         if (qrCodes[key]) {
           qrWrapper.innerHTML = `<img src="data:image/png;base64,${qrCodes[key]}" style="height:120px;" class="mb-3">`;
         }
-        shareBtn.className = "btn btn-success";
+        shareBtn.classList.remove("btn-success", "btn-outline-secondary");
+        shareBtn.classList.add("btn-success");
         shareBtn.innerHTML = '<i class="fa-solid fa-eye"></i> 公開中';
       } else {
         qrWrapper.innerHTML = `<div class="text-muted mt-3">🔒 非公開中です</div>`;

@@ -108,7 +108,11 @@ def mypage():
 
         return base64.b64encode(buf.read()).decode('utf-8')
 
-    qr_codes = {g: make_qr(g) for g in selected_groups}
+    qr_codes = {}
+    for g in selected_groups:
+        share = WantShare.get_or_create(current_user.id, g)
+
+        qr_codes[g] = make_qr(g) if share.is_public else ""
 
     # -------------------------
     # share状態
@@ -141,7 +145,7 @@ def mypage():
         selected_groups=selected_groups,
         next_billing=next_billing,
         cancel_at_period_end=cancel_at_period_end,
-        
+
         # 👇 追加（テンプレで使える）
         is_free=is_free(),
         is_lite=is_lite(),
