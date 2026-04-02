@@ -22,7 +22,7 @@ PRICE_IDS = {
 @login_required
 def create_checkout_session():
 
-    if current_user.stripe_subscription_id:
+    if current_user.plan_type in ["lite", "standard", "premium"]:
         return jsonify({"error": "already subscribed"}), 400
 
     data = request.get_json()
