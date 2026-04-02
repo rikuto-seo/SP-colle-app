@@ -156,8 +156,14 @@
             return;
           }
 
+          const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
           const res = await fetch("/api/downgrade", {
-            method: "POST"
+            method: "POST",
+            headers: {
+              "X-CSRFToken": csrfToken,
+              "X-CSRF-Token": csrfToken
+            }
           });
 
           const data = await res.json();
@@ -175,15 +181,19 @@
         // =========================
         // 有料プラン
         // =========================
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
         const res = await fetch("/api/create-checkout-session", {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+            "X-CSRF-Token": csrfToken
           },
           body: JSON.stringify({
             plan: String(plan).trim()
           })
-        }); // ← ★これが必要
+        });
 
         // 👇ここからOK判定
         if (!res.ok) {
