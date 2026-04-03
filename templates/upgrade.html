@@ -206,6 +206,14 @@
 
         const data = await res.json();
 
+        // 🔥 追加：既存ユーザー更新時
+        if (data.status === "updated") {
+          showToast("プランを変更しました");
+          setTimeout(() => location.reload(), 1000);
+          return;
+        }
+
+        // Checkout遷移
         if (data.url) {
           window.location.href = data.url;
         } else {

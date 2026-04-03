@@ -22,24 +22,44 @@ PRICE_IDS = {
 @login_required
 def create_checkout_session():
 
-    if current_user.plan_type in ["lite", "standard", "premium"]:
-        return jsonify({"error": "already subscribed"}), 400
-
     data = request.get_json()
-    if not data:
-        return jsonify({"error": "invalid request"}), 400
-
     if not data or "plan" not in data:
-        return jsonify({"error": "no plan"}), 400
+        return jsonify({"error": "invalid request"}), 400
 
     plan = data.get("plan")
 
     if plan not in PRICE_IDS:
         return jsonify({"error": "invalid plan"}), 400
 
-    
     try:
-        # customer作成 or 再利用
+        # =========================
+        # 🔥 既存ユーザー → プラン変更
+        # =========================
+        if current_user.stripe_subscription_id:
+
+            sub = stripe.Subscription.retrieve(
+                current_user.stripe_subscription_id
+            )
+
+            stripe.Subscription.modify(
+                sub.id,
+                cancel_at_period_end=False,
+                proration_behavior="create_prorations",
+                items=[{
+                    "id": sub["items"]["data"][0].id,
+                    "price": PRICE_IDS[plan],
+                }]
+            )
+
+            # DB更新（ここ超重要）
+            current_user.plan_type = plan
+            db.session.commit()
+
+            return jsonify({"status": "updated"})
+
+        # =========================
+        # 🔥 新規ユーザー → Checkout
+        # =========================
         if current_user.stripe_customer_id:
             customer_id = current_user.stripe_customer_id
         else:
@@ -47,11 +67,9 @@ def create_checkout_session():
                 email=current_user.email
             )
             customer_id = customer.id
-
             current_user.stripe_customer_id = customer_id
             db.session.commit()
 
-        # Checkout Session作成
         session = stripe.checkout.Session.create(
             customer=customer_id,
             line_items=[{
@@ -62,11 +80,7 @@ def create_checkout_session():
             metadata={
                 "user_id": str(current_user.id)
             },
-            success_url=url_for(
-                "user.payment_success",
-                plan=plan,
-                _external=True
-            ),
+            success_url=url_for("user.payment_success", _external=True),
             cancel_url=url_for("user.upgrade", _external=True),
         )
 
@@ -74,7 +88,7 @@ def create_checkout_session():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
+    
 # =========================
 # プラン確認API
 # =========================
@@ -198,9 +212,14 @@ def stripe_webhook():
                 elif price_id == PRICE_IDS["premium"]:
                     user.plan_type = "premium"
 
-            # subscription保存（任意だが推奨）
-            if session_obj.get("subscription"):
-                user.stripe_subscription_id = session_obj["subscription"]
+            subscription_id = session_obj.get("subscription")
+
+            if subscription_id:
+                user.stripe_subscription_id = subscription_id
+
+                # 🔥 追加：即取得してログ確認（デバッグ用）
+                sub = stripe.Subscription.retrieve(subscription_id)
+                print("📅 PERIOD END:", sub.get("current_period_end"))
 
             db.session.commit()
             print("✅ PLAN UPDATED:", user.plan_type)

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, abort
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, abort,make_response
 from flask_login import login_required, current_user, logout_user
 import os,io,qrcode,shutil,base64,time,stripe
 from PIL import Image
@@ -406,7 +406,14 @@ def upgrade():
 @user_bp.route("/payment-success")
 @login_required
 def payment_success():
-    return render_template("payment_success.html")
+    res = make_response(render_template("payment_success.html"))
+
+    # 🔥 キャッシュ禁止（超重要）
+    res.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    res.headers["Pragma"] = "no-cache"
+    res.headers["Expires"] = "0"
+
+    return res
 
 # =========================
 # 🔥 グループ選択
@@ -443,28 +450,22 @@ def force_group_select():
     allowed = current_user.get_allowed_group_count()
     current_selected = current_user.get_selected_groups()
 
+    # 🔥 追加：すでに正常なら追い出す
+    if len(current_selected) == allowed:
+        return redirect(url_for("user.mypage"))
+
     if request.method == "POST":
         selected = request.form.getlist("groups")
 
-        # =========================
-        # 🔥 バリデーション（最重要）
-        # =========================
-
-        # 不正グループ防止
         if not all(g in ALLOWED_GROUPS for g in selected):
             abort(400)
 
-        # 🔥 必須数チェック（ここが本質）
         if len(selected) != allowed:
             flash(f"{allowed}グループ必ず選択してください", "danger")
             return redirect(url_for("user.force_group_select"))
 
-        # =========================
-        # 保存
-        # =========================
         current_user.set_selected_groups(selected)
         current_user.normalize_groups()
-
         db.session.commit()
 
         return redirect(url_for("photo.index", group_key=selected[0]))
