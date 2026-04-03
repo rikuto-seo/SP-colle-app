@@ -30,9 +30,6 @@ def create_checkout_session():
         return jsonify({"error": "invalid plan"}), 400
 
     try:
-        # =========================
-        # 顧客取得 or 作成
-        # =========================
         if current_user.stripe_customer_id:
             customer_id = current_user.stripe_customer_id
         else:
@@ -43,9 +40,6 @@ def create_checkout_session():
             current_user.stripe_customer_id = customer_id
             db.session.commit()
 
-        # =========================
-        # Checkout作成
-        # =========================
         session = stripe.checkout.Session.create(
             customer=customer_id,
             line_items=[{
@@ -54,15 +48,14 @@ def create_checkout_session():
             }],
             mode="subscription",
 
-            # 🔥 サブスクに紐付ける情報
             subscription_data={
                 "metadata": {
                     "user_id": str(current_user.id),
-                    "target_plan": plan
+                    "target_plan": plan,
+                    "groups": ",".join(current_user.get_selected_groups())
                 }
             },
 
-            # 🔥 セッションにも入れる（安全用）
             metadata={
                 "user_id": str(current_user.id),
                 "target_plan": plan
@@ -119,10 +112,12 @@ def save_groups():
         "premium": 999
     }
 
-    if len(groups) != PLAN_LIMITS[current_user.plan_type]:
+    plan = current_user.plan_type or "free"
+
+    if len(groups) != PLAN_LIMITS[plan]:
         return {"error": "invalid group count"}, 400
 
-    current_user.selected_groups = groups
+    current_user.selected_groups = ",".join(groups)
     db.session.commit()
 
     return {"status": "ok"}
@@ -134,9 +129,6 @@ def stripe_webhook():
     payload = request.data
     sig_header = request.headers.get("Stripe-Signature")
 
-    # =========================
-    # 署名検証
-    # =========================
     try:
         event = stripe.Webhook.construct_event(
             payload,
@@ -149,13 +141,9 @@ def stripe_webhook():
 
     print("🔥 EVENT:", event["type"])
 
-    # =========================
-    # 共通：安全にユーザー取得
-    # =========================
     def find_user(session_obj=None, customer_id=None):
         user = None
 
-        # ① metadata優先（最重要）
         if session_obj:
             metadata = session_obj.get("metadata", {})
             user_id = metadata.get("user_id")
@@ -166,7 +154,6 @@ def stripe_webhook():
                     print("✅ USER FOUND (metadata):", user.id)
                     return user
 
-        # ② fallback: customer_id
         if customer_id:
             user = User.query.filter_by(
                 stripe_customer_id=customer_id
@@ -179,9 +166,6 @@ def stripe_webhook():
         print("❌ USER NOT FOUND")
         return None
 
-    # =========================
-    # 決済完了
-    # =========================
     if event["type"] == "checkout.session.completed":
         try:
             session_obj = event["data"]["object"]
@@ -192,9 +176,6 @@ def stripe_webhook():
             if not user:
                 return "user not found", 200
 
-            # =========================
-            # 🔽 ここで line_items 取得
-            # =========================
             line_items = stripe.checkout.Session.list_line_items(
                 session_obj["id"]
             )
@@ -212,12 +193,8 @@ def stripe_webhook():
             groups_str = session_obj.get("metadata", {}).get("groups")
 
             if groups_str:
-                groups = groups_str.split(",")
-                user.selected_groups = groups
+                user.selected_groups = groups_str
 
-            # =========================
-            # subscription保存
-            # =========================
             subscription_id = session_obj.get("subscription")
 
             if subscription_id:
@@ -228,7 +205,7 @@ def stripe_webhook():
         except Exception as e:
             db.session.rollback()
             print("❌ DB ERROR:", e)
-            return "db error", 200  # ← Stripeには200返す
+            return "db error", 200
 
     elif event["type"] == "invoice.payment_succeeded":
         invoice = event["data"]["object"]
@@ -239,7 +216,6 @@ def stripe_webhook():
         if user:
             print("💰 RENEWAL SUCCESS:", user.id)
 
-            # 🔥 ここで現在のsubscription取得
             sub_id = invoice.get("subscription")
 
             if sub_id:
@@ -247,7 +223,6 @@ def stripe_webhook():
 
                 price_id = sub["items"]["data"][0]["price"]["id"]
 
-                # 🔥 ここで初めてDB更新
                 if price_id == PRICE_IDS["lite"]:
                     user.plan_type = "lite"
                 elif price_id == PRICE_IDS["standard"]:
@@ -258,9 +233,6 @@ def stripe_webhook():
                 db.session.commit()
                 print("✅ PLAN UPDATED AFTER PAYMENT:", user.plan_type)
 
-    # =========================
-    # サブスク解約
-    # =========================
     elif event["type"] == "customer.subscription.deleted":
         try:
             subscription = event["data"]["object"]
@@ -281,13 +253,7 @@ def stripe_webhook():
             print("❌ DB ERROR:", e)
             return "db error", 200
 
-    # =========================
-    # その他イベント（無視OK）
-    # =========================
     else:
         print("ℹ️ UNHANDLED EVENT:", event["type"])
 
-    # =========================
-    # 常に200返す（超重要）
-    # =========================
     return "ok", 200
