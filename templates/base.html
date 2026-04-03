@@ -84,17 +84,7 @@
 
             {% set can_access = current_user.is_authenticated and current_user.can_access_group(key) %}
 
-            {% if request.endpoint == 'want.public_want' %}
-            {% if uuid is defined %}
-                {% set target_url = url_for('want.public_want', public_uuid=uuid, group_key=key) %}
-            {% else %}
-                {% set target_url = url_for('photo.index', group_key=key) %}
-            {% endif %}
-            {% elif request.endpoint and group_key %}
-            {% set target_url = url_for(request.endpoint, group_key=key) %}
-            {% else %}
-            {% set target_url = url_for('photo.index', group_key=key) %}
-            {% endif %}
+            {% set target_url = url_for('core.group_switch', group_key=key) %}
 
             {% if can_access %}
             <!-- 通常リンク -->
