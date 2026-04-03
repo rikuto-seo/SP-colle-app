@@ -26,12 +26,6 @@ app = Flask(__name__)
 app.permanent_session_lifetime = timedelta(minutes=60)
 
 # config
-db_url = os.environ.get("DATABASE_URL")
-
-if db_url and db_url.startswith("postgres://"):
-    db_url = db_url.replace("postgres://", "postgresql://", 1)
-
-app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY")
 app.config.from_object(Config)
@@ -41,6 +35,12 @@ app.config['SESSION_COOKIE_SECURE'] = True
 app.config['REMEMBER_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+db_url = os.environ.get("DATABASE_URL")
+
+if db_url and db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 
 cred_json = os.environ.get("FIREBASE_KEY_JSON")
 cred_path = os.environ.get("FIREBASE_KEY_PATH")
