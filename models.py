@@ -28,7 +28,6 @@ class Photo(db.Model):
         Index('idx_photo_group', 'group_key')
     )
 
-
 # =========================
 # User
 # =========================
@@ -207,11 +206,8 @@ class User(UserMixin, db.Model):
     # WantShare連携
     # =========================
     def is_want_share_enabled(self, group_key: str) -> bool:
-        share = WantShare.query.filter_by(
-            user_id=self.id,
-            group_key=group_key
-        ).first()
-        return share.is_public if share else False
+        share = WantShare.get_or_create(self.id, group_key)
+        return share.is_public
 
     def toggle_want_share(self, group_key: str):
         share = WantShare.query.filter_by(
@@ -230,7 +226,6 @@ class User(UserMixin, db.Model):
         db.session.add(share)
         db.session.commit()
 
-
 # =========================
 # 🔥 自動正規化（超重要）
 # =========================
@@ -238,7 +233,6 @@ class User(UserMixin, db.Model):
 @event.listens_for(User, "before_update")
 def receive_before_save(mapper, connection, target):
     target.normalize_groups()
-
 
 # =========================
 # UserPhoto
@@ -291,7 +285,6 @@ class UserPhoto(db.Model):
         Index('idx_userphoto_user', 'user_id')
     )
 
-
 # =========================
 # WantPhoto
 # =========================
@@ -321,7 +314,6 @@ class WantPhoto(db.Model):
             'user_id', 'group_key', 'member', 'costume', 'photo_type'
         ),
     )
-
 
 # =========================
 # WantShare

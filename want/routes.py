@@ -27,7 +27,9 @@ def index(group_key):
     qr_base64 = None
     public_url = None
 
-    if current_user.is_want_share_enabled(group_key):
+    share = WantShare.get_or_create(current_user.id, group_key)
+
+    if share.is_public:
         public_url = url_for(
             'want.public_want',
             public_uuid=current_user.public_uuid,
@@ -35,6 +37,9 @@ def index(group_key):
             _external=True
         )
         qr_base64 = generate_qr_base64(public_url)
+    else:
+        public_url = None
+        qr_base64 = None
 
     return render_template(
         'want/index.html',
@@ -269,6 +274,7 @@ def want_qr_image(group_key):
 @want_bp.route('/share_toggle/<group_key>', methods=['POST'])
 @login_required
 def toggle_want_share(group_key):
-    current_user.toggle_want_share(group_key)
+    share = WantShare.get_or_create(current_user.id, group_key)
+    share.is_public = not share.is_public
     db.session.commit()
     return redirect(url_for('want.index', group_key=group_key))
