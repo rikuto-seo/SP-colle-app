@@ -25,23 +25,9 @@ def create_checkout_session():
         return jsonify({"error": "invalid request"}), 400
 
     plan = data.get("plan")
-    groups = data.get("groups", [])
 
     if plan not in PRICE_IDS:
         return jsonify({"error": "invalid plan"}), 400
-
-    # =========================
-    # グループ制限チェック
-    # =========================
-    PLAN_LIMITS = {
-        "free": 1,
-        "lite": 1,
-        "standard": 2,
-        "premium": 999
-    }
-
-    if len(groups) != PLAN_LIMITS[plan]:
-        return jsonify({"error": "invalid group count"}), 400
 
     try:
         # =========================
@@ -68,23 +54,21 @@ def create_checkout_session():
             }],
             mode="subscription",
 
-            # 🔥 ここが重要（サブスク側）
+            # 🔥 サブスクに紐付ける情報
             subscription_data={
                 "metadata": {
                     "user_id": str(current_user.id),
-                    "target_plan": plan,
-                    "groups": ",".join(groups)
+                    "target_plan": plan
                 }
             },
 
-            # 🔥 ここも重要（session側）
+            # 🔥 セッションにも入れる（安全用）
             metadata={
                 "user_id": str(current_user.id),
-                "target_plan": plan,
-                "groups": ",".join(groups)
+                "target_plan": plan
             },
 
-            success_url=url_for("user.payment_success", _external=True),
+            success_url=url_for("user.payment_success", _external=True) + f"?plan={plan}",
             cancel_url=url_for("user.upgrade", _external=True),
         )
 
