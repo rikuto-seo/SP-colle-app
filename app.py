@@ -170,6 +170,7 @@ def enforce_group_access():
     if not current_user.can_access_group(group_key):
         return redirect(url_for('user.upgrade'))
 
+print("DB URL:", db_url)
 
 # Blueprint登録
 app.register_blueprint(photo_bp)
