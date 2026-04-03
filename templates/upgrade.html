@@ -206,10 +206,11 @@
 
         const data = await res.json();
 
-        // 🔥 追加：既存ユーザー更新時
-        if (data.status === "updated") {
-          showToast("プランを変更しました");
-          setTimeout(() => location.reload(), 1000);
+        if (data.status === "pending") {
+          showToast("プラン変更を反映中です");
+
+          // 👇 payment_successに飛ばす（重要）
+          window.location.href = "/payment-success?plan=" + plan;
           return;
         }
 

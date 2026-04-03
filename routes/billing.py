@@ -33,7 +33,7 @@ def create_checkout_session():
 
     try:
         # =========================
-        # 🔥 既存ユーザー → プラン変更
+        # 🔥 既存サブスク → プラン変更
         # =========================
         if current_user.stripe_subscription_id:
 
@@ -46,16 +46,16 @@ def create_checkout_session():
                 cancel_at_period_end=False,
                 proration_behavior="create_prorations",
                 items=[{
-                    "id": sub["items"]["data"][0].id,
+                    "id": sub["items"]["data"][0]["id"],  # ← 修正ポイント
                     "price": PRICE_IDS[plan],
                 }]
             )
 
-            # 🔥 DBは触らない
+            # ❌ DB更新しない（重要）
             return jsonify({"status": "pending"})
 
         # =========================
-        # 🔥 新規ユーザー → Checkout
+        # 🔥 新規 → Checkout
         # =========================
         if current_user.stripe_customer_id:
             customer_id = current_user.stripe_customer_id
@@ -84,6 +84,7 @@ def create_checkout_session():
         return jsonify({"url": session.url})
 
     except Exception as e:
+        print("❌ STRIPE ERROR:", e)
         return jsonify({"error": str(e)}), 500
     
 # =========================
