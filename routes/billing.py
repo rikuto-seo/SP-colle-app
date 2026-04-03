@@ -51,11 +51,8 @@ def create_checkout_session():
                 }]
             )
 
-            # DB更新（ここ超重要）
-            current_user.plan_type = plan
-            db.session.commit()
-
-            return jsonify({"status": "updated"})
+            # 🔥 DBは触らない
+            return jsonify({"status": "pending"})
 
         # =========================
         # 🔥 新規ユーザー → Checkout
@@ -237,6 +234,25 @@ def stripe_webhook():
 
         if user:
             print("💰 RENEWAL SUCCESS:", user.id)
+
+            # 🔥 ここで現在のsubscription取得
+            sub_id = invoice.get("subscription")
+
+            if sub_id:
+                sub = stripe.Subscription.retrieve(sub_id)
+
+                price_id = sub["items"]["data"][0]["price"]["id"]
+
+                # 🔥 ここで初めてDB更新
+                if price_id == PRICE_IDS["lite"]:
+                    user.plan_type = "lite"
+                elif price_id == PRICE_IDS["standard"]:
+                    user.plan_type = "standard"
+                elif price_id == PRICE_IDS["premium"]:
+                    user.plan_type = "premium"
+
+                db.session.commit()
+                print("✅ PLAN UPDATED AFTER PAYMENT:", user.plan_type)
 
     # =========================
     # サブスク解約
