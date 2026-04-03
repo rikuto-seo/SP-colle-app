@@ -109,7 +109,7 @@ def save_groups():
         "free": 1,
         "lite": 1,
         "standard": 2,
-        "premium": 999
+        "premium": 3
     }
 
     plan = current_user.plan_type or "free"
