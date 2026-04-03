@@ -11,30 +11,28 @@
   </p>
 
   <form method="POST" id="groupForm">
-    <div class="mt-4 text-start">
+    <div class="row g-3">
 
       {% set all_groups = [
-        ('nogizaka', '乃木坂46'),
-        ('sakurazaka', '櫻坂46'),
-        ('hinatazaka', '日向坂46')
+      ('nogizaka', '乃木坂46', '#e4dcf1'),
+      ('sakurazaka', '櫻坂46', '#f9d6e5'),
+      ('hinatazaka', '日向坂46', '#d4f4ff')
       ] %}
 
-      {% for key, name in all_groups %}
-      <div class="form-check mb-2">
-        <input class="form-check-input group-checkbox"
-               type="checkbox"
-               name="groups"
-               value="{{ key }}"
-               id="{{ key }}"
-               {% if key in current_selected %}checked{% endif %}>
-
-        <label class="form-check-label" for="{{ key }}">
-          {{ name }}
-        </label>
+      {% for key, name, color in all_groups %}
+      <div class="col-md-4">
+        <div class="group-card selectable
+         {% if key in current_selected %}active{% endif %}" data-value="{{ key }}"
+          style="background-color: {{ color }}">
+          <h5>{{ name }}</h5>
+        </div>
       </div>
       {% endfor %}
 
     </div>
+
+    <!-- hiddenで配列送信 -->
+    <div id="hiddenInputs"></div>
 
     <button type="submit" class="btn btn-primary mt-4 w-100">
       決定
@@ -69,102 +67,129 @@
 </div>
 
 <style>
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px);}
-  to { opacity: 1; transform: translateY(0);}
-}
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 </style>
 
 <script>
-const max = {{ allowed }};
-const form = document.getElementById("groupForm");
-const modal = document.getElementById("confirmModal");
-const selectedList = document.getElementById("selectedList");
+  const max = {{ allowed }};
+  const cards = document.querySelectorAll(".group-card.selectable");
+  const hiddenContainer = document.getElementById("hiddenInputs");
 
-const confirmBtn = document.getElementById("confirmBtn");
-const cancelBtn = document.getElementById("cancelBtn");
+  const modal = document.getElementById("confirmModal");
+  const selectedList = document.getElementById("selectedList");
 
-const checkboxes = document.querySelectorAll(".group-checkbox");
+  const confirmBtn = document.getElementById("confirmBtn");
+  const cancelBtn = document.getElementById("cancelBtn");
+  const form = document.getElementById("groupForm");
 
-const groupMap = {
-  nogizaka: "乃木坂46",
-  sakurazaka: "櫻坂46",
-  hinatazaka: "日向坂46"
-};
+  const groupMap = {
+    nogizaka: "乃木坂46",
+    sakurazaka: "櫻坂46",
+    hinatazaka: "日向坂46"
+  };
 
-// =========================
-// チェック制御（上限）
-// =========================
-checkboxes.forEach(cb => {
-  cb.addEventListener("change", () => {
-    const checked = document.querySelectorAll(".group-checkbox:checked");
+  // =========================
+  // 選択ロジック
+  // =========================
+  cards.forEach(card => {
+    card.addEventListener("click", () => {
 
-    if (checked.length > max) {
-      cb.checked = false;
+      const activeCards = document.querySelectorAll(".group-card.active");
+
+      // 既に選択済みなら解除
+      if (card.classList.contains("active")) {
+        card.classList.remove("active");
+        return;
+      }
+
+      // 上限チェック
+      if (activeCards.length >= max) {
+        showTempMessage("最大 " + max + " グループまで選択できます");
+        return;
+      }
+
+      card.classList.add("active");
+    });
+  });
+
+  // =========================
+  // 送信処理
+  // =========================
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const selected = document.querySelectorAll(".group-card.active");
+
+    if (selected.length !== max) {
+      showTempMessage("必ず " + max + " グループ選択してください");
+      return;
     }
+
+    // hidden生成
+    hiddenContainer.innerHTML = "";
+    selectedList.innerHTML = "";
+
+    selected.forEach(card => {
+      const value = card.dataset.value;
+
+      // hidden input
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = "groups";
+      input.value = value;
+      hiddenContainer.appendChild(input);
+
+      // モーダル表示
+      const li = document.createElement("li");
+      li.textContent = groupMap[value];
+      selectedList.appendChild(li);
+    });
+
+    modal.style.display = "flex";
   });
-});
 
-// =========================
-// 送信時処理
-// =========================
-form.addEventListener("submit", (e) => {
-  e.preventDefault();
+  // モーダル
+  cancelBtn.addEventListener("click", () => {
+    modal.style.display = "none";
+  });
 
-  const checked = document.querySelectorAll(".group-checkbox:checked");
+  confirmBtn.addEventListener("click", () => {
+    modal.style.display = "none";
+    form.submit();
+  });
 
-  // 必須数チェック
-  if (checked.length !== max) {
-    showTempMessage("必ず " + max + " グループ選択してください");
-    return;
+  // =========================
+  // 軽量トースト（alert代替）
+  // =========================
+  function showTempMessage(msg) {
+    const div = document.createElement("div");
+    div.textContent = msg;
+    div.style.position = "fixed";
+    div.style.bottom = "20px";
+    div.style.left = "50%";
+    div.style.transform = "translateX(-50%)";
+    div.style.background = "#333";
+    div.style.color = "#fff";
+    div.style.padding = "10px 20px";
+    div.style.borderRadius = "8px";
+    div.style.zIndex = "9999";
+
+    document.body.appendChild(div);
+
+    setTimeout(() => {
+      div.remove();
+    }, 2000);
   }
-
-  // モーダルに表示
-  selectedList.innerHTML = "";
-  checked.forEach(cb => {
-    const li = document.createElement("li");
-    li.textContent = groupMap[cb.value];
-    selectedList.appendChild(li);
-  });
-
-  modal.style.display = "flex";
-});
-
-// =========================
-// モーダル操作
-// =========================
-cancelBtn.addEventListener("click", () => {
-  modal.style.display = "none";
-});
-
-confirmBtn.addEventListener("click", () => {
-  modal.style.display = "none";
-  form.submit();
-});
-
-// =========================
-// 軽量トースト（alert代替）
-// =========================
-function showTempMessage(msg) {
-  const div = document.createElement("div");
-  div.textContent = msg;
-  div.style.position = "fixed";
-  div.style.bottom = "20px";
-  div.style.left = "50%";
-  div.style.transform = "translateX(-50%)";
-  div.style.background = "#333";
-  div.style.color = "#fff";
-  div.style.padding = "10px 20px";
-  div.style.borderRadius = "8px";
-  div.style.zIndex = "9999";
-
-  document.body.appendChild(div);
-
-  setTimeout(() => {
-    div.remove();
-  }, 2000);
-}
 </script>
 
 {% endblock %}
