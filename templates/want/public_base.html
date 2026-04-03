@@ -40,7 +40,7 @@
 
     {% elif not current_user.is_authenticated and not is_check %}
     <a href="{{ url_for(
-          'login',
+          'auth.login',
           next=url_for(
               'want.public_want',
               public_uuid=uuid,
