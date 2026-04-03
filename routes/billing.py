@@ -23,39 +23,32 @@ PRICE_IDS = {
 def create_checkout_session():
 
     data = request.get_json()
-    if not data or "plan" not in data:
+
+    if not data:
         return jsonify({"error": "invalid request"}), 400
 
     plan = data.get("plan")
+    groups = data.get("groups", [])
 
     if plan not in PRICE_IDS:
         return jsonify({"error": "invalid plan"}), 400
 
+    # =========================
+    # グループ制限チェック
+    # =========================
+    PLAN_LIMITS = {
+        "free": 1,
+        "lite": 1,
+        "standard": 2,
+        "premium": 999
+    }
+
+    if len(groups) != PLAN_LIMITS[plan]:
+        return jsonify({"error": "invalid group count"}), 400
+
     try:
         # =========================
-        # 🔥 既存サブスク → プラン変更
-        # =========================
-        if current_user.stripe_subscription_id:
-
-            sub = stripe.Subscription.retrieve(
-                current_user.stripe_subscription_id
-            )
-
-            stripe.Subscription.modify(
-                sub.id,
-                cancel_at_period_end=False,
-                proration_behavior="create_prorations",
-                items=[{
-                    "id": sub["items"]["data"][0]["id"],  # ← 修正ポイント
-                    "price": PRICE_IDS[plan],
-                }]
-            )
-
-            # ❌ DB更新しない（重要）
-            return jsonify({"status": "pending"})
-
-        # =========================
-        # 🔥 新規 → Checkout
+        # 顧客取得 or 作成
         # =========================
         if current_user.stripe_customer_id:
             customer_id = current_user.stripe_customer_id
@@ -67,6 +60,9 @@ def create_checkout_session():
             current_user.stripe_customer_id = customer_id
             db.session.commit()
 
+        # =========================
+        # Checkout作成
+        # =========================
         session = stripe.checkout.Session.create(
             customer=customer_id,
             line_items=[{
@@ -74,9 +70,23 @@ def create_checkout_session():
                 "quantity": 1,
             }],
             mode="subscription",
-            metadata={
-                "user_id": str(current_user.id)
+
+            # 🔥 ここが重要（サブスク側）
+            subscription_data={
+                "metadata": {
+                    "user_id": str(current_user.id),
+                    "target_plan": plan,
+                    "groups": ",".join(groups)
+                }
             },
+
+            # 🔥 ここも重要（session側）
+            metadata={
+                "user_id": str(current_user.id),
+                "target_plan": plan,
+                "groups": ",".join(groups)
+            },
+
             success_url=url_for("user.payment_success", _external=True),
             cancel_url=url_for("user.upgrade", _external=True),
         )
@@ -180,48 +190,44 @@ def stripe_webhook():
             session_obj = event["data"]["object"]
             customer_id = session_obj.get("customer")
 
-            print("🔥 SESSION:", session_obj.get("id"))
-            print("🔥 CUSTOMER:", customer_id)
-            print("🔥 METADATA:", session_obj.get("metadata"))
-
             user = find_user(session_obj, customer_id)
 
             if not user:
-                # ⚠️ Stripeには必ず200返す
                 return "user not found", 200
 
-            # line_items取得
+            # =========================
+            # 🔽 ここで line_items 取得
+            # =========================
             line_items = stripe.checkout.Session.list_line_items(
                 session_obj["id"]
             )
 
-            print("🔥 LINE ITEMS:", line_items)
-
             for item in line_items["data"]:
                 price_id = item["price"]["id"]
-                print("🔥 PRICE ID:", price_id)
 
                 if price_id == PRICE_IDS["lite"]:
                     user.plan_type = "lite"
-
                 elif price_id == PRICE_IDS["standard"]:
                     user.plan_type = "standard"
-
                 elif price_id == PRICE_IDS["premium"]:
                     user.plan_type = "premium"
 
+            groups_str = session_obj.get("metadata", {}).get("groups")
+
+            if groups_str:
+                groups = groups_str.split(",")
+                user.selected_groups = groups
+
+            # =========================
+            # subscription保存
+            # =========================
             subscription_id = session_obj.get("subscription")
 
             if subscription_id:
                 user.stripe_subscription_id = subscription_id
 
-                # 🔥 追加：即取得してログ確認（デバッグ用）
-                sub = stripe.Subscription.retrieve(subscription_id)
-                print("📅 PERIOD END:", sub.get("current_period_end"))
-
             db.session.commit()
-            print("✅ PLAN UPDATED:", user.plan_type)
-
+            
         except Exception as e:
             db.session.rollback()
             print("❌ DB ERROR:", e)

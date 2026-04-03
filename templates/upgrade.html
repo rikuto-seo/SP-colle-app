@@ -31,8 +31,8 @@
 
         <ul class="plan-list">
           <li>広告あり</li>
-          <li>一覧ページの検索機能制限</li>
-          <li>統計制限あり</li>
+          <li>検索制限</li>
+          <li>統計制限</li>
           <li>1グループ</li>
         </ul>
 
@@ -56,7 +56,7 @@
 
         <ul class="plan-list">
           <li>広告なし</li>
-          <li>検索機能開放</li>
+          <li>検索開放</li>
           <li>統計解放</li>
           <li>1グループ</li>
         </ul>
@@ -76,7 +76,6 @@
     <!-- STANDARD -->
     <div class="col-6 col-md-6">
       <div class="plan-card highlight">
-
         <div class="badge-top">複推し</div>
 
         <h6 class="text-primary fw-bold">STANDARD</h6>
@@ -84,7 +83,7 @@
 
         <ul class="plan-list">
           <li>ライトの全機能</li>
-          <li><b>2グループ利用</b></li>
+          <li><b>2グループ</b></li>
         </ul>
 
         {% if current_plan == "standard" %}
@@ -102,16 +101,14 @@
     <!-- PREMIUM -->
     <div class="col-6 col-md-6">
       <div class="plan-card border-premium">
-
         <div class="badge-top danger">最上位</div>
 
         <h6 class="text-danger fw-bold">PREMIUM</h6>
         <h2 class="fw-bold mt-2">¥500<span class="small">/月</span></h2>
 
         <ul class="plan-list">
-          <li><b>全グループ利用</b></li>
+          <li><b>全グループ</b></li>
           <li>画像アップロード</li>
-          <li>新機能優先</li>
         </ul>
 
         {% if current_plan == "premium" %}
@@ -133,120 +130,81 @@
     </div>
   </div>
 
-  <script>
-    let loading = false;
+<script>
+let loading = false;
+
+// =========================
+// メイン処理
+// =========================
+async function handlePlanChange(plan) {
+
+  if (loading) return;
+  loading = true;
+
+  try {
 
     // =========================
-    // メイン処理
+    // FREE（ダウングレード）
     // =========================
-    async function handlePlanChange(plan) {
+    if (plan === "free") {
 
-      if (loading) return;
-      loading = true;
-
-      try {
-
-        // =========================
-        // FREE（ダウングレード）
-        // =========================
-        if (plan === "free") {
-
-          if (!confirm("次回更新時に解約されます。よろしいですか？")) {
-            loading = false;
-            return;
-          }
-
-          const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-
-          const res = await fetch("/api/downgrade", {
-            method: "POST",
-            headers: {
-              "X-CSRFToken": csrfToken,
-              "X-CSRF-Token": csrfToken
-            }
-          });
-
-          const data = await res.json();
-
-          if (data.status === "ok") {
-            location.reload();
-          } else {
-            showToast("ダウングレードに失敗しました");
-          }
-
-          loading = false;
-          return;
-        }
-
-        // =========================
-        // 有料プラン
-        // =========================
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-
-        const res = await fetch("/api/create-checkout-session", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": csrfToken,
-            "X-CSRF-Token": csrfToken
-          },
-          body: JSON.stringify({
-            plan: String(plan).trim()
-          })
-        });
-
-        // 👇ここからOK判定
-        if (!res.ok) {
-          const text = await res.text();
-          console.error("SERVER ERROR:", text);
-          showToast("サーバーエラー");
-          loading = false;
-          return;
-        }
-
-        const data = await res.json();
-
-        if (data.status === "pending") {
-          showToast("プラン変更を反映中です");
-
-          // 👇 payment_successに飛ばす（重要）
-          window.location.href = "/payment-success?plan=" + plan;
-          return;
-        }
-
-        // Checkout遷移
-        if (data.url) {
-          window.location.href = data.url;
-        } else {
-          showToast(data.error || "エラーが発生しました");
-          loading = false;
-        }
-
-      } catch (e) {
-        showToast("通信エラー");
+      if (!confirm("次回更新時に解約されます。よろしいですか？")) {
         loading = false;
+        return;
       }
+
+      const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+      const res = await fetch("/api/downgrade", {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": csrfToken,
+          "X-CSRF-Token": csrfToken
+        }
+      });
+
+      const data = await res.json();
+
+      if (data.status === "ok") {
+        location.reload();
+      } else {
+        showToast("ダウングレードに失敗しました");
+      }
+
+      loading = false;
+      return;
     }
 
     // =========================
-    // トースト
+    // 🔥 有料プラン → force_selectへ
     // =========================
-    function showToast(msg) {
-      const div = document.createElement("div");
-      div.textContent = msg;
-      div.style.position = "fixed";
-      div.style.bottom = "20px";
-      div.style.left = "50%";
-      div.style.transform = "translateX(-50%)";
-      div.style.background = "#333";
-      div.style.color = "#fff";
-      div.style.padding = "10px 20px";
-      div.style.borderRadius = "8px";
-      div.style.zIndex = "9999";
+    window.location.href = "/force-select?plan=" + plan;
 
-      document.body.appendChild(div);
-      setTimeout(() => div.remove(), 2000);
-    }
-  </script>
+  } catch (e) {
+    showToast("通信エラー");
+    loading = false;
+  }
+}
 
-  {% endblock %}
+// =========================
+// トースト
+// =========================
+function showToast(msg) {
+  const div = document.createElement("div");
+  div.textContent = msg;
+  div.style.position = "fixed";
+  div.style.bottom = "20px";
+  div.style.left = "50%";
+  div.style.transform = "translateX(-50%)";
+  div.style.background = "#333";
+  div.style.color = "#fff";
+  div.style.padding = "10px 20px";
+  div.style.borderRadius = "8px";
+  div.style.zIndex = "9999";
+
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 2000);
+}
+</script>
+
+{% endblock %}
