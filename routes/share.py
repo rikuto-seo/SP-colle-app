@@ -54,5 +54,6 @@ def shared_collection(group_key, public_uuid):
 
     return render_template(
         "shared_collection/shared_view.html",
-        photocards=photos
+        photocards=photos,
+        user=user
     )
