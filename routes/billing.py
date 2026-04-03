@@ -15,9 +15,6 @@ PRICE_IDS = {
     "premium": "price_1TFEHqLpYTfv8wQ09O2XSR4O"
 }
 
-# =========================
-# Checkout作成
-# =========================
 @billing_bp.route("/api/create-checkout-session", methods=["POST"])
 @login_required
 def create_checkout_session():
@@ -96,10 +93,7 @@ def create_checkout_session():
     except Exception as e:
         print("❌ STRIPE ERROR:", e)
         return jsonify({"error": str(e)}), 500
-    
-# =========================
-# プラン確認API
-# =========================
+
 @billing_bp.route("/api/check-plan")
 @login_required
 def check_plan():
@@ -127,9 +121,28 @@ def downgrade():
     db.session.commit()
     return {"status": "ok"}
 
-# =========================
-# Webhook
-# =========================
+@billing_bp.route("/api/save-groups", methods=["POST"])
+@login_required
+def save_groups():
+
+    data = request.get_json()
+    groups = data.get("groups", [])
+
+    PLAN_LIMITS = {
+        "free": 1,
+        "lite": 1,
+        "standard": 2,
+        "premium": 999
+    }
+
+    if len(groups) != PLAN_LIMITS[current_user.plan_type]:
+        return {"error": "invalid group count"}, 400
+
+    current_user.selected_groups = groups
+    db.session.commit()
+
+    return {"status": "ok"}
+
 @csrf.exempt
 @billing_bp.route("/stripe/webhook", methods=["POST"])
 def stripe_webhook():

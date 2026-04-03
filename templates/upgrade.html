@@ -176,9 +176,31 @@ async function handlePlanChange(plan) {
     }
 
     // =========================
-    // 🔥 有料プラン → force_selectへ
+    // 🔥 ここが重要（即Stripe）
     // =========================
-    window.location.href = "/force-select?plan=" + plan;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+    const res = await fetch("/api/create-checkout-session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken,
+        "X-CSRF-Token": csrfToken
+      },
+      body: JSON.stringify({
+        plan: plan,
+        groups: []  // 🔥 一旦空でOK（後で選ばせる）
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      showToast("決済エラー");
+      loading = false;
+    }
 
   } catch (e) {
     showToast("通信エラー");

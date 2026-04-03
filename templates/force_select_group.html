@@ -10,7 +10,7 @@
     利用するグループを選択してください。
   </p>
 
-  <form method="POST" id="groupForm">
+  <form id="groupForm">
     <div class="row g-3">
 
       {% set all_groups = [
@@ -31,9 +31,6 @@
 
     </div>
 
-    <!-- hiddenで配列送信 -->
-    <div id="hiddenInputs"></div>
-
     <button type="submit" class="btn btn-primary mt-4 w-100">
       決定
     </button>
@@ -50,9 +47,7 @@
 
 </div>
 
-<!-- =========================
- モーダル（確認ポップアップ）
-========================= -->
+<!-- モーダル -->
 <div id="confirmModal" class="custom-modal">
   <div class="custom-modal-content">
     <h5 class="fw-bold mb-3">この内容で確定しますか？</h5>
@@ -65,20 +60,6 @@
     </div>
   </div>
 </div>
-
-<style>
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-</style>
 
 <script>
 const max = {{ allowed }};
@@ -95,10 +76,6 @@ const groupMap = {
   sakurazaka: "櫻坂46",
   hinatazaka: "日向坂46"
 };
-
-// 🔥 URLからplan取得
-const urlParams = new URLSearchParams(window.location.search);
-const plan = urlParams.get("plan");
 
 // =========================
 // 選択ロジック
@@ -164,7 +141,8 @@ confirmBtn.addEventListener("click", async () => {
 
   try {
 
-    const res = await fetch("/api/create-checkout-session", {
+    // 🔥 Stripeではなく保存API
+    const res = await fetch("/api/save-groups", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -172,23 +150,17 @@ confirmBtn.addEventListener("click", async () => {
         "X-CSRF-Token": csrfToken
       },
       body: JSON.stringify({
-        plan: plan,
         groups: groups
       })
     });
 
     if (!res.ok) {
-      showTempMessage("サーバーエラー");
+      showTempMessage("保存に失敗しました");
       return;
     }
 
-    const data = await res.json();
-
-    if (data.url) {
-      window.location.href = data.url;
-    } else {
-      showTempMessage(data.error || "決済エラー");
-    }
+    // 成功 → マイページ or トップ
+    window.location.href = "/";
 
   } catch (e) {
     showTempMessage("通信エラー");
@@ -215,4 +187,5 @@ function showTempMessage(msg) {
   setTimeout(() => div.remove(), 2000);
 }
 </script>
+
 {% endblock %}
