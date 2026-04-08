@@ -39,14 +39,14 @@
     </a>
   </div>
 
-  <!-- 一覧（コンパクト） -->
+  <!-- 一覧 -->
   <div class="row row-cols-2 row-cols-md-3 g-2">
 
     {% for want in wants %}
     <div class="col">
       <div class="card shadow-sm p-2 position-relative h-100 small-card">
 
-        <!-- ❌ 削除ボタン（右上） -->
+        <!-- 削除ボタン -->
         <form method="POST"
           action="{{ url_for('want.delete_want', want_id=want.id) }}"
           class="position-absolute top-0 end-0 m-1">
@@ -59,17 +59,24 @@
           </button>
         </form>
 
+        <!-- 無限回収バッジ -->
+        {% if want.is_infinite %}
+        <span class="badge bg-warning text-dark position-absolute bottom-0 end-0 m-1">
+          ∞
+        </span>
+        {% endif %}
+
         <!-- 内容 -->
         <div class="fw-bold text-truncate small">
-          {{ want.member }}
+          {{ want.member or "全メンバー" }}
         </div>
 
         <div class="text-secondary text-truncate small">
-          {{ want.costume }}
+          {{ want.costume or "全衣装" }}
         </div>
 
         <div class="d-flex justify-content-between small mt-1">
-          <span>{{ want.photo_type }}</span>
+          <span>{{ want.photo_type or "全種類" }}</span>
         </div>
 
       </div>

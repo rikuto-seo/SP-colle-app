@@ -1,5 +1,5 @@
 # sakamichi_photo_app/want/routes.py
-from flask import render_template, request, redirect, url_for, flash, abort
+from flask import render_template, request, redirect, url_for, flash, abort, jsonify
 from flask_login import login_required, current_user
 import io, base64, qrcode
 from extensions import db
@@ -9,9 +9,9 @@ from utils.qr import generate_qr_base64
 
 ALLOWED_GROUPS = {"nogizaka", "sakurazaka", "hinatazaka"}
 
-# =========================
-# 一覧
-# =========================
+def normalize(v):
+    return v if v not in ("", None) else None
+
 @want_bp.route('/<group_key>')
 @login_required
 def index(group_key):
@@ -24,10 +24,10 @@ def index(group_key):
         group_key=group_key
     ).all()
 
+    share = WantShare.get_or_create(current_user.id, group_key)
+
     qr_base64 = None
     public_url = None
-
-    share = WantShare.get_or_create(current_user.id, group_key)
 
     if share.is_public:
         public_url = url_for(
@@ -37,9 +37,6 @@ def index(group_key):
             _external=True
         )
         qr_base64 = generate_qr_base64(public_url)
-    else:
-        public_url = None
-        qr_base64 = None
 
     return render_template(
         'want/index.html',
@@ -49,9 +46,7 @@ def index(group_key):
         qr_base64=qr_base64
     )
 
-# =========================
-# 追加
-# =========================
+
 @want_bp.route('/<group_key>/add', methods=['GET', 'POST'])
 @login_required
 def add_want(group_key):
@@ -60,13 +55,21 @@ def add_want(group_key):
         abort(404)
 
     if request.method == 'POST':
+
+        member = normalize(request.form.get("member"))
+        costume = normalize(request.form.get("costume"))
+        photo_type = normalize(request.form.get("photo_type"))
+        is_infinite = bool(request.form.get("is_infinite"))
+
         want = WantPhoto(
             user_id=current_user.id,
             group_key=group_key,
-            member=request.form['member'],
-            costume=request.form['costume'],
-            photo_type=request.form['photo_type']
+            member=member,
+            costume=costume,
+            photo_type=photo_type,
+            is_infinite=is_infinite
         )
+
         db.session.add(want)
 
         try:
@@ -78,25 +81,45 @@ def add_want(group_key):
 
         return redirect(url_for('want.index', group_key=group_key))
 
-    from models import Photo
-
-    photos = Photo.query.filter_by(group_key=group_key).all()
-
-    members = sorted({p.member for p in photos})
-    costumes = sorted({p.costume for p in photos})
-    photo_types = sorted({p.photo_type for p in photos})
-
     return render_template(
         'want/add.html',
-        group_key=group_key,
-        members=members,
-        costumes=costumes,
-        photo_types=photo_types
+        group_key=group_key
     )
 
-# =========================
-# タイプ取得
-# =========================
+@want_bp.route('/get_members')
+@login_required
+def get_members():
+    from models import Photo
+
+    group_key = request.args.get('group')
+
+    members = (
+        db.session.query(Photo.member)
+        .filter_by(group_key=group_key)
+        .distinct()
+        .order_by(Photo.member)
+        .all()
+    )
+
+    return jsonify({'members': [m[0] for m in members]})
+
+@want_bp.route('/get_costumes')
+@login_required
+def get_costumes():
+    from models import Photo
+
+    group_key = request.args.get('group')
+    member = request.args.get('member')
+
+    query = db.session.query(Photo.costume).filter_by(group_key=group_key)
+
+    if member:
+        query = query.filter_by(member=member)
+
+    costumes = query.distinct().order_by(Photo.costume).all()
+
+    return jsonify({'costumes': [c[0] for c in costumes]})
+
 @want_bp.route('/get_types')
 @login_required
 def get_types():
@@ -106,23 +129,18 @@ def get_types():
     member = request.args.get('member')
     costume = request.args.get('costume')
 
-    types = (
-        db.session.query(Photo.photo_type)
-        .filter_by(
-            group_key=group_key,
-            member=member,
-            costume=costume
-        )
-        .distinct()
-        .order_by(Photo.photo_type)
-        .all()
-    )
+    query = db.session.query(Photo.photo_type).filter_by(group_key=group_key)
 
-    return {'types': [t[0] for t in types]}
+    if member:
+        query = query.filter_by(member=member)
 
-# =========================
-# 削除
-# =========================
+    if costume:
+        query = query.filter_by(costume=costume)
+
+    types = query.distinct().order_by(Photo.photo_type).all()
+
+    return jsonify({'types': [t[0] for t in types]})
+
 @want_bp.route('/delete/<int:want_id>', methods=['POST'])
 @login_required
 def delete_want(want_id):
@@ -138,9 +156,6 @@ def delete_want(want_id):
 
     return redirect(url_for('want.index', group_key=group_key))
 
-# =========================
-# 🔥 公開ページ（ここ重要）
-# =========================
 @want_bp.route('/share/<public_uuid>/<group_key>')
 def public_want(public_uuid, group_key):
 
@@ -157,7 +172,7 @@ def public_want(public_uuid, group_key):
         group_key=group_key
     ).all()
 
-    # 🔥 ここ追加：テンプレ対策
+    # 初期化
     for w in wants:
         w.is_owned = False
 
@@ -167,20 +182,22 @@ def public_want(public_uuid, group_key):
     )
 
     if is_check:
-        owned_keys = {
-            (p.member, p.costume, p.photo_type)
-            for p in UserPhoto.query.filter_by(
-                user_id=current_user.id,
-                group_key=group_key
-            ).all()
-        }
+        my_photos = UserPhoto.query.filter_by(
+            user_id=current_user.id,
+            group_key=group_key
+        ).all()
+
+        def is_match(want, photo):
+            if want.member and want.member != photo.member:
+                return False
+            if want.costume and want.costume != photo.costume:
+                return False
+            if want.photo_type and want.photo_type != photo.photo_type:
+                return False
+            return True
 
         for want in wants:
-            want.is_owned = (
-                want.member,
-                want.costume,
-                want.photo_type
-            ) in owned_keys
+            want.is_owned = any(is_match(want, p) for p in my_photos)
 
     return render_template(
         'want/public_base.html',
@@ -191,46 +208,11 @@ def public_want(public_uuid, group_key):
         is_check=is_check
     )
 
-# =========================
-# 🔥 追加：安全なグループ切替用ルート
-# =========================
-@want_bp.route('/share_redirect/<group_key>')
-def public_want_redirect(group_key):
-
-    if group_key not in ALLOWED_GROUPS:
-        abort(404)
-
-    public_uuid = request.view_args.get('public_uuid') or request.args.get('uuid')
-
-    if not public_uuid:
-        return redirect(url_for('photo.index', group_key=group_key))
-
-    return redirect(url_for(
-        'want.public_want',
-        public_uuid=public_uuid,
-        group_key=group_key
-    ))
-
-# =========================
-# 共有設定
-# =========================
 @want_bp.route('/share_setting/<group_key>', methods=['GET', 'POST'])
 @login_required
 def share_setting(group_key):
 
-    share = WantShare.query.filter_by(
-        user_id=current_user.id,
-        group_key=group_key
-    ).first()
-
-    if not share:
-        share = WantShare(
-            user_id=current_user.id,
-            group_key=group_key,
-            is_public=False
-        )
-        db.session.add(share)
-        db.session.commit()
+    share = WantShare.get_or_create(current_user.id, group_key)
 
     if request.method == 'POST':
         share.is_public = not share.is_public
@@ -245,9 +227,6 @@ def share_setting(group_key):
         share=share
     )
 
-# =========================
-# QR
-# =========================
 @want_bp.route('/qr_image/<group_key>')
 @login_required
 def want_qr_image(group_key):
@@ -268,9 +247,6 @@ def want_qr_image(group_key):
         'qr_base64': base64.b64encode(buf.read()).decode()
     }
 
-# =========================
-# トグル
-# =========================
 @want_bp.route('/share_toggle/<group_key>', methods=['POST'])
 @login_required
 def toggle_want_share(group_key):

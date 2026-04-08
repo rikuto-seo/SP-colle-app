@@ -6,9 +6,6 @@ from sqlalchemy import CheckConstraint, Index, event
 from extensions import db
 
 
-# =========================
-# Photo master
-# =========================
 class Photo(db.Model):
     __tablename__ = "photo"
 
@@ -28,9 +25,6 @@ class Photo(db.Model):
         Index('idx_photo_group', 'group_key')
     )
 
-# =========================
-# User
-# =========================
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
 
@@ -226,17 +220,11 @@ class User(UserMixin, db.Model):
         db.session.add(share)
         db.session.commit()
 
-# =========================
-# 🔥 自動正規化（超重要）
-# =========================
 @event.listens_for(User, "before_insert")
 @event.listens_for(User, "before_update")
 def receive_before_save(mapper, connection, target):
     target.normalize_groups()
 
-# =========================
-# UserPhoto
-# =========================
 class UserPhoto(db.Model):
     __tablename__ = "user_photos"
 
@@ -285,9 +273,6 @@ class UserPhoto(db.Model):
         Index('idx_userphoto_user', 'user_id')
     )
 
-# =========================
-# WantPhoto
-# =========================
 class WantPhoto(db.Model):
     __tablename__ = 'want_photos'
 
@@ -307,6 +292,8 @@ class WantPhoto(db.Model):
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    is_infinite = db.Column(db.Boolean, default=False, nullable=False)
+    
     user = db.relationship('User', backref='want_list')
 
     __table_args__ = (
@@ -315,9 +302,6 @@ class WantPhoto(db.Model):
         ),
     )
 
-# =========================
-# WantShare
-# =========================
 class WantShare(db.Model):
     __tablename__ = 'want_shares'
 

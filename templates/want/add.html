@@ -24,23 +24,32 @@
     <div class="card-body">
 
       <form method="POST">
-
-        <!-- ★ CSRF追加 -->
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
+        <!-- メンバー -->
         <div class="mb-3">
           <label class="form-label fw-bold">メンバー</label>
           <select name="member" id="member"></select>
         </div>
 
+        <!-- 衣装 -->
         <div class="mb-3">
           <label class="form-label fw-bold">衣装</label>
           <select name="costume" id="costume"></select>
         </div>
 
-        <div class="mb-4">
+        <!-- 種類 -->
+        <div class="mb-3">
           <label class="form-label fw-bold">種類</label>
           <select name="photo_type" id="photo_type"></select>
+        </div>
+
+        <!-- 無限回収 -->
+        <div class="form-check mb-4">
+          <input class="form-check-input" type="checkbox" name="is_infinite" id="infinite">
+          <label class="form-check-label fw-bold">
+            無限回収（メンバーのみで全対象）
+          </label>
         </div>
 
         <button type="submit" class="btn btn-success w-100 fw-bold">
@@ -61,10 +70,10 @@
 </div>
 
 <style>
-  .section-title {
-    background-color: var(--bs-secondary-bg);
-    color: var(--bs-body-color);
-  }
+.section-title {
+  background-color: var(--bs-secondary-bg);
+  color: var(--bs-body-color);
+}
 </style>
 
 <!-- Tom Select -->
@@ -72,136 +81,120 @@
 <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
 
-    const groupKey = document.getElementById('group_key').value;
+  const groupKey = document.getElementById('group_key').value;
 
-    // =========================
-    // TomSelect初期化
-    // =========================
-    const memberTS = new TomSelect("#member", {
-      create: false,
-      maxItems: 1,
-      placeholder: "メンバーを選択"
+  const ANY_OPTION = { value: "", text: "指定しない（すべて）" };
+
+  // =========================
+  // TomSelect初期化
+  // =========================
+  const memberTS = new TomSelect("#member", {
+    create: false,
+    maxItems: 1,
+    placeholder: "指定しない（すべて）"
+  });
+
+  const costumeTS = new TomSelect("#costume", {
+    create: false,
+    maxItems: 1,
+    placeholder: "指定しない（すべて）"
+  });
+
+  const typeTS = new TomSelect("#photo_type", {
+    create: false,
+    maxItems: 1,
+    placeholder: "指定しない（すべて）"
+  });
+
+  // =========================
+  // メンバー取得
+  // =========================
+  fetch(`/get_members?group=${encodeURIComponent(groupKey)}`)
+    .then(res => res.json())
+    .then(data => {
+
+      memberTS.clearOptions();
+      memberTS.addOption(ANY_OPTION);
+
+      data.members.forEach(m => {
+        memberTS.addOption({ value: m, text: m });
+      });
+
+      memberTS.refreshOptions(false);
     });
 
-    const costumeTS = new TomSelect("#costume", {
-      create: false,
-      maxItems: 1,
-      placeholder: "衣装を選択"
-    });
+  // =========================
+  // 衣装取得（memberなしでも取得）
+  // =========================
+  memberTS.on("change", (member) => {
 
-    const typeTS = new TomSelect("#photo_type", {
-      create: false,
-      maxItems: 1,
-      placeholder: "種類を選択"
-    });
+    costumeTS.clear();
+    costumeTS.clearOptions();
 
-    // 初期状態
-    costumeTS.disable();
-    typeTS.disable();
-
-    // =========================
-    // メンバー取得
-    // =========================
-    fetch(`/get_members?group=${encodeURIComponent(groupKey)}`)
+    fetch(`/get_costumes?group=${encodeURIComponent(groupKey)}&member=${encodeURIComponent(member || "")}`)
       .then(res => res.json())
       .then(data => {
 
-        memberTS.clearOptions();
+        costumeTS.addOption(ANY_OPTION);
 
-        memberTS.addOption({ value: "", text: "選択してください" });
-
-        data.members.forEach(m => {
-          memberTS.addOption({ value: m, text: m });
+        data.costumes.forEach(c => {
+          costumeTS.addOption({ value: c, text: c });
         });
 
-        memberTS.refreshOptions(false);
+        costumeTS.refreshOptions(false);
+      })
+      .catch(err => {
+        console.error("衣装取得失敗", err);
       });
-
-    // =========================
-    // メンバー選択 → 衣装
-    // =========================
-    memberTS.on("change", (member) => {
-
-      // リセット
-      costumeTS.clear();
-      costumeTS.clearOptions();
-      costumeTS.disable();
-
-      typeTS.clear();
-      typeTS.clearOptions();
-      typeTS.disable();
-
-      if (!member) return;
-
-      costumeTS.addOption({ value: "", text: "読み込み中..." });
-      costumeTS.refreshOptions(false);
-
-      fetch(`/get_costumes?group=${encodeURIComponent(groupKey)}&member=${encodeURIComponent(member)}`)
-        .then(res => res.json())
-        .then(data => {
-
-          costumeTS.clearOptions();
-
-          costumeTS.addOption({ value: "", text: "選択してください" });
-
-          data.costumes.forEach(c => {
-            costumeTS.addOption({ value: c, text: c });
-          });
-
-          costumeTS.enable();
-          costumeTS.refreshOptions(false);
-        })
-        .catch(err => {
-          console.error("衣装取得失敗", err);
-        });
-    });
-
-    // =========================
-    // 衣装選択 → 種類
-    // =========================
-    costumeTS.on("change", (costume) => {
-
-      typeTS.clear();
-      typeTS.clearOptions();
-      typeTS.disable();
-
-      if (!costume) return;
-
-      typeTS.addOption({ value: "", text: "読み込み中..." });
-      typeTS.refreshOptions(false);
-
-      fetch(`/get_types?group=${encodeURIComponent(groupKey)}&member=${encodeURIComponent(memberTS.getValue())}&costume=${encodeURIComponent(costume)}`)
-        .then(res => res.json())
-        .then(data => {
-
-          const TYPE_LABEL_MAP = {
-            "04": "ヨリ",
-            "05": "チュウ",
-            "06": "ヒキ"
-          };
-
-          typeTS.clearOptions();
-
-          typeTS.addOption({ value: "", text: "選択してください" });
-
-          data.types.forEach(t => {
-            typeTS.addOption({
-              value: t,
-              text: TYPE_LABEL_MAP[t] || t
-            });
-          });
-
-          typeTS.enable();
-          typeTS.refreshOptions(false);
-        })
-        .catch(err => {
-          console.error("type取得失敗", err);
-        });
-    });
-
   });
+
+  // =========================
+  // 種類取得（完全独立）
+  // =========================
+  costumeTS.on("change", (costume) => {
+
+    typeTS.clear();
+    typeTS.clearOptions();
+
+    fetch(`/get_types?group=${encodeURIComponent(groupKey)}&member=${encodeURIComponent(memberTS.getValue() || "")}&costume=${encodeURIComponent(costume || "")}`)
+      .then(res => res.json())
+      .then(data => {
+
+        const TYPE_LABEL_MAP = {
+          "04": "ヨリ",
+          "05": "チュウ",
+          "06": "ヒキ"
+        };
+
+        typeTS.addOption(ANY_OPTION);
+
+        data.types.forEach(t => {
+          typeTS.addOption({
+            value: t,
+            text: TYPE_LABEL_MAP[t] || t
+          });
+        });
+
+        typeTS.refreshOptions(false);
+      })
+      .catch(err => {
+        console.error("type取得失敗", err);
+      });
+  });
+
+  // =========================
+  // 無限回収チェック時
+  // =========================
+  document.getElementById("infinite").addEventListener("change", (e) => {
+    if (e.target.checked) {
+      costumeTS.clear();
+      typeTS.clear();
+    }
+  });
+
+});
 </script>
 
 {% endblock %}
