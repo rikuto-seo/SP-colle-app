@@ -292,8 +292,6 @@ class WantPhoto(db.Model):
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    is_infinite = db.Column(db.Boolean, default=False, nullable=False)
-    
     user = db.relationship('User', backref='want_list')
 
     __table_args__ = (
