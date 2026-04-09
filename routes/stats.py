@@ -6,7 +6,7 @@ from services.photo_service import load_required_types, get_missing_photos
 from services.stats_service import get_ordered_members, get_all_costumes_in_order
 stats_bp = Blueprint('stats', __name__)
 
-# グループごとの設定を一元管理
+
 GROUP_CONFIG = {
     'nogizaka': {'name': '乃木坂46', 'color': 'bg-nogizaka'},
     'sakurazaka': {'name': '櫻坂46', 'color': 'bg-sakurazaka'},
@@ -27,40 +27,31 @@ def get_group_conf(group_key):
 def stats(group_key):
     conf = get_group_conf(group_key)
 
-    # 共有状態の取得
     share_attr = f"is_{group_key}_shared"
     is_shared = getattr(current_user, share_attr, False)
 
-    # --- 1. CSVからマスターデータ（全写真リスト）を取得 ---
-    # required_dict[member][costume] = {type1, type2, ...}
     required_dict = load_required_types(group_key)
 
-    # --- 2. DBからユーザーの所持データを取得 ---
     user_photos = UserPhoto.query.filter_by(
         user_id=current_user.id, group_key=group_key).all()
 
     total_photos = sum(p.quantity for p in user_photos)
 
-    # 統計用の変数
-    member_stats = defaultdict(int)         # メンバーごとの純粋な所持枚数
-    type_stats = defaultdict(int)           # ヨリ・チュウなどのタイプ別枚数
-    # 判定用: {member: {costume: {types}}}
+    member_stats = defaultdict(int) 
+    type_stats = defaultdict(int) 
     owned_dict = defaultdict(lambda: defaultdict(set))
 
     for p in user_photos:
         m, c, t = p.member.strip(), p.costume.strip(), p.photo_type.strip()
-        # 枚数集計
+
         member_stats[m] += p.quantity
         type_stats[t] += p.quantity
-        # コンプ判定用にセットに追加
         owned_dict[m][c].add(t)
 
-    # --- 3. コンプリート・進捗率の計算 ---
     comp_stats = {}
     comp_ranking_list = []
     costume_progress_map = defaultdict(lambda: {"owned": 0, "total": 0})
 
-    # ★ 追加：正しい順番
     ordered_members = get_ordered_members(group_key)
 
     for member in ordered_members:
@@ -97,14 +88,11 @@ def stats(group_key):
             'complete_count': member_comp_count
         })
 
-    # --- 4. 表示用データの整形 ---
-    # コンプ数ランキング
     comp_ranking = sorted(
         comp_ranking_list, key=lambda x: x['complete_count'], reverse=True)
 
     total_complete = sum(x['complete_count'] for x in comp_ranking_list)
 
-    # 衣装別進捗リスト
     ordered_costumes = get_all_costumes_in_order(group_key)
 
     progress_list = []
