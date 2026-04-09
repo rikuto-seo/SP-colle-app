@@ -357,8 +357,10 @@ def upgrade():
     )
 
 @user_bp.route("/payment-success")
-@login_required
 def payment_success():
+    if not current_user.is_authenticated:
+        return redirect(url_for("auth.login"))
+
     res = make_response(render_template("payment_success.html"))
 
     res.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
