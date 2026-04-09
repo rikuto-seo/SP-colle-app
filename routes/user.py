@@ -15,9 +15,6 @@ user_bp = Blueprint('user', __name__)
 
 ALLOWED_GROUPS = ['nogizaka', 'sakurazaka', 'hinatazaka']
 
-# =========================
-# 🔥 プランチェック関数（追加）
-# =========================
 def is_free():
     return current_user.plan_type == "free"
 
@@ -30,14 +27,10 @@ def is_standard():
 def is_premium():
     return current_user.plan_type == "premium"
 
-# =========================
-# 🔥 マイページ
-# =========================
 @user_bp.route("/mypage")
 @login_required
 def mypage():
 
-    # 🔥 プラン整合性チェック
     current_user.normalize_groups()
     db.session.commit()
 
@@ -53,9 +46,6 @@ def mypage():
     if selected_group not in selected_groups:
         selected_group = selected_groups[0]
 
-    # -------------------------
-    # 課金
-    # -------------------------
     next_billing = None
     cancel_at_period_end = False
 
@@ -75,16 +65,12 @@ def mypage():
         except Exception as e:
             current_app.logger.error(f"Stripe取得失敗: {e}")
 
-    # -------------------------
-    # QR生成
-    # -------------------------
     def make_qr(group_key):
         share = WantShare.query.filter_by(
             user_id=current_user.id,
             group_key=group_key
         ).first()
 
-        # 🔥 なければ作る（重要）
         if not share:
             share = WantShare(
                 user_id=current_user.id,
@@ -114,9 +100,6 @@ def mypage():
 
         qr_codes[g] = make_qr(g) if share.is_public else ""
 
-    # -------------------------
-    # share状態
-    # -------------------------
     share_statuses = {}
     for g in selected_groups:
         share = WantShare.query.filter_by(
@@ -126,9 +109,6 @@ def mypage():
 
         share_statuses[g] = share.is_public if share else False
 
-    # -------------------------
-    # アイコン
-    # -------------------------
     if current_user.icon_url:
         icon_url = f"{current_user.icon_url}?v={int(time.time())}"
     else:
@@ -146,16 +126,12 @@ def mypage():
         next_billing=next_billing,
         cancel_at_period_end=cancel_at_period_end,
 
-        # 👇 追加（テンプレで使える）
         is_free=is_free(),
         is_lite=is_lite(),
         is_standard=is_standard(),
         is_premium=is_premium()
     )
 
-# -------------------------
-# アイコン設定
-# -------------------------
 @user_bp.route('/mypage/icon', methods=['GET', 'POST'])
 @login_required
 def icon_setting():
@@ -179,7 +155,6 @@ def icon_setting():
 
             bucket = storage.bucket('sakamichi-photo-app.firebasestorage.app')
 
-            # 新しいファイル
             filename = f'icons/{current_user.firebase_uid}_{int(time.time())}.png'
             blob = bucket.blob(filename)
 
@@ -188,7 +163,6 @@ def icon_setting():
 
             new_icon_url = blob.public_url
 
-            # 古い画像削除
             if current_user.icon_url:
                 try:
                     old_path = current_user.icon_url.split('.com/')[1]
@@ -247,7 +221,6 @@ def change_password():
             return redirect(url_for('user.change_password'))
 
         try:
-            # Firebase Authentication のパスワードを更新
             firebase_auth.update_user(
                 uid=current_user.firebase_uid,
                 password=new_password
@@ -272,7 +245,6 @@ def edit_profile():
         instagram_id = request.form.get('instagram_id', '').strip()
 
         try:
-            # ユーザー名更新
             if new_name:
                 firebase_auth.update_user(
                     current_user.firebase_uid,
@@ -280,11 +252,9 @@ def edit_profile():
                 )
                 current_user.username = new_name
 
-            # Twitter（入力がある場合のみ更新）
             if twitter_id != '':
                 current_user.twitter_id = twitter_id.replace('@', '')
 
-            # Instagram（入力がある場合のみ更新）
             if instagram_id != '':
                 current_user.instagram_id = instagram_id
 
@@ -303,8 +273,6 @@ def edit_profile():
 @user_bp.route('/confirm_delete_account', methods=['GET', 'POST'])
 @login_required
 def confirm_delete_account():
-    # Firebase移行後はセッション等での再認証が望ましいですが、
-    # 一旦、最終確認ページへの誘導のみ行います。
     if request.method == 'POST':
         return redirect(url_for('user.confirm_delete_final'))
     return render_template('confirm_delete_account.html')
@@ -317,18 +285,17 @@ def confirm_delete_final():
             current_app.root_path, 'static', 'uploads', 'icons', f'user_{current_user.firebase_uid}'
         )
         try:
-            # 1. Firebase Authから削除
             firebase_auth.delete_user(current_user.firebase_uid)
-            # 2. フォルダ削除
+
             if os.path.exists(user_folder):
                 shutil.rmtree(user_folder)
-            # 3.サブスク解約
+
             if current_user.stripe_subscription_id:
                 try:
                     stripe.Subscription.delete(current_user.stripe_subscription_id)
                 except Exception as e:
                     current_app.logger.error(f"Stripe解約失敗: {e}")
-            # 4. DBから削除
+
             db.session.delete(current_user)
             db.session.commit()
 
@@ -341,9 +308,6 @@ def confirm_delete_final():
 
     return render_template('confirm_delete_final.html')
 
-# =========================
-# 🔥 share切替（完全修正版）
-# =========================
 @user_bp.route('/toggle_share/<group_key>', methods=['POST'])
 @login_required
 def toggle_share(group_key):
@@ -351,12 +315,10 @@ def toggle_share(group_key):
     if group_key not in ALLOWED_GROUPS:
         abort(404)
 
-    # 🔥 追加：選択グループチェック
     selected_groups = current_user.get_selected_groups()
     if group_key not in selected_groups:
         abort(403)
 
-    # 🔥 追加：プラン制限チェック
     if len(selected_groups) > current_user.get_allowed_group_count():
         abort(403)
 
@@ -379,9 +341,6 @@ def toggle_share(group_key):
 
     return redirect(url_for('user.mypage', group=group_key))
 
-# -------------------------
-# ダークモード
-# -------------------------
 @user_bp.route('/toggle_dark_mode', methods=['POST'])
 @login_required
 def toggle_dark_mode():
@@ -389,9 +348,6 @@ def toggle_dark_mode():
     db.session.commit()
     return redirect(request.referrer or url_for('user.mypage'))
 
-# =========================
-# 🔥 アップグレードページ
-# =========================
 @user_bp.route('/upgrade')
 @login_required
 def upgrade():
@@ -400,24 +356,17 @@ def upgrade():
         current_plan=current_user.plan_type
     )
 
-# =========================
-# 中継ページ
-# =========================
 @user_bp.route("/payment-success")
 @login_required
 def payment_success():
     res = make_response(render_template("payment_success.html"))
 
-    # 🔥 キャッシュ禁止（超重要）
     res.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     res.headers["Pragma"] = "no-cache"
     res.headers["Expires"] = "0"
 
     return res
 
-# =========================
-# 🔥 グループ選択
-# =========================
 @user_bp.route('/select-group', methods=['GET', 'POST'])
 @login_required
 def select_group():
@@ -440,9 +389,6 @@ def select_group():
 
     return render_template('select_group.html', force_select_mode=True)
 
-# =========================
-# 🔥 強制選択
-# =========================
 @user_bp.route("/force-select-group", methods=["GET", "POST"])
 @login_required
 def force_group_select():
@@ -450,7 +396,6 @@ def force_group_select():
     allowed = current_user.get_allowed_group_count()
     current_selected = current_user.get_selected_groups()
 
-    # 🔥 追加：すでに正常なら追い出す
     if len(current_selected) == allowed:
         return redirect(url_for("user.mypage"))
 
@@ -476,9 +421,6 @@ def force_group_select():
         current_selected=current_selected
     )
 
-# =========================
-# 🔥 ログアウト
-# =========================
 @user_bp.route('/logout')
 @login_required
 def logout():

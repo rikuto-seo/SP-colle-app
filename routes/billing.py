@@ -40,6 +40,8 @@ def create_checkout_session():
             current_user.stripe_customer_id = customer_id
             db.session.commit()
 
+        domain = request.host_url.rstrip("/")
+
         session = stripe.checkout.Session.create(
             customer=customer_id,
             line_items=[{
@@ -61,8 +63,8 @@ def create_checkout_session():
                 "target_plan": plan
             },
 
-            success_url=url_for("user.payment_success", _external=True) + f"?plan={plan}",
-            cancel_url=url_for("user.upgrade", _external=True),
+            success_url=f"{domain}/payment-success?plan={plan}",
+            cancel_url=f"{domain}/upgrade",
         )
 
         return jsonify({"url": session.url})

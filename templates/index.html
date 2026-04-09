@@ -14,10 +14,8 @@
 
   <div class="col-12 position-relative">
 
-    <!-- 🔍 検索カード -->
     <div class="card shadow-sm bg-body text-body position-relative">
 
-      <!-- 🔒 オーバーレイ -->
       {% if is_search_locked %}
       <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
         style="background: rgba(255,255,255,0.6); z-index:10; backdrop-filter: blur(2px);">
@@ -35,7 +33,6 @@
       </div>
       {% endif %}
 
-      <!-- 🔍 中身 -->
       <div class="card-body p-3"
         style="{% if is_search_locked %}filter: blur(6px); pointer-events:none; user-select:none;{% endif %}">
 
@@ -84,9 +81,6 @@
 
   <br>
 
-  <!-- ========================= -->
-  <!-- 🧩 カード（無制限表示） -->
-  <!-- ========================= -->
   <div class="row row-cols-2 row-cols-md-3 g-2">
 
     {% for card in cards %}
@@ -130,9 +124,6 @@
 </div>
 </div>
 
-<!-- ========================= -->
-<!-- ページネーション -->
-<!-- ========================= -->
 <nav class="mt-4">
   <ul class="pagination justify-content-center">
 
@@ -172,7 +163,6 @@
   </ul>
 </nav>
 
-<!-- モーダル -->
 <div class="modal fade" id="detailModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -206,10 +196,7 @@
       });
     });
   });
-  
-  // =========================
-  // モーダル（グループ詳細）
-  // =========================
+
   function openGroupModal(card) {
     const container = document.getElementById("detailList");
     container.innerHTML = "";
@@ -281,9 +268,6 @@
     ).show();
   }
 
-  // =========================
-  // 削除（確認付き）
-  // =========================
   function deletePhoto(id) {
     if (!confirm("本当に削除しますか？")) return;
 

@@ -11,7 +11,6 @@
   'hinatazaka': '日向坂46'
   } %}
 
-  <!-- タイトル -->
   <div class="text-center mb-4">
     <h1 class="fw-bold text-black p-3 rounded section-title">
       {{ owner.username }} さんの欲しい写真
@@ -21,7 +20,6 @@
     </div>
   </div>
 
-  <!-- 操作ボタン -->
   <div class="d-flex flex-column flex-md-row justify-content-center mb-3 gap-2">
 
     <button id="tradeBtn" class="btn btn-success btn-sm w-100 w-md-auto">
@@ -54,17 +52,14 @@
 
   </div>
 
-  <!-- トレード結果 -->
   <div id="tradeResult" class="mt-4"></div>
 
-  <!-- カード表示 -->
   <div class="row row-cols-2 row-cols-md-3 g-2 mt-2">
 
     {% for want in wants %}
     <div class="col">
       <div class="card shadow-sm p-2 h-100 bg-body text-body position-relative">
 
-        <!-- 無限回収バッジ -->
         {% if want.is_infinite %}
         <span class="badge bg-warning text-dark position-absolute top-0 end-0 m-1">
           ∞
@@ -124,9 +119,6 @@ document.getElementById("tradeBtn")?.addEventListener("click", () => {
 
       let html = "";
 
-      // =========================
-      // 交換成立候補
-      // =========================
       html += `<h4 class="mt-4 text-success">交換成立候補</h4>`;
 
       if (data.mutual.length === 0) {
@@ -159,9 +151,6 @@ document.getElementById("tradeBtn")?.addEventListener("click", () => {
         });
       }
 
-      // =========================
-      // あなたが出せる
-      // =========================
       html += `<h5 class="mt-4">あなたが出せる</h5>`;
       if (data.i_can_give.length === 0) {
         html += `<p class="text-muted">なし</p>`;
@@ -181,9 +170,6 @@ document.getElementById("tradeBtn")?.addEventListener("click", () => {
         html += `</div>`;
       }
 
-      // =========================
-      // 相手が出せる
-      // =========================
       html += `<h5 class="mt-4">相手が出せる</h5>`;
       if (data.they_can_give.length === 0) {
         html += `<p class="text-muted">なし</p>`;

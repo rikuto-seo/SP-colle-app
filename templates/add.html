@@ -75,7 +75,6 @@
   </div>
 </div>
 
-<!-- Tom Select -->
 <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 
@@ -88,12 +87,10 @@
     const costumeHidden = document.getElementById('costume-hidden');
     const toggle = document.getElementById("continuous_mode");
 
-    // ------------------------
-    // TomSelect初期化
-    // ------------------------
     const memberTS = new TomSelect("#member", {
       create: false,
       maxItems: 1,
+      maxOptions : null,
       placeholder: "メンバーを選択",
       onChange: value => memberHidden.value = value
     });
@@ -110,9 +107,6 @@
       maxItems: 1
     });
 
-    // ------------------------
-    // トグル保存
-    // ------------------------
     const saved = localStorage.getItem("continuous_mode");
     if (saved === "true") toggle.checked = true;
 
@@ -120,9 +114,6 @@
       localStorage.setItem("continuous_mode", toggle.checked);
     });
 
-    // ------------------------
-    // メンバー取得
-    // ------------------------
     fetch(`/get_members?group=${encodeURIComponent(groupKey)}`)
       .then(res => res.json())
       .then(data => {
@@ -143,9 +134,6 @@
         }
       });
 
-    // ------------------------
-    // メンバー変更
-    // ------------------------
     memberTS.on("change", function (member) {
 
       costumeTS.clear();
@@ -175,9 +163,6 @@
         });
     });
 
-    // ------------------------
-    // 衣装変更
-    // ------------------------
     costumeTS.on("change", function (costume) {
 
       typeTS.clear();

@@ -17,10 +17,9 @@ def load_required_types(group_key):
 
         with open(os.path.join(base, filename), encoding="utf-8") as f:
             reader = csv.reader(f)
-            next(reader, None)  # ヘッダースキップ
+            next(reader, None)
 
             for row in reader:
-                # ✅ 列数チェック
                 if len(row) < 3:
                     continue
 
@@ -33,7 +32,7 @@ def load_required_types(group_key):
     return required
 
 def get_photos_by_group(group_key):
-    folder_path = f'members_csv/{group_key}'  # 例: members_csv/hinatazaka
+    folder_path = f'members_csv/{group_key}'
     photos_by_member = {}
 
     for filename in os.listdir(folder_path):
@@ -61,11 +60,8 @@ def get_missing_photos(search_member='', search_costume='', group_key='hinatazak
     CSVを正として未所持写真を算出する
     """
 
-    # ① CSVから「本来存在する全写真」を取得
     required = load_required_types(group_key)
-    # required[member][costume] = set(photo_type)
 
-    # ② ユーザーが所持している写真（文字列タプル）
     owned = {
         (
             p.member.strip(),
@@ -78,18 +74,15 @@ def get_missing_photos(search_member='', search_costume='', group_key='hinatazak
         ).all()
     }
 
-    # ③ 未所持抽出
     grouped = defaultdict(list)
 
     for member, costumes in required.items():
 
-        # メンバー検索
         if search_member and search_member not in member:
             continue
 
         for costume, types in costumes.items():
 
-            # 衣装検索
             if search_costume and search_costume not in costume:
                 continue
 
