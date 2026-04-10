@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}初回登録{% endblock %}
+
+{% block content %}
+<div class="container mt-5" style="max-width:600px;">
+
+  <div class="card p-4 shadow-sm">
+
+    <h2 class="text-center mb-4">初回登録</h2>
+
+    <div id="errorMessage" class="alert alert-danger d-none"></div>
+
+    <div id="step1">
+      <h5 class="mb-3">ユーザー名を入力</h5>
+
+      <input type="text" id="username" class="form-control mb-3" placeholder="坂道太郎">
+
+      <div class="d-grid">
+        <button id="toStep2" class="btn btn-primary">次へ</button>
+      </div>
+    </div>
+
+    <div id="step2" class="d-none">
+      <h5 class="mb-3">アイコン設定</h5>
+
+      <input type="file" id="iconInput" class="form-control mb-3">
+
+      <div class="text-center mb-3">
+        <img id="preview" style="max-width:200px; display:none;">
+      </div>
+
+      <div class="d-grid gap-2">
+        <button id="uploadIcon" class="btn btn-success">保存して次へ</button>
+        <button id="skipIcon" class="btn btn-secondary">スキップ</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import {
+  getAuth,
+  isSignInWithEmailLink,
+  signInWithEmailLink
+} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSy...",
+  authDomain: "sakamichi-photo-app.firebaseapp.com",
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+let idToken = null;
+
+async function handleEmailLink() {
+  if (isSignInWithEmailLink(auth, window.location.href)) {
+    let email = localStorage.getItem("emailForSignIn");
+
+    if (!email) {
+      email = prompt("メールアドレスを入力してください");
+    }
+
+    const result = await signInWithEmailLink(auth, email, window.location.href);
+    const user = result.user;
+
+    idToken = await user.getIdToken();
+
+    await fetch("/api/create-user", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + idToken
+      }
+    });
+
+    localStorage.removeItem("emailForSignIn");
+  }
+}
+
+await handleEmailLink();
+
+document.getElementById("toStep2").addEventListener("click", async () => {
+  const username = document.getElementById("username").value;
+
+  if (!username) {
+    alert("ユーザー名を入力してください");
+    return;
+  }
+
+  const res = await fetch("/api/setup/username", {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + idToken,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ username })
+  });
+
+  if (!res.ok) {
+    alert("保存に失敗しました");
+    return;
+  }
+
+  document.getElementById("step1").classList.add("d-none");
+  document.getElementById("step2").classList.remove("d-none");
+});
+
+const iconInput = document.getElementById("iconInput");
+const preview = document.getElementById("preview");
+
+let base64Image = null;
+
+iconInput.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    preview.src = reader.result;
+    preview.style.display = "block";
+    base64Image = reader.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById("uploadIcon").addEventListener("click", async () => {
+
+  if (base64Image) {
+    await fetch("/api/setup/icon", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + idToken,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        image: base64Image
+      })
+    });
+  }
+
+  window.location.href = "/select-group";
+});
+
+document.getElementById("skipIcon").addEventListener("click", () => {
+  window.location.href = "/select-group";
+});
+
+</script>
+{% endblock %}

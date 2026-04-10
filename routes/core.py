@@ -49,10 +49,6 @@ def group_switch(group_key):
         flash("このグループは有料プランで利用できます", "warning")
         return redirect(url_for("user.upgrade"))
 
-    current_user.set_selected_groups([group_key])
-    current_user.normalize_groups()
-    db.session.commit()
-
     return redirect(url_for('photo.index', group_key=group_key))
 
 @core_bp.route('/privacy')

@@ -32,13 +32,14 @@
         初期設定
     </div>
     {% else %}
-    <!-- ナビバー -->
     <div class="{% if group_key == 'hinatazaka' %}navbar-hinata
     {% elif group_key == 'sakurazaka' %}navbar-sakura
     {% elif group_key == 'nogizaka' %}navbar-nogi
     {% else %}navbar-default{% endif %} p-3 d-flex justify-content-between align-items-center flex-wrap">
 
-        <button id="menu-button">☰</button>
+        <button id="menu-button">
+            <i class="fa-solid fa-bars"></i>
+        </button>
         <div style="font-size: 20px; font-weight: bold;">
             坂道グループ 生写真アプリ
         </div>
@@ -47,7 +48,6 @@
     {% endif %}
 
     {% if not force_select_mode %}
-    <!-- サイドバー -->
     <div id="sidebar">
         <div class="sidebar-main">
             <h3>メニュー</h3>
@@ -87,12 +87,10 @@
             {% set target_url = url_for('core.group_switch', group_key=key) %}
 
             {% if can_access %}
-            <!-- 通常リンク -->
             <a href="{{ target_url }}">
                 {{ name }}
             </a>
             {% else %}
-            <!-- 🔒 ロック状態 -->
             <a href="{{ url_for('user.upgrade') }}" class="text-muted" style="pointer-events:auto;">
                 <i class="fas fa-lock me-1"></i>{{ name }}
             </a>
@@ -137,7 +135,6 @@
     </div>
     {% endif %}
 
-    <!-- メイン -->
     <div class="container mt-4 {{ group_color }}">
         {% block content %}
         {% endblock %}
@@ -153,7 +150,6 @@
         <i class="fas fa-arrow-up"></i>
     </button>
 
-    <!-- JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {

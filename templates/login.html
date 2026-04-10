@@ -50,7 +50,6 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
 
-  // エラーメッセージを日本語に変換する関数
   function getJapaneseMessage(errorCode) {
     switch (errorCode) {
       case "auth/invalid-email":
@@ -78,7 +77,6 @@
     const loginSpinner = document.getElementById("loginSpinner");
     const errorDiv = document.getElementById("errorMessage");
 
-    // UIのリセット
     errorDiv.classList.add("d-none");
     btn.disabled = true;
     loginText.textContent = "ログイン中...";
@@ -88,11 +86,9 @@
     const password = document.getElementById("password").value;
 
     try {
-      // 1. Firebase Auth
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const token = await userCredential.user.getIdToken();
 
-      // 2. Python Backend Sync
       const res = await fetch("/api/me", {
         method: "POST",
         headers: {
@@ -111,11 +107,9 @@
     } catch (err) {
       console.error(err);
 
-      // エラー表示
       errorDiv.textContent = getJapaneseMessage(err.code) || err.message;
       errorDiv.classList.remove("d-none");
 
-      // UIを元に戻す
       btn.disabled = false;
       loginText.textContent = "ログイン";
       loginSpinner.classList.add("d-none");

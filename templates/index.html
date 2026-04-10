@@ -21,7 +21,9 @@
         style="background: rgba(255,255,255,0.6); z-index:10; backdrop-filter: blur(2px);">
 
         <div class="text-center p-3 bg-white rounded shadow">
-          <h6 class="fw-bold mb-1">🔒 プレミアム機能</h6>
+          <h6 class="fw-bold mb-1">
+            <i class="fa-solid fa-lock me-1"></i> プレミアム機能
+          </h6>
           <p class="text-muted small mb-2">
             検索・メンバー・衣装フィルターはアップグレードで解放されます
           </p>
@@ -67,7 +69,7 @@
             </div>
 
             <div class="col-12 mt-1">
-              <button class="btn btn-outline-secondary w-100 mb-1">検索</button>
+              <button type="submit" class="btn btn-outline-secondary w-100 mb-1">検索</button>
               <a href="{{ url_for('photo.index', group_key=group_key) }}" class="btn btn-danger w-100 btn-sm">条件クリア</a>
             </div>
 
@@ -90,7 +92,7 @@
 
         {% if card.has_favorite %}
         <div style="position:absolute; top:6px; right:8px; font-size:16px;">
-          ⭐
+          <i class="fa-solid fa-star text-warning"></i>
         </div>
         {% endif %}
 
@@ -214,7 +216,7 @@
 
                 <div class="d-flex justify-content-between">
                     <strong>${d.type}</strong>
-                    ${d.is_favorite ? '★' : ''}
+                    ${d.is_favorite ? '<i class="fa-solid fa-star text-warning"></i>' : ''}
                 </div>
 
                 <div>所持数</div>

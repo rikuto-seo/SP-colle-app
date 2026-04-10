@@ -4,18 +4,13 @@
 {% block content %}
 <div class="container mt-5" style="max-width: 800px;">
 
-  <!-- タイトル -->
   <div class="text-center mb-4">
     <h1 class="display-5 fw-bold text-black p-3 rounded section-title">マイページ</h1>
   </div>
 
-  <!-- =========================
-     プロフィール + プラン統合
-========================== -->
   <div class="card mb-4 border-warning">
     <div class="card-body d-flex justify-content-between align-items-center">
 
-      <!-- 左：プロフィール -->
       <div class="d-flex align-items-center gap-3">
         <img src="{{ icon_url }}" style="width:64px;height:64px;object-fit:cover;border-radius:50%;">
 
@@ -42,19 +37,18 @@
         </div>
       </div>
 
-      <!-- 右：プラン -->
       <div class="text-end">
         <div class="text-muted small">現在のプラン</div>
 
         <div class="fw-bold">
           {% if current_user.plan_type == "free" %}
-          無料プラン
+          無料
           {% elif current_user.plan_type == "lite" %}
-          ライトプラン
+          ライト
           {% elif current_user.plan_type == "standard" %}
-          スタンダードプラン
+          スタンダード
           {% else %}
-          プレミアムプラン
+          プレミアム
           {% endif %}
         </div>
 
@@ -74,9 +68,6 @@
     </div>
   </div>
 
-  <!-- =========================
-       QR共有
-  ========================== -->
   <div class="mb-4">
     <h4 class="fw-bold mb-3">
       <i class="fa-solid fa-qrcode me-2"></i>所持一覧のQRコード共有
@@ -91,7 +82,6 @@
     <div class="card">
       <div class="card-body d-flex flex-column flex-md-row">
 
-        <!-- 左：グループ -->
         <div class="d-flex flex-md-column gap-2 me-md-4 mb-3 mb-md-0">
           {% for key, name in group_names.items() %}
           {% if key in selected_groups %}
@@ -106,7 +96,6 @@
           {% endfor %}
         </div>
 
-        <!-- 右：QR -->
         <div class="flex-grow-1 text-center">
 
           {% if selected_groups %}
@@ -114,7 +103,6 @@
 
           <h5 id="group-title">{{ group_names[default_group] }}</h5>
 
-          <!-- QR表示 -->
           <div id="qr-wrapper">
             {% if share_statuses[default_group] %}
             <img id="qr-image" src="data:image/png;base64,{{ qr_codes.get(default_group, '') }}" class="mb-3"
@@ -126,7 +114,6 @@
             {% endif %}
           </div>
 
-          <!-- ボタン -->
           <form id="share-form" method="post" action="{{ url_for('user.toggle_share', group_key=default_group) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
@@ -151,9 +138,6 @@
     </div>
   </div>
 
-  <!-- =========================
-       設定
-  ========================== -->
   <div class="card">
     <div class="card-body">
 
@@ -182,9 +166,6 @@
 
 </div>
 
-<!-- =========================
-     JS
-========================== -->
 <script>
   const qrCodes = {{ qr_codes | tojson }};
   const shareStatuses = {{ share_statuses | tojson }};
@@ -209,7 +190,6 @@
       groupTitle.textContent = groupNames[key];
       shareForm.action = toggleShareBase.replace('__GROUP__', key);
 
-      // QR表示制御
       if (shareStatuses[key]) {
         if (qrCodes[key]) {
           qrWrapper.innerHTML = `<img src="data:image/png;base64,${qrCodes[key]}" style="height:120px;" class="mb-3">`;

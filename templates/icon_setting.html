@@ -5,13 +5,11 @@
 {% block content %}
 <div class="container py-5" style="max-width: 700px;">
 
-  <!-- タイトル -->
   <div class="text-center mb-4">
     <h2 class="fw-bold">アイコン設定</h2>
     <p class="text-muted">プロフィール画像を変更できます</p>
   </div>
 
-  <!-- 現在のアイコン -->
   <div class="card shadow-sm mb-4 text-center">
     <div class="card-body">
       <h5 class="mb-3">現在のアイコン</h5>
@@ -21,7 +19,6 @@
     </div>
   </div>
 
-  <!-- アップロード -->
   <div class="card shadow-sm mb-4">
     <div class="card-body">
       <h5 class="mb-3">新しい画像をアップロード</h5>
@@ -33,7 +30,6 @@
           {{ form.icon(class="form-control", id="icon-input") }}
         </div>
 
-        <!-- プレビュー -->
         <div class="text-center mb-3">
           <img id="cropper-image" class="img-fluid rounded" style="display:none; max-height:300px;">
         </div>
@@ -49,7 +45,6 @@
     </div>
   </div>
 
-  <!-- 削除 -->
   <div class="card border-danger shadow-sm">
     <div class="card-body text-center">
       <h6 class="text-danger mb-2">危険操作</h6>
@@ -63,7 +58,6 @@
     </div>
   </div>
 
-  <!-- 戻る -->
   <div class="text-center mt-4">
     <a href="{{ url_for('user.mypage') }}" class="btn btn-link text-decoration-none">
       ← マイページに戻る
@@ -72,7 +66,6 @@
 
 </div>
 
-<!-- モーダル -->
 <div class="modal fade" id="deleteModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">

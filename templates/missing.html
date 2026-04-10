@@ -7,19 +7,16 @@
     <h1 class="display-5 fw-bold text-black p-3 rounded section-title">未所持リスト</h1>
   </div>
 
-  <!-- 検索フォーム -->
   <div class="card shadow-sm mb-4 rounded-4 border-0">
     <div class="card-body">
       <form method="get" action="{{ url_for('stats.missing', group_key=group_key) }}">
         <div class="row g-3">
 
-          <!-- メンバー -->
           <div class="col-md-6">
             <label for="member" class="form-label text-black">メンバー</label>
             <select id="member" name="member"></select>
           </div>
 
-          <!-- 衣装 -->
           <div class="col-md-6">
             <label for="costume" class="form-label text-black">衣装</label>
             <select id="costume" name="costume"></select>
@@ -34,10 +31,10 @@
     </div>
   </div>
 
-  <!-- 未所持表示 -->
   {% if not grouped_missing %}
     <div class="alert alert-success text-center rounded-4">
-      🎉 全ての生写真を所持しています！
+      <i class="fa-solid fa-party-horn me-2"></i>
+      全ての生写真を所持しています！
     </div>
   {% else %}
     <div class="accordion custom-accordion" id="accordionMissingList">
@@ -90,11 +87,9 @@
   {% endif %}
 </div>
 
-<!-- Tom Select -->
 <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 
-<!-- JS -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
@@ -107,9 +102,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const selectedMember = "{{ search_member or '' }}";
   const selectedCostume = "{{ search_costume or '' }}";
 
-  // ------------------------
-  // TomSelect初期化
-  // ------------------------
   const memberTS = new TomSelect(memberEl, {
     create: false,
     maxItems: 1,
@@ -122,9 +114,6 @@ document.addEventListener("DOMContentLoaded", function () {
     placeholder: "衣装を選択",
   });
 
-  // ------------------------
-  // メンバー初期化
-  // ------------------------
   memberTS.clearOptions();
   memberTS.addOption({ value: "", text: "全て" });
 
@@ -138,9 +127,6 @@ document.addEventListener("DOMContentLoaded", function () {
     memberTS.setValue(selectedMember);
   }
 
-  // ------------------------
-  // 衣装初期化
-  // ------------------------
   costumeTS.clearOptions();
   costumeTS.addOption({ value: "", text: "全て" });
 
@@ -154,9 +140,6 @@ document.addEventListener("DOMContentLoaded", function () {
     costumeTS.setValue(selectedCostume);
   }
 
-  // ------------------------
-  // メンバー変更 → 衣装更新
-  // ------------------------
   memberTS.on("change", function (member) {
 
     costumeTS.clear();

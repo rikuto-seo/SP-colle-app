@@ -4,7 +4,6 @@
 {% block content %}
 <h1>ダッシュボード</h1>
 
-<!-- ✅ グループ選択 -->
 <div class="mb-4">
   <label for="groupSelect" class="form-label">グループを選択</label>
   <select class="form-select" id="groupSelect">
@@ -14,7 +13,6 @@
   </select>
 </div>
 
-<!-- ✅ ダッシュボードカード -->
 <div class="row">
   <div class="col-md-6">
     <div class="card text-bg-light mb-3">
@@ -52,20 +50,16 @@
   </div>
 </div>
 
-<!-- ✅ グループ選択を記憶するJS -->
 <script>
   const groupSelect = document.getElementById('groupSelect');
   const savedGroup = localStorage.getItem('selectedGroup');
 
-  // 保存されたグループがあれば選択状態に反映
   if (savedGroup) {
     groupSelect.value = savedGroup;
   }
 
-  // 選択変更時に保存
   groupSelect.addEventListener('change', function () {
     localStorage.setItem('selectedGroup', this.value);
-    // 必要に応じてページをリロードしたり、他のUIを更新
   });
 </script>
 {% endblock %}

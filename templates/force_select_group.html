@@ -47,7 +47,6 @@
 
 </div>
 
-<!-- モーダル -->
 <div id="confirmModal" class="custom-modal">
   <div class="custom-modal-content">
     <h5 class="fw-bold mb-3">この内容で確定しますか？</h5>
@@ -77,9 +76,6 @@ const groupMap = {
   hinatazaka: "日向坂46"
 };
 
-// =========================
-// 選択ロジック
-// =========================
 cards.forEach(card => {
   card.addEventListener("click", () => {
 
@@ -99,9 +95,6 @@ cards.forEach(card => {
   });
 });
 
-// =========================
-// 決定ボタン
-// =========================
 document.getElementById("groupForm").addEventListener("submit", (e) => {
   e.preventDefault();
 
@@ -123,9 +116,6 @@ document.getElementById("groupForm").addEventListener("submit", (e) => {
   modal.style.display = "flex";
 });
 
-// =========================
-// モーダル操作
-// =========================
 cancelBtn.addEventListener("click", () => {
   modal.style.display = "none";
 });
@@ -140,8 +130,6 @@ confirmBtn.addEventListener("click", async () => {
   const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
   try {
-
-    // 🔥 Stripeではなく保存API
     const res = await fetch("/api/save-groups", {
       method: "POST",
       headers: {
@@ -159,7 +147,6 @@ confirmBtn.addEventListener("click", async () => {
       return;
     }
 
-    // 成功 → マイページ or トップ
     window.location.href = "/";
 
   } catch (e) {
@@ -167,9 +154,6 @@ confirmBtn.addEventListener("click", async () => {
   }
 });
 
-// =========================
-// トースト
-// =========================
 function showTempMessage(msg) {
   const div = document.createElement("div");
   div.textContent = msg;

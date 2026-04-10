@@ -23,7 +23,6 @@
 
   <div class="row g-4 justify-content-center">
 
-    <!-- FREE -->
     <div class="col-6 col-md-6">
       <div class="plan-card border">
         <h6 class="text-muted">FREE</h6>
@@ -48,7 +47,6 @@
       </div>
     </div>
 
-    <!-- LITE -->
     <div class="col-6 col-md-6">
       <div class="plan-card border">
         <h6 class="text-muted">LITE</h6>
@@ -73,7 +71,6 @@
       </div>
     </div>
 
-    <!-- STANDARD -->
     <div class="col-6 col-md-6">
       <div class="plan-card highlight">
         <div class="badge-top">複推し</div>
@@ -98,7 +95,6 @@
       </div>
     </div>
 
-    <!-- PREMIUM -->
     <div class="col-6 col-md-6">
       <div class="plan-card border-premium">
         <div class="badge-top danger">最上位</div>
@@ -133,9 +129,6 @@
 <script>
 let loading = false;
 
-// =========================
-// メイン処理
-// =========================
 async function handlePlanChange(plan) {
 
   if (loading) return;
@@ -143,9 +136,6 @@ async function handlePlanChange(plan) {
 
   try {
 
-    // =========================
-    // FREE（ダウングレード）
-    // =========================
     if (plan === "free") {
 
       if (!confirm("次回更新時に解約されます。よろしいですか？")) {
@@ -175,9 +165,6 @@ async function handlePlanChange(plan) {
       return;
     }
 
-    // =========================
-    // 🔥 ここが重要（即Stripe）
-    // =========================
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
     const res = await fetch("/api/create-checkout-session", {
@@ -189,7 +176,7 @@ async function handlePlanChange(plan) {
       },
       body: JSON.stringify({
         plan: plan,
-        groups: []  // 🔥 一旦空でOK（後で選ばせる）
+        groups: [] 
       })
     });
 
@@ -208,9 +195,6 @@ async function handlePlanChange(plan) {
   }
 }
 
-// =========================
-// トースト
-// =========================
 function showToast(msg) {
   const div = document.createElement("div");
   div.textContent = msg;

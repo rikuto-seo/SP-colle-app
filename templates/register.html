@@ -6,6 +6,7 @@
   <div class="card p-4 shadow-sm" style="max-width: 500px; margin: 0 auto;">
     <h2 class="text-center mb-4">ユーザー登録</h2>
 
+    <div id="successMessage" class="alert alert-success d-none" role="alert"></div>
     <div id="errorMessage" class="alert alert-danger d-none" role="alert"></div>
 
     <form id="registerForm">
@@ -13,21 +14,15 @@
         <label class="form-label">メールアドレス</label>
         <input type="email" id="email" class="form-control" placeholder="example@mail.com" required>
       </div>
-      <div class="mb-3">
-        <label class="form-label">ユーザー名</label>
-        <input type="text" id="username" class="form-control" placeholder="坂道太郎" required>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">パスワード</label>
-        <input type="password" id="password" class="form-control" placeholder="6文字以上" required>
-      </div>
+
       <div class="d-grid">
         <button type="submit" id="registerBtn" class="btn btn-primary">
-          <span id="registerText">登録する</span>
+          <span id="registerText">登録用リンクを送信</span>
           <span id="registerSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
         </button>
       </div>
     </form>
+
     <div class="mt-3 text-center">
       <a href="/login" class="text-decoration-none">ログインはこちら</a>
     </div>
@@ -36,7 +31,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+  import { getAuth, sendSignInLinkToEmail } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAJNWrQTo4R78rygPdugp6G7LXlJ0jggLo",
@@ -50,18 +45,16 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
 
-  function getJapaneseRegisterMessage(errorCode) {
+  function getJapaneseErrorMessage(errorCode) {
     switch (errorCode) {
-      case "auth/email-already-in-use":
-        return "このメールアドレスは既に登録されています。";
       case "auth/invalid-email":
         return "メールアドレスの形式が正しくありません。";
-      case "auth/operation-not-allowed":
-        return "現在、新規登録は許可されていません。";
-      case "auth/weak-password":
-        return "パスワードが短すぎます。6文字以上で設定してください。";
+      case "auth/missing-email":
+        return "メールアドレスを入力してください。";
+      case "auth/too-many-requests":
+        return "リクエストが多すぎます。しばらく待ってください。";
       default:
-        return "登録に失敗しました。内容を確認してください。";
+        return "送信に失敗しました。もう一度お試しください。";
     }
   }
 
@@ -69,67 +62,46 @@
     e.preventDefault();
 
     const btn = document.getElementById("registerBtn");
-    const registerText = document.getElementById("registerText");
-    const registerSpinner = document.getElementById("registerSpinner");
+    const text = document.getElementById("registerText");
+    const spinner = document.getElementById("registerSpinner");
     const errorDiv = document.getElementById("errorMessage");
+    const successDiv = document.getElementById("successMessage");
 
     errorDiv.classList.add("d-none");
+    successDiv.classList.add("d-none");
+
     btn.disabled = true;
-    registerText.textContent = "登録中...";
-    registerSpinner.classList.remove("d-none");
+    text.textContent = "送信中...";
+    spinner.classList.remove("d-none");
 
     const email = document.getElementById("email").value;
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
 
     try {
-      // 1. Firebase登録
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const actionCodeSettings = {
+        url: "http://localhost:5000/first-register",
+        handleCodeInApp: true,
+      };
 
-      // 2. displayName設定
-      await updateProfile(userCredential.user, { displayName: username });
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
 
-      // 3. トークン取得
-      const token = await userCredential.user.getIdToken();
+      // メール保存（後で使用）
+      localStorage.setItem("emailForSignIn", email);
 
-      // 4. バックエンド同期（←ここ修正）
-      const res = await fetch("/api/me", {
-        method: "POST",
-        headers: {
-          "Authorization": "Bearer " + token,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          username: username
-        })
-      });
+      successDiv.textContent = "登録用リンクをメールに送信しました。メールをご確認ください。";
+      successDiv.classList.remove("d-none");
 
-      if (!res.ok) {
-        let message = "サーバーエラー";
-
-        try {
-          const data = await res.json();
-          message = data.error || message;
-        } catch {
-          const text = await res.text();
-          message = text || message;
-        }
-
-        throw new Error(message);
-      }
-
-      // 成功
-      window.location.href = "/";
+      document.getElementById("registerForm").reset();
 
     } catch (err) {
       console.error(err);
 
-      errorDiv.textContent = getJapaneseRegisterMessage(err.code) || err.message;
+      errorDiv.textContent = getJapaneseErrorMessage(err.code);
       errorDiv.classList.remove("d-none");
 
+    } finally {
       btn.disabled = false;
-      registerText.textContent = "登録する";
-      registerSpinner.classList.add("d-none");
+      text.textContent = "登録用リンクを送信";
+      spinner.classList.add("d-none");
     }
   });
 </script>
