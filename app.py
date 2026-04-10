@@ -11,7 +11,6 @@ from models import User
 from dotenv import load_dotenv
 load_dotenv()
 
-# Blueprint
 from routes.photo import photo_bp
 from routes.stats import stats_bp
 from routes.core import core_bp
@@ -25,7 +24,6 @@ from routes.billing import billing_bp
 app = Flask(__name__)
 app.permanent_session_lifetime = timedelta(minutes=60)
 
-# config
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY")
 app.config.from_object(Config)
@@ -47,10 +45,8 @@ cred_path = os.environ.get("FIREBASE_KEY_PATH")
 
 if not firebase_admin._apps:
     if cred_json:
-        # Render（本番）
         cred = credentials.Certificate(json.loads(cred_json))
     elif cred_path:
-        # ローカル
         cred = credentials.Certificate(cred_path)
     else:
         raise ValueError("Firebase credentials not set")
@@ -59,14 +55,12 @@ if not firebase_admin._apps:
         'storageBucket': 'sakamichi-photo-app.appspot.app'
     })
 
-# extensions
 db.init_app(app)
 migrate = Migrate(app, db)
 cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache'})
 
 csrf.init_app(app)
 
-# login
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
 login_manager.init_app(app)
@@ -75,18 +69,10 @@ login_manager.init_app(app)
 def load_user(user_id):
     return db.session.get(User, int(user_id))
 
-
-# =========================
-# セッション
-# =========================
 @app.before_request
 def make_session_permanent():
     session.permanent = True
 
-
-# =========================
-# 共通注入
-# =========================
 @app.context_processor
 def inject_common():
     from flask import request, url_for
@@ -102,10 +88,6 @@ def inject_common():
         icon_url=icon_url
     )
 
-
-# =========================
-# 🔥 ダウングレード検知
-# =========================
 @app.before_request
 def enforce_plan_limit():
     from flask_login import current_user
@@ -131,14 +113,9 @@ def enforce_plan_limit():
     selected = current_user.get_selected_groups()
     allowed = current_user.get_allowed_group_count()
 
-    # 🔥 超過していたら強制選択
     if len(selected) > allowed:
         return redirect(url_for('user.force_group_select'))
 
-
-# =========================
-# 🔥 グループアクセス制御
-# =========================
 @app.before_request
 def enforce_group_access():
     from flask_login import current_user
@@ -172,7 +149,6 @@ def enforce_group_access():
 
 print("DB URL:", db_url)
 
-# Blueprint登録
 app.register_blueprint(photo_bp)
 app.register_blueprint(stats_bp)
 app.register_blueprint(core_bp)

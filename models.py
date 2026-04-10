@@ -39,10 +39,7 @@ class User(UserMixin, db.Model):
 
     twitter_id = db.Column(db.String(100))
     instagram_id = db.Column(db.String(100))
-
-    # =========================
-    # UUID（共有用）
-    # =========================
+    
     public_uuid = db.Column(
         db.String(36),
         unique=True,
@@ -50,9 +47,6 @@ class User(UserMixin, db.Model):
         default=lambda: str(uuid.uuid4())
     )
 
-    # =========================
-    # 課金
-    # =========================
     plan_type = db.Column(
         db.String(20),
         nullable=False,
@@ -72,20 +66,13 @@ class User(UserMixin, db.Model):
         unique=True
     )
     subscription_status = db.Column(db.String(50))  
-    # active / canceled / past_due / incomplete など
 
     current_period_end = db.Column(db.DateTime)
     cancel_at_period_end = db.Column(db.Boolean, default=False)
 
-    # =========================
-    # グループ管理
-    # =========================
     primary_group = db.Column(db.String(50), nullable=True)
     selected_groups = db.Column(db.String, default="")
 
-    # =========================
-    # 🔥 プラン判定
-    # =========================
     def is_free(self):
         return self.plan_type == "free"
 
@@ -98,9 +85,6 @@ class User(UserMixin, db.Model):
     def is_premium(self):
         return self.plan_type == "premium"
 
-    # =========================
-    # 🔥 機能判定（超重要）
-    # =========================
     def is_active_paid(self):
         return (
             self.plan_type != "free"
@@ -122,9 +106,6 @@ class User(UserMixin, db.Model):
     def can_use_all_groups(self):
         return self.plan_type == "premium"
 
-    # =========================
-    # ユーティリティ
-    # =========================
     def get_selected_groups(self):
         if not self.selected_groups:
             return []
@@ -141,11 +122,8 @@ class User(UserMixin, db.Model):
             return 1
         elif self.plan_type == "standard":
             return 2
-        return 999  # premium
-
-    # =========================
-    # アクセス制御
-    # =========================
+        return 999  
+    
     def can_access_group(self, group_key: str) -> bool:
         if not group_key:
             return False
@@ -155,18 +133,13 @@ class User(UserMixin, db.Model):
 
         return group_key in self.get_selected_groups()
 
-    # =========================
-    # 🔥 DB整合性（重要）
-    # =========================
     def normalize_groups(self):
         selected = self.get_selected_groups()
         allowed = self.get_allowed_group_count()
 
-        # 上限制御
         if len(selected) > allowed:
-            return
+            selected = selected[:allowed]
 
-        # free制限
         if self.is_free():
             selected = selected[:1]
 
@@ -178,9 +151,6 @@ class User(UserMixin, db.Model):
         else:
             self.primary_group = None
 
-    # =========================
-    # 操作
-    # =========================
     def can_add_group(self):
         return len(self.get_selected_groups()) < self.get_allowed_group_count()
 
@@ -196,9 +166,6 @@ class User(UserMixin, db.Model):
         groups.append(group_key)
         self.set_selected_groups(groups)
 
-    # =========================
-    # WantShare連携
-    # =========================
     def is_want_share_enabled(self, group_key: str) -> bool:
         share = WantShare.get_or_create(self.id, group_key)
         return share.is_public

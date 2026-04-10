@@ -54,9 +54,17 @@
 
         <div class="text-muted small">
           {% if cancel_at_period_end %}
+          {% if next_billing %}
           ※このプランは{{ next_billing }}で終了します
           {% else %}
+          ※終了日取得中
+          {% endif %}
+          {% else %}
+          {% if next_billing %}
           次回請求日：{{ next_billing }}
+          {% else %}
+          次回請求日：未設定
+          {% endif %}
           {% endif %}
         </div>
 

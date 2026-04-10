@@ -119,7 +119,11 @@ def save_groups():
     if len(groups) != PLAN_LIMITS[plan]:
         return {"error": "invalid group count"}, 400
 
-    current_user.selected_groups = ",".join(groups)
+    current_user.set_selected_groups(groups)
+
+    if groups:
+        current_user.primary_group = groups[0]
+
     db.session.commit()
 
     return {"status": "ok"}

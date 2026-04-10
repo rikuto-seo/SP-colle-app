@@ -58,7 +58,10 @@ def mypage():
             period_end = sub.get("current_period_end")
 
             if period_end:
-                next_billing = datetime.fromtimestamp(period_end)
+                dt = datetime.fromtimestamp(period_end)
+                next_billing = dt.strftime('%Y-%m-%d')
+            else:
+                next_billing = None
 
             cancel_at_period_end = sub.get("cancel_at_period_end", False)
 

@@ -78,13 +78,12 @@
 
     try {
       const actionCodeSettings = {
-        url: "http://localhost:5000/first-register",
+        url: "https://sakamichi-photo-app.onrender.com/finish-login",
         handleCodeInApp: true,
       };
 
       await sendSignInLinkToEmail(auth, email, actionCodeSettings);
 
-      // メール保存（後で使用）
       localStorage.setItem("emailForSignIn", email);
 
       successDiv.textContent = "登録用リンクをメールに送信しました。メールをご確認ください。";

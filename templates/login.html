@@ -73,12 +73,14 @@
     e.preventDefault();
 
     const btn = document.getElementById("loginBtn");
+
+    if (btn.disabled) return; 
+    
     const loginText = document.getElementById("loginText");
     const loginSpinner = document.getElementById("loginSpinner");
     const errorDiv = document.getElementById("errorMessage");
 
     errorDiv.classList.add("d-none");
-    btn.disabled = true;
     loginText.textContent = "ログイン中...";
     loginSpinner.classList.remove("d-none");
 
@@ -92,20 +94,22 @@
       const res = await fetch("/api/me", {
         method: "POST",
         headers: {
-          "Authorization": "Bearer " + token,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({})
+          "Authorization": "Bearer " + token
+        }
       });
 
-      if (res.ok) {
-        window.location.href = "/";
-      } else {
-        const errData = await res.json();
-        throw new Error(errData.error || "サーバーとの同期に失敗しました");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "ログイン処理に失敗しました");
       }
-    } catch (err) {
-      console.error(err);
+
+      const data = await res.json();
+
+      if (!data.is_setup_complete) {
+        window.location.href = "/first-register";
+      } else {
+        window.location.href = "/";
+      }
 
       errorDiv.textContent = getJapaneseMessage(err.code) || err.message;
       errorDiv.classList.remove("d-none");
