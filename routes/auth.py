@@ -206,9 +206,16 @@ def api_me():
         user = User.query.filter_by(firebase_uid=uid).first()
 
         if not user:
-            return jsonify({'error': 'User not found'}), 404
+            user = User(
+                firebase_uid=uid,
+                email=email,
+                username=None,
+                primary_group=None,
+            )
+            user.set_selected_groups([])
+            db.session.add(user)
+            db.session.commit()
 
-        # 🔐 ログイン処理のみ
         login_user(user, remember=True)
 
         return jsonify({
