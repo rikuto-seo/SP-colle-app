@@ -1,4 +1,4 @@
-from flask import Flask, session,request
+from flask import Flask, request
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_caching import Cache
@@ -69,10 +69,6 @@ login_manager.init_app(app)
 def load_user(user_id):
     return db.session.get(User, int(user_id))
 
-@app.before_request
-def make_session_permanent():
-    session.permanent = True
-
 @app.context_processor
 def inject_common():
     from flask import request, url_for
@@ -91,23 +87,18 @@ def inject_common():
 @app.before_request
 def enforce_plan_limit():
     from flask_login import current_user
-    from flask import redirect, url_for
+    from flask import redirect, url_for, request
+
+    if request.path.startswith("/finish-login"):
+        return
+
+    if request.path.startswith("/static"):
+        return
 
     if not current_user.is_authenticated:
         return
 
-    exempt = [
-        'user.force_group_select',
-        'user.upgrade',
-        'auth.logout',
-        'auth.login',
-        'static',
-        'billing.stripe_webhook',
-        'billing.check_plan', 
-        'user.payment_success',
-    ]
-
-    if request.endpoint in exempt:
+    if not request.endpoint:
         return
 
     selected = current_user.get_selected_groups()
@@ -115,28 +106,19 @@ def enforce_plan_limit():
 
     if len(selected) > allowed:
         return redirect(url_for('user.force_group_select'))
-
+    
 @app.before_request
 def enforce_group_access():
     from flask_login import current_user
     from flask import request, redirect, url_for
 
+    if request.path.startswith("/finish-login"):
+        return
+
     if not current_user.is_authenticated:
         return
 
-    exempt = [
-        'user.select_group',
-        'user.force_group_select',
-        'user.upgrade',
-        'auth.logout',
-        'auth.login',
-        'static',
-        'billing.stripe_webhook',
-        'billing.check_plan', 
-        'user.payment_success',
-    ]
-
-    if request.endpoint in exempt:
+    if not request.endpoint:
         return
 
     group_key = request.view_args.get('group_key') if request.view_args else None
