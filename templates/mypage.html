@@ -23,13 +23,13 @@
             <div class="ms-2 d-flex gap-2">
               {% if current_user.twitter_id %}
               <a href="https://x.com/{{ current_user.twitter_id }}" target="_blank">
-                <i class="fa-brands fa-x-twitter" style="color: black;"></i>
+                <i class="fa-brands fa-x-twitter"></i>
               </a>
               {% endif %}
 
               {% if current_user.instagram_id %}
               <a href="https://www.instagram.com/{{ current_user.instagram_id }}" target="_blank">
-                <i class="fa-brands fa-instagram" style="color: rgb(240, 39, 73);"></i>
+                <i class="fa-brands fa-instagram"></i>
               </a>
               {% endif %}
             </div>
@@ -93,12 +93,12 @@
         <div class="d-flex flex-md-column gap-2 me-md-4 mb-3 mb-md-0">
           {% for key, name in group_names.items() %}
           {% if key in selected_groups %}
-          <button class="btn btn-outline-primary group-btn" data-group="{{ key }}">
+          <button type="button" class="btn btn-outline-primary group-btn" data-group="{{ key }}">
             {{ name }}
           </button>
           {% else %}
-          <button class="btn btn-outline-secondary" disabled>
-            🔒 {{ name }}
+          <button type="button" class="btn btn-outline-secondary" disabled>
+            <i class="fa-solid fa-lock me-1"></i>{{ name }}
           </button>
           {% endif %}
           {% endfor %}
@@ -117,7 +117,7 @@
               style="height:120px;">
             {% else %}
             <div class="text-muted mt-3">
-              🔒 非公開中です
+              <i class="fa-solid fa-lock me-1"></i>非公開中です
             </div>
             {% endif %}
           </div>
@@ -125,7 +125,7 @@
           <form id="share-form" method="post" action="{{ url_for('user.toggle_share', group_key=default_group) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-            <button id="share-btn"
+            <button type="submit" id="share-btn"
               class="btn {% if share_statuses[default_group] %}btn-success{% else %}btn-outline-secondary{% endif %}">
               {% if share_statuses[default_group] %}
               <i class="fa-solid fa-eye"></i> 公開中
@@ -137,7 +137,7 @@
 
           {% else %}
           <div class="text-muted mt-4">
-            🔒 QR機能は有料プランで利用できます
+            <i class="fa-solid fa-lock me-1"></i>QR機能は有料プランで利用できます
           </div>
           {% endif %}
 
@@ -149,23 +149,23 @@
   <div class="card">
     <div class="card-body">
 
-      <h5><i class="fas fa-cog me-2"></i>設定</h5>
+      <h5><i class="fa-solid fa-gear me-2"></i>設定</h5>
 
       <div class="setting-links">
-        <a href="{{ url_for('user.edit_profile') }}"><i class="fas fa-user-edit me-2"></i>プロフィール編集</a>
-        <a href="{{ url_for('user.icon_setting') }}"><i class="fas fa-image me-2"></i>アイコン設定</a>
-        <a href="{{ url_for('user.change_password') }}"><i class="fas fa-key me-2"></i>パスワード変更</a>
+        <a href="{{ url_for('user.edit_profile') }}"><i class="fa-solid fa-user-pen me-2"></i>プロフィール編集</a>
+        <a href="{{ url_for('user.icon_setting') }}"><i class="fa-solid fa-image me-2"></i>アイコン設定</a>
+        <a href="{{ url_for('user.change_password') }}"><i class="fa-solid fa-key me-2"></i>パスワード変更</a>
 
         <form action="{{ url_for('user.toggle_dark_mode') }}" method="post">
           <button type="submit" class="sidebar-like-link">
-            <i class="fas fa-moon me-2"></i>
+            <i class="fa-solid fa-moon me-2"></i>
             {% if current_user.dark_mode %}ダークモード解除{% else %}ダークモード有効{% endif %}
           </button>
         </form>
 
-        <a href="{{ url_for('user.logout') }}"><i class="fas fa-sign-out-alt me-2"></i>ログアウト</a>
+        <a href="{{ url_for('user.logout') }}"><i class="fa-solid fa-right-from-bracket me-2"></i>ログアウト</a>
         <a href="{{ url_for('user.confirm_delete_account') }}" class="text-danger">
-          <i class="fas fa-user-slash me-2"></i>アカウント削除
+          <i class="fa-solid fa-user-xmark me-2"></i>アカウント削除
         </a>
       </div>
 
@@ -206,7 +206,7 @@
         shareBtn.classList.add("btn-success");
         shareBtn.innerHTML = '<i class="fa-solid fa-eye"></i> 公開中';
       } else {
-        qrWrapper.innerHTML = `<div class="text-muted mt-3">🔒 非公開中です</div>`;
+        qrWrapper.innerHTML = `<div class="text-muted mt-3"><i class="fa-solid fa-lock me-1"></i>非公開中です</div>`;
         shareBtn.className = "btn btn-outline-secondary";
         shareBtn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> 非公開';
       }

@@ -42,8 +42,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import {
   getAuth,
-  isSignInWithEmailLink,
-  signInWithEmailLink
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -56,37 +55,27 @@ const auth = getAuth(app);
 
 let idToken = null;
 
-async function handleEmailLink() {
-  if (isSignInWithEmailLink(auth, window.location.href)) {
-    let email = localStorage.getItem("emailForSignIn");
-
-    if (!email) {
-      email = prompt("メールアドレスを入力してください");
-    }
-
-    const result = await signInWithEmailLink(auth, email, window.location.href);
-    const user = result.user;
-
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
     idToken = await user.getIdToken();
-
-    await fetch("/api/create-user", {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + idToken
-      }
-    });
-
-    localStorage.removeItem("emailForSignIn");
+    console.log("Token取得OK");
+  } else {
+    alert("ログイン状態が取得できません。再ログインしてください");
+    window.location.href = "/login";
   }
-}
-
-await handleEmailLink();
+});
 
 document.getElementById("toStep2").addEventListener("click", async () => {
-  const username = document.getElementById("username").value;
+
+  const username = document.getElementById("username").value.trim();
 
   if (!username) {
     alert("ユーザー名を入力してください");
+    return;
+  }
+
+  if (!idToken) {
+    alert("認証エラー（トークンなし）");
     return;
   }
 
@@ -100,7 +89,7 @@ document.getElementById("toStep2").addEventListener("click", async () => {
   });
 
   if (!res.ok) {
-    alert("保存に失敗しました");
+    alert("ユーザー名の保存に失敗しました");
     return;
   }
 
@@ -127,6 +116,11 @@ iconInput.addEventListener("change", (e) => {
 });
 
 document.getElementById("uploadIcon").addEventListener("click", async () => {
+
+  if (!idToken) {
+    alert("認証エラー");
+    return;
+  }
 
   if (base64Image) {
     await fetch("/api/setup/icon", {
