@@ -198,13 +198,36 @@ def api_me():
     token = auth_header.split(" ", 1)[1].strip()
 
     try:
+        # =========================
+        # Firebaseトークン検証
+        # =========================
         decoded_token = firebase_auth.verify_id_token(token)
 
         uid = decoded_token['uid']
         email = decoded_token.get('email')
 
+        if email:
+            email = email.lower()  # 🔥 正規化（重要）
+
+        # =========================
+        # ① UIDで検索
+        # =========================
         user = User.query.filter_by(firebase_uid=uid).first()
 
+        # =========================
+        # ② UIDで見つからない → emailで検索
+        # =========================
+        if not user and email:
+            user = User.query.filter_by(email=email).first()
+
+            if user:
+                # 🔗 UIDを紐付け（ここが超重要）
+                user.firebase_uid = uid
+                db.session.commit()
+
+        # =========================
+        # ③ それでも無ければ新規作成
+        # =========================
         if not user:
             user = User(
                 firebase_uid=uid,
@@ -213,14 +236,25 @@ def api_me():
                 primary_group=None,
             )
             user.set_selected_groups([])
+
             db.session.add(user)
             db.session.commit()
 
+        # =========================
+        # ログイン状態にする
+        # =========================
         login_user(user, remember=True)
+
+        # =========================
+        # 初期登録完了判定
+        # =========================
+        is_setup_complete = bool(
+            user.username and user.get_selected_groups()
+        )
 
         return jsonify({
             'status': 'ok',
-            'is_setup_complete': bool(user.username and user.get_selected_groups())
+            'is_setup_complete': is_setup_complete
         })
 
     except firebase_auth.InvalidIdTokenError:
