@@ -10,16 +10,22 @@
 
     <div id="errorMessage" class="alert alert-danger d-none"></div>
 
+    <!-- STEP1 -->
     <div id="step1">
-      <h5 class="mb-3">ユーザー名を入力</h5>
+      <h5 class="mb-3">ユーザー名とパスワードを入力</h5>
 
       <input type="text" id="username" class="form-control mb-3" placeholder="坂道太郎">
+
+      <input type="password" id="password" class="form-control mb-3" placeholder="パスワード（6文字以上）">
+
+      <input type="password" id="passwordConfirm" class="form-control mb-3" placeholder="パスワード確認">
 
       <div class="d-grid">
         <button id="toStep2" class="btn btn-primary">次へ</button>
       </div>
     </div>
 
+    <!-- STEP2 -->
     <div id="step2" class="d-none">
       <h5 class="mb-3">アイコン設定</h5>
 
@@ -42,7 +48,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import {
   getAuth,
-  onAuthStateChanged
+  onAuthStateChanged,
+  updatePassword
 } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -55,21 +62,32 @@ const auth = getAuth(app);
 
 let idToken = null;
 
-// ⭐ 修正：即リダイレクト禁止
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    idToken = await user.getIdToken();
-    console.log("Token取得OK");
-  } else {
-    console.log("Firebase未復元（待機）");
-  }
-});
+// ==========================
+// Firebase復元待ち
+// ==========================
+function waitForAuth() {
+  return new Promise((resolve) => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        idToken = await user.getIdToken();
+        unsub();
+        resolve();
+      }
+    });
+  });
+}
 
-// ⭐ サーバー側ログイン確認を追加
+// ==========================
+// ログインチェック
+// ==========================
 async function checkLogin() {
+  await waitForAuth();
+
   const res = await fetch("/api/me", {
     method: "POST",
-    credentials: "include" // ← 超重要
+    headers: {
+      Authorization: "Bearer " + idToken
+    }
   });
 
   if (!res.ok) {
@@ -82,39 +100,55 @@ checkLogin();
 
 
 // ==========================
-// ユーザー名登録
+// STEP1（ユーザー名 + パスワード）
 // ==========================
 document.getElementById("toStep2").addEventListener("click", async () => {
 
   const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value;
+  const confirm = document.getElementById("passwordConfirm").value;
 
   if (!username) {
     alert("ユーザー名を入力してください");
     return;
   }
 
-  if (!idToken) {
-    alert("認証待機中です。少し待ってください");
+  if (!password || password.length < 6) {
+    alert("パスワードは6文字以上にしてください");
     return;
   }
 
-  const res = await fetch("/api/setup/username", {
-    method: "POST",
-    credentials: "include", // ← 追加
-    headers: {
-      "Authorization": "Bearer " + idToken,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ username })
-  });
-
-  if (!res.ok) {
-    alert("ユーザー名の保存に失敗しました");
+  if (password !== confirm) {
+    alert("パスワードが一致しません");
     return;
   }
 
-  document.getElementById("step1").classList.add("d-none");
-  document.getElementById("step2").classList.remove("d-none");
+  try {
+    // 🔐 パスワード設定
+    await updatePassword(auth.currentUser, password);
+
+    // 🔁 トークン更新（重要）
+    idToken = await auth.currentUser.getIdToken(true);
+
+    // 👤 ユーザー名保存
+    const res = await fetch("/api/setup/username", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + idToken,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ username })
+    });
+
+    if (!res.ok) throw new Error();
+
+    document.getElementById("step1").classList.add("d-none");
+    document.getElementById("step2").classList.remove("d-none");
+
+  } catch (err) {
+    console.error(err);
+    alert("登録に失敗しました");
+  }
 });
 
 
@@ -149,7 +183,6 @@ document.getElementById("uploadIcon").addEventListener("click", async () => {
   if (base64Image) {
     await fetch("/api/setup/icon", {
       method: "POST",
-      credentials: "include", // ← 追加
       headers: {
         "Authorization": "Bearer " + idToken,
         "Content-Type": "application/json"
@@ -167,4 +200,5 @@ document.getElementById("skipIcon").addEventListener("click", () => {
   window.location.href = "/select-group";
 });
 </script>
+
 {% endblock %}
