@@ -87,19 +87,23 @@ def check_plan():
 @billing_bp.route("/api/downgrade", methods=["POST"])
 @login_required
 def downgrade():
-    if current_user.stripe_subscription_id:
-        stripe.Subscription.modify(
-            current_user.stripe_subscription_id,
-            cancel_at_period_end=True
-        )
+    try:
+        if current_user.stripe_subscription_id:
 
-    # ❌ 消す
-    # current_user.plan_type = "free"
-    # current_user.stripe_subscription_id = None
+            sub = stripe.Subscription.modify(
+                current_user.stripe_subscription_id,
+                cancel_at_period_end=True
+            )
 
-    db.session.commit()
-    return {"status": "ok"}
+            print("🔻 CANCEL SCHEDULED:", sub.get("current_period_end"))
 
+        db.session.commit()
+        return {"status": "ok"}
+
+    except Exception as e:
+        print("❌ DOWNGRADE ERROR:", e)
+        return {"error": "failed"}, 500
+    
 @billing_bp.route("/api/save-groups", methods=["POST"])
 @login_required
 def save_groups():
@@ -125,6 +129,18 @@ def save_groups():
         current_user.primary_group = groups[0]
 
     db.session.commit()
+
+    return {"status": "ok"}
+
+@billing_bp.route("/api/resume-subscription", methods=["POST"])
+@login_required
+def resume_subscription():
+
+    if current_user.stripe_subscription_id:
+        stripe.Subscription.modify(
+            current_user.stripe_subscription_id,
+            cancel_at_period_end=False
+        )
 
     return {"status": "ok"}
 
@@ -244,20 +260,36 @@ def stripe_webhook():
             subscription = event["data"]["object"]
             customer_id = subscription.get("customer")
 
-            print("🔥 SUBSCRIPTION DELETED:", subscription.get("id"))
-
             user = find_user(customer_id=customer_id)
 
             if user:
                 user.plan_type = "free"
                 user.stripe_subscription_id = None
+
                 db.session.commit()
                 print("🔻 PLAN DOWNGRADED: free")
 
         except Exception as e:
             db.session.rollback()
             print("❌ DB ERROR:", e)
-            return "db error", 200
+
+    elif event["type"] == "customer.subscription.updated":
+        try:
+            subscription = event["data"]["object"]
+            customer_id = subscription.get("customer")
+
+            user = find_user(customer_id=customer_id)
+
+            if user:
+                cancel_flag = subscription.get("cancel_at_period_end", False)
+
+                print("🔄 SUB UPDATED cancel:", cancel_flag)
+
+                # ここで状態をログだけでも残すと良い
+                # 将来的にDBに持ってもOK
+
+        except Exception as e:
+            print("❌ UPDATE ERROR:", e)
 
     else:
         print("ℹ️ UNHANDLED EVENT:", event["type"])

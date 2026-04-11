@@ -8,116 +8,177 @@
       <div class="card shadow p-4">
         <h2 class="text-center mb-4">ログイン</h2>
 
-        <div id="errorMessage" class="alert alert-danger d-none" role="alert"></div>
+        <div id="errorMessage" class="alert alert-danger d-none"></div>
 
         <form id="loginForm">
           <div class="mb-3">
             <label class="form-label">メールアドレス</label>
             <input type="email" id="email" class="form-control" placeholder="example@mail.com" required>
           </div>
-          <div class="mb-3">
+
+          <div class="mb-1">
             <label class="form-label">パスワード</label>
             <input type="password" id="password" class="form-control" placeholder="••••••••" required>
           </div>
+
+          <!-- 🔥 追加：パスワード忘れ -->
+          <div class="text-end mb-3">
+            <a href="#" id="forgotPasswordLink" class="small text-decoration-none">
+              パスワードをお忘れですか？
+            </a>
+          </div>
+
           <div class="d-grid">
             <button type="submit" id="loginBtn" class="btn btn-primary">
               <span id="loginText">ログイン</span>
-              <span id="loginSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+              <span id="loginSpinner" class="spinner-border spinner-border-sm d-none"></span>
             </button>
           </div>
         </form>
+
         <div class="mt-3 text-center">
-          <a href="/register" class="text-decoration-none">アカウントを新規作成</a>
+          <a href="/register">アカウントを新規作成</a>
         </div>
       </div>
     </div>
   </div>
 </div>
 
+<!-- 🔥 パスワードリセットモーダル -->
+<div id="resetModal" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <h5 class="fw-bold">パスワードリセット</h5>
+
+    <p class="small mt-2">
+      登録したメールアドレスを入力してください。<br>
+      リセット用リンクを送信します。
+    </p>
+
+    <input type="email" id="resetEmail" class="form-control mt-2" placeholder="example@mail.com">
+
+    <div class="d-flex gap-2 mt-3">
+      <button class="btn btn-secondary w-50" onclick="closeResetModal()">閉じる</button>
+      <button class="btn btn-primary w-50" onclick="sendResetEmail()">送信</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyAJNWrQTo4R78rygPdugp6G7LXlJ0jggLo",
-    authDomain: "sakamichi-photo-app.firebaseapp.com",
-    projectId: "sakamichi-photo-app",
-    storageBucket: "sakamichi-photo-app.appspot.com",
-    messagingSenderId: "873667254289",
-    appId: "1:873667254289:web:4441f862542e9c4c9bb9b0",
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSy...",
+  authDomain: "sakamichi-photo-app.firebaseapp.com",
+  projectId: "sakamichi-photo-app",
+};
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-  function getJapaneseMessage(errorCode) {
-    switch (errorCode) {
-      case "auth/invalid-email":
-        return "メールアドレスの形式が正しくありません。";
-      case "auth/user-disabled":
-        return "このアカウントは無効化されています。";
-      case "auth/user-not-found":
-        return "アカウントが見つかりません。";
-      case "auth/wrong-password":
-        return "パスワードが間違っています。";
-      case "auth/invalid-credential":
-        return "メールアドレスまたはパスワードが正しくありません。"; // 最近のFirebaseはこのエラーに統合されています
-      case "auth/too-many-requests":
-        return "何度も失敗したため、一時的にロックされました。時間を置いて試してください。";
-      default:
-        return "ログインに失敗しました。入力内容を確認してください。";
-    }
+function getJapaneseMessage(errorCode) {
+  switch (errorCode) {
+    case "auth/user-not-found":
+    case "auth/wrong-password":
+    case "auth/invalid-credential":
+      return "メールアドレスまたはパスワードが正しくありません。";
+    case "auth/too-many-requests":
+      return "何度も失敗したため一時的にロックされています。";
+    default:
+      return "ログインに失敗しました。";
+  }
+}
+
+/* ログイン処理 */
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const btn = document.getElementById("loginBtn");
+  if (btn.disabled) return;
+
+  btn.disabled = true;
+
+  const loginText = document.getElementById("loginText");
+  const spinner = document.getElementById("loginSpinner");
+  const errorDiv = document.getElementById("errorMessage");
+
+  errorDiv.classList.add("d-none");
+  loginText.textContent = "ログイン中...";
+  spinner.classList.remove("d-none");
+
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const token = await userCredential.user.getIdToken();
+
+    const res = await fetch("/api/me", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + token }
+    });
+
+    if (!res.ok) throw new Error("ログイン処理失敗");
+
+    const data = await res.json();
+
+    window.location.href = data.is_setup_complete ? "/" : "/first-register";
+
+  } catch (err) {
+    errorDiv.textContent = getJapaneseMessage(err.code);
+    errorDiv.classList.remove("d-none");
+
+    btn.disabled = false;
+    loginText.textContent = "ログイン";
+    spinner.classList.add("d-none");
+  }
+});
+
+/* パスワードリセット */
+document.getElementById("forgotPasswordLink").addEventListener("click", (e) => {
+  e.preventDefault();
+  document.getElementById("resetModal").style.display = "flex";
+
+  document.getElementById("resetEmail").value =
+    document.getElementById("email").value;
+});
+
+window.closeResetModal = function() {
+  document.getElementById("resetModal").style.display = "none";
+};
+
+window.sendResetEmail = async function() {
+  const email = document.getElementById("resetEmail").value;
+
+  if (!email) {
+    alert("メールアドレスを入力してください");
+    return;
   }
 
-  document.getElementById("loginForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
+  try {
+    await sendPasswordResetEmail(auth, email);
+    closeResetModal();
+    showToast("リセットメールを送信しました");
+  } catch (err) {
+    alert(getJapaneseMessage(err.code));
+  }
+};
 
-    const btn = document.getElementById("loginBtn");
-
-    if (btn.disabled) return; 
-    
-    const loginText = document.getElementById("loginText");
-    const loginSpinner = document.getElementById("loginSpinner");
-    const errorDiv = document.getElementById("errorMessage");
-
-    errorDiv.classList.add("d-none");
-    loginText.textContent = "ログイン中...";
-    loginSpinner.classList.remove("d-none");
-
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const token = await userCredential.user.getIdToken();
-
-      const res = await fetch("/api/me", {
-        method: "POST",
-        headers: {
-          "Authorization": "Bearer " + token
-        }
-      });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || "ログイン処理に失敗しました");
-      }
-
-      const data = await res.json();
-
-      if (!data.is_setup_complete) {
-        window.location.href = "/first-register";
-      } else {
-        window.location.href = "/";
-      }
-
-      errorDiv.textContent = getJapaneseMessage(err.code) || err.message;
-      errorDiv.classList.remove("d-none");
-
-      btn.disabled = false;
-      loginText.textContent = "ログイン";
-      loginSpinner.classList.add("d-none");
-    }
-  });
+/* トースト */
+function showToast(msg) {
+  const div = document.createElement("div");
+  div.textContent = msg;
+  div.style.position = "fixed";
+  div.style.bottom = "20px";
+  div.style.left = "50%";
+  div.style.transform = "translateX(-50%)";
+  div.style.background = "#333";
+  div.style.color = "#fff";
+  div.style.padding = "10px 20px";
+  div.style.borderRadius = "8px";
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 2000);
+}
 </script>
+
 {% endblock %}
