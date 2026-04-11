@@ -63,17 +63,24 @@ const auth = getAuth(app);
 let idToken = null;
 
 // ==========================
-// Firebase復元待ち
+// Firebase復元待ち（完全版）
 // ==========================
 function waitForAuth() {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        idToken = await user.getIdToken();
-        unsub();
-        resolve();
+        try {
+          idToken = await user.getIdToken();
+          unsub();
+          resolve(user);
+        } catch (e) {
+          reject(e);
+        }
       }
     });
+
+    // 念のためタイムアウト
+    setTimeout(() => reject("auth timeout"), 10000);
   });
 }
 
@@ -81,16 +88,19 @@ function waitForAuth() {
 // ログインチェック
 // ==========================
 async function checkLogin() {
-  await waitForAuth();
+  try {
+    const user = await waitForAuth();
 
-  const res = await fetch("/api/me", {
-    method: "POST",
-    headers: {
-      Authorization: "Bearer " + idToken
-    }
-  });
+    const res = await fetch("/api/me", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + idToken
+      }
+    });
 
-  if (!res.ok) {
+    if (!res.ok) throw new Error();
+
+  } catch (err) {
     alert("ログイン状態が無効です");
     window.location.href = "/login";
   }
@@ -124,11 +134,19 @@ document.getElementById("toStep2").addEventListener("click", async () => {
   }
 
   try {
-    // 🔐 パスワード設定
-    await updatePassword(auth.currentUser, password);
+    const user = auth.currentUser;
 
-    // 🔁 トークン更新（重要）
-    idToken = await auth.currentUser.getIdToken(true);
+    if (!user) {
+      alert("認証エラーです。再ログインしてください");
+      location.href = "/login";
+      return;
+    }
+
+    // 🔐 パスワード設定（ここ重要）
+    await updatePassword(user, password);
+
+    // 🔁 トークン強制更新
+    idToken = await user.getIdToken(true);
 
     // 👤 ユーザー名保存
     const res = await fetch("/api/setup/username", {
@@ -142,11 +160,19 @@ document.getElementById("toStep2").addEventListener("click", async () => {
 
     if (!res.ok) throw new Error();
 
+    // 次へ
     document.getElementById("step1").classList.add("d-none");
     document.getElementById("step2").classList.remove("d-none");
 
   } catch (err) {
     console.error(err);
+
+    if (err.code === "auth/requires-recent-login") {
+      alert("セキュリティのため再ログインしてください");
+      window.location.href = "/login";
+      return;
+    }
+
     alert("登録に失敗しました");
   }
 });
@@ -174,11 +200,6 @@ iconInput.addEventListener("change", (e) => {
 });
 
 document.getElementById("uploadIcon").addEventListener("click", async () => {
-
-  if (!idToken) {
-    alert("認証待機中です");
-    return;
-  }
 
   if (base64Image) {
     await fetch("/api/setup/icon", {
