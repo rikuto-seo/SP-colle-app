@@ -55,16 +55,35 @@ const auth = getAuth(app);
 
 let idToken = null;
 
+// ⭐ 修正：即リダイレクト禁止
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     idToken = await user.getIdToken();
     console.log("Token取得OK");
   } else {
-    alert("ログイン状態が取得できません。再ログインしてください");
-    window.location.href = "/login";
+    console.log("Firebase未復元（待機）");
   }
 });
 
+// ⭐ サーバー側ログイン確認を追加
+async function checkLogin() {
+  const res = await fetch("/api/me", {
+    method: "POST",
+    credentials: "include" // ← 超重要
+  });
+
+  if (!res.ok) {
+    alert("ログイン状態が無効です");
+    window.location.href = "/login";
+  }
+}
+
+checkLogin();
+
+
+// ==========================
+// ユーザー名登録
+// ==========================
 document.getElementById("toStep2").addEventListener("click", async () => {
 
   const username = document.getElementById("username").value.trim();
@@ -75,12 +94,13 @@ document.getElementById("toStep2").addEventListener("click", async () => {
   }
 
   if (!idToken) {
-    alert("認証エラー（トークンなし）");
+    alert("認証待機中です。少し待ってください");
     return;
   }
 
   const res = await fetch("/api/setup/username", {
     method: "POST",
+    credentials: "include", // ← 追加
     headers: {
       "Authorization": "Bearer " + idToken,
       "Content-Type": "application/json"
@@ -97,6 +117,10 @@ document.getElementById("toStep2").addEventListener("click", async () => {
   document.getElementById("step2").classList.remove("d-none");
 });
 
+
+// ==========================
+// アイコン処理
+// ==========================
 const iconInput = document.getElementById("iconInput");
 const preview = document.getElementById("preview");
 
@@ -118,13 +142,14 @@ iconInput.addEventListener("change", (e) => {
 document.getElementById("uploadIcon").addEventListener("click", async () => {
 
   if (!idToken) {
-    alert("認証エラー");
+    alert("認証待機中です");
     return;
   }
 
   if (base64Image) {
     await fetch("/api/setup/icon", {
       method: "POST",
+      credentials: "include", // ← 追加
       headers: {
         "Authorization": "Bearer " + idToken,
         "Content-Type": "application/json"
@@ -141,6 +166,5 @@ document.getElementById("uploadIcon").addEventListener("click", async () => {
 document.getElementById("skipIcon").addEventListener("click", () => {
   window.location.href = "/select-group";
 });
-
 </script>
 {% endblock %}
