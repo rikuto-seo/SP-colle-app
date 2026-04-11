@@ -21,7 +21,7 @@
     apiKey: "AIzaSyAJNWrQTo4R78rygPdugp6G7LXlJ0jggLo",
     authDomain: "sakamichi-photo-app.firebaseapp.com",
     projectId: "sakamichi-photo-app",
-    storageBucket: "sakamichi-photo-app.appspot.com",
+    storageBucket: "sakamichi-photo-app.firebasestorage.app", // ← 修正
     messagingSenderId: "873667254289",
     appId: "1:873667254289:web:4441f862542e9c4c9bb9b0",
   };
@@ -31,52 +31,61 @@
 
   const statusText = document.getElementById("statusText");
 
+  function showError(msg) {
+    statusText.textContent = msg;
+  }
+
   async function finishLogin() {
     try {
-      // 🔍 メールリンクか確認
+      // 🔍 メールリンク判定
       if (!isSignInWithEmailLink(auth, window.location.href)) {
-        statusText.textContent = "無効なリンクです。";
+        showError("無効なリンクです。");
         return;
       }
 
-      // 📧 メール取得（localStorage）
+      // 📧 email取得
       let email = localStorage.getItem("emailForSignIn");
 
       if (!email) {
-        // 他端末対策
-        email = window.prompt("メールアドレスを入力してください");
+        email = window.prompt("登録したメールアドレスを入力してください");
       }
 
       if (!email) {
-        statusText.textContent = "メールアドレスが必要です。";
+        showError("メールアドレスが必要です。");
         return;
       }
 
       // 🔐 Firebaseログイン
       const result = await signInWithEmailLink(auth, email, window.location.href);
 
-      // ローカル削除
       localStorage.removeItem("emailForSignIn");
 
-      // 🎫 トークン取得
+      // 🎫 IDトークン取得
       const token = await result.user.getIdToken();
 
       // 🔗 サーバー同期
       const res = await fetch("/api/me", {
         method: "POST",
         headers: {
-          "Authorization": "Bearer " + token,
-          "Content-Type": "application/json"
+          "Authorization": "Bearer " + token
         }
       });
 
+      // 🔴 ここ重要：レスポンスチェック強化
       if (!res.ok) {
-        throw new Error("サーバー同期失敗");
+        const errText = await res.text();
+        console.error("API ERROR:", errText);
+        throw new Error("ログイン状態の取得に失敗しました");
       }
 
       const data = await res.json();
 
-      // 🚀 初回 or 通常ログイン分岐
+      // 🔴 安全チェック
+      if (!data || data.status !== "ok") {
+        throw new Error("ログイン状態が不正です");
+      }
+
+      // 🚀 分岐
       if (!data.is_setup_complete) {
         window.location.href = "/first-register";
       } else {
@@ -84,8 +93,11 @@
       }
 
     } catch (err) {
-      console.error(err);
-      statusText.textContent = "ログインに失敗しました。もう一度お試しください。";
+      console.error("LOGIN ERROR:", err);
+
+      showError(
+        "ログインに失敗しました。\nもう一度やり直してください。"
+      );
     }
   }
 
