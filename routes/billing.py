@@ -164,8 +164,6 @@ def stripe_webhook():
     print("🔥 EVENT:", event["type"])
 
     def find_user(session_obj=None, customer_id=None):
-        user = None
-
         if session_obj:
             metadata = session_obj.get("metadata", {})
             user_id = metadata.get("user_id")
@@ -173,125 +171,116 @@ def stripe_webhook():
             if user_id:
                 user = db.session.get(User, int(user_id))
                 if user:
-                    print("✅ USER FOUND (metadata):", user.id)
                     return user
 
         if customer_id:
-            user = User.query.filter_by(
+            return User.query.filter_by(
                 stripe_customer_id=customer_id
             ).first()
 
-            if user:
-                print("✅ USER FOUND (customer):", user.id)
-                return user
-
-        print("❌ USER NOT FOUND")
         return None
 
-    if event["type"] == "checkout.session.completed":
-        try:
-            session_obj = event["data"]["object"]
-            customer_id = session_obj.get("customer")
+    try:
 
-            user = find_user(session_obj, customer_id)
+        # ✅ 初回課金
+        if event["type"] == "checkout.session.completed":
+
+            session_obj = event["data"]["object"]
+            user = find_user(session_obj, session_obj.get("customer"))
 
             if not user:
-                return "user not found", 200
+                return "ok", 200
 
-            line_items = stripe.checkout.Session.list_line_items(
-                session_obj["id"]
-            )
+            # プラン
+            plan = session_obj.get("metadata", {}).get("target_plan")
+            if plan in ["lite", "standard", "premium"]:
+                user.plan_type = plan
 
-            for item in line_items["data"]:
-                price_id = item["price"]["id"]
-
-                if price_id == PRICE_IDS["lite"]:
-                    user.plan_type = "lite"
-                elif price_id == PRICE_IDS["standard"]:
-                    user.plan_type = "standard"
-                elif price_id == PRICE_IDS["premium"]:
-                    user.plan_type = "premium"
-
+            # グループ
             groups_str = session_obj.get("metadata", {}).get("groups")
-
             if groups_str:
                 user.selected_groups = groups_str
 
+            # サブスク情報取得
             subscription_id = session_obj.get("subscription")
-
             if subscription_id:
+                sub = stripe.Subscription.retrieve(subscription_id)
+
                 user.stripe_subscription_id = subscription_id
+                user.subscription_status = sub.status
+                user.cancel_at_period_end = sub.cancel_at_period_end
+
+                if sub.current_period_end:
+                    from datetime import datetime, timezone
+                    user.current_period_end = datetime.fromtimestamp(
+                        sub.current_period_end,
+                        tz=timezone.utc
+                    )
 
             db.session.commit()
-            
-        except Exception as e:
-            db.session.rollback()
-            print("❌ DB ERROR:", e)
-            return "db error", 200
 
-    elif event["type"] == "invoice.payment_succeeded":
-        invoice = event["data"]["object"]
-        customer_id = invoice.get("customer")
+        # ✅ 更新（解約予約・更新など全部ここに来る）
+        elif event["type"] == "customer.subscription.updated":
 
-        user = find_user(customer_id=customer_id)
+            subscription = event["data"]["object"]
+            user = find_user(customer_id=subscription.get("customer"))
 
-        if user:
-            print("💰 RENEWAL SUCCESS:", user.id)
+            if user:
+                user.subscription_status = subscription.get("status")
+                user.cancel_at_period_end = subscription.get("cancel_at_period_end", False)
 
-            sub_id = invoice.get("subscription")
-
-            if sub_id:
-                sub = stripe.Subscription.retrieve(sub_id)
-
-                price_id = sub["items"]["data"][0]["price"]["id"]
-
-                if price_id == PRICE_IDS["lite"]:
-                    user.plan_type = "lite"
-                elif price_id == PRICE_IDS["standard"]:
-                    user.plan_type = "standard"
-                elif price_id == PRICE_IDS["premium"]:
-                    user.plan_type = "premium"
+                if subscription.get("current_period_end"):
+                    from datetime import datetime, timezone
+                    user.current_period_end = datetime.fromtimestamp(
+                        subscription["current_period_end"],
+                        tz=timezone.utc
+                    )
 
                 db.session.commit()
-                print("✅ PLAN UPDATED AFTER PAYMENT:", user.plan_type)
 
-    elif event["type"] == "customer.subscription.deleted":
-        try:
+        # ✅ 完全解約
+        elif event["type"] == "customer.subscription.deleted":
+
             subscription = event["data"]["object"]
-            customer_id = subscription.get("customer")
-
-            user = find_user(customer_id=customer_id)
+            user = find_user(customer_id=subscription.get("customer"))
 
             if user:
                 user.plan_type = "free"
                 user.stripe_subscription_id = None
+                user.subscription_status = "canceled"
+                user.cancel_at_period_end = False
+                user.current_period_end = None
 
                 db.session.commit()
-                print("🔻 PLAN DOWNGRADED: free")
 
-        except Exception as e:
-            db.session.rollback()
-            print("❌ DB ERROR:", e)
+        # ✅ 支払い成功（更新）
+        elif event["type"] == "invoice.payment_succeeded":
 
-    elif event["type"] == "customer.subscription.updated":
-        try:
-            subscription = event["data"]["object"]
-            customer_id = subscription.get("customer")
-
-            user = find_user(customer_id=customer_id)
+            invoice = event["data"]["object"]
+            user = find_user(customer_id=invoice.get("customer"))
 
             if user:
-                cancel_flag = subscription.get("cancel_at_period_end", False)
+                sub_id = invoice.get("subscription")
 
-                print("🔄 SUB UPDATED cancel:", cancel_flag)
+                if sub_id:
+                    sub = stripe.Subscription.retrieve(sub_id)
 
-                # ここで状態をログだけでも残すと良い
-                # 将来的にDBに持ってもOK
+                    user.subscription_status = sub.status
 
-        except Exception as e:
-            print("❌ UPDATE ERROR:", e)
+                    if sub.current_period_end:
+                        from datetime import datetime, timezone
+                        user.current_period_end = datetime.fromtimestamp(
+                            sub.current_period_end,
+                            tz=timezone.utc
+                        )
 
-    else:
-        print("ℹ️ UNHANDLED EVENT:", event["type"])
+                    db.session.commit()
+
+        else:
+            print("ℹ️ UNHANDLED EVENT:", event["type"])
+
+    except Exception as e:
+        db.session.rollback()
+        print("❌ WEBHOOK ERROR:", e)
 
     return "ok", 200

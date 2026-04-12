@@ -47,27 +47,12 @@ def mypage():
     if selected_group not in selected_groups:
         selected_group = selected_groups[0]
 
+    # ✅ Stripe API完全排除
     next_billing = None
-    cancel_at_period_end = False
+    cancel_at_period_end = current_user.cancel_at_period_end
 
-    if current_user.stripe_subscription_id:
-        try:
-            sub = stripe.Subscription.retrieve(
-                current_user.stripe_subscription_id
-            )
-
-            period_end = sub.get("current_period_end")
-
-            if period_end:
-                dt = datetime.fromtimestamp(period_end)
-                next_billing = dt.strftime('%Y-%m-%d')
-            else:
-                next_billing = None
-
-            cancel_at_period_end = sub.get("cancel_at_period_end", False)
-
-        except Exception as e:
-            current_app.logger.error(f"Stripe取得失敗: {e}")
+    if current_user.current_period_end:
+        next_billing = current_user.current_period_end.strftime('%Y-%m-%d')
 
     def make_qr(group_key):
         share = WantShare.query.filter_by(
@@ -101,7 +86,6 @@ def mypage():
     qr_codes = {}
     for g in selected_groups:
         share = WantShare.get_or_create(current_user.id, g)
-
         qr_codes[g] = make_qr(g) if share.is_public else ""
 
     share_statuses = {}
