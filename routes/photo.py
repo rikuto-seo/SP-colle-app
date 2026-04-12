@@ -11,6 +11,7 @@ from forms import AddPhotoForm
 from services.stats_service import get_costumes_from_member_csv, get_ordered_members, load_required_types
 from datetime import date
 from collections import defaultdict
+from routes.core import group_required
 
 photo_bp = Blueprint('photo', __name__)
 
@@ -23,6 +24,7 @@ GROUP_KEY_MAP = {
 
 @photo_bp.route('/index/<group_key>', methods=['GET'])
 @login_required
+@group_required
 def index(group_key):
 
     if group_key not in GROUP_KEY_MAP:
@@ -229,6 +231,7 @@ def index(group_key):
 
 @photo_bp.route('/delete_user_photo/<group_key>/<int:photo_id>', methods=['POST'])
 @login_required
+@group_required
 def delete_user_photo(group_key, photo_id):
     photo = UserPhoto.query.filter_by(
         id=photo_id,
@@ -264,6 +267,7 @@ def delete_user_photo(group_key, photo_id):
 
 @photo_bp.route('/add/<group_key>', methods=['GET', 'POST'])
 @login_required
+@group_required
 def add(group_key):
     group_colors = {
         'nogizaka': 'bg-nogi',
@@ -532,6 +536,7 @@ def get_types():
 
 @photo_bp.route('/update_user_photo/<group_key>/<int:photo_id>', methods=['POST'])
 @login_required
+@group_required
 def update_user_photo(group_key, photo_id):
     photo = UserPhoto.query.filter_by(
         id=photo_id,

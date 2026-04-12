@@ -1,8 +1,24 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash,abort
 from flask_login import login_required, current_user
 from extensions import db
-
+from functools import wraps
 core_bp = Blueprint('core', __name__)
+
+def group_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+
+        group_key = kwargs.get("group_key")
+
+        if not group_key:
+            abort(400)
+
+        if not current_user.can_access_group(group_key):
+            abort(403)
+
+        return f(*args, **kwargs)
+
+    return wrapper
 
 @core_bp.route('/group/<group_key>')
 def group(group_key):
@@ -43,6 +59,7 @@ def legal():
 
 @core_bp.route('/switch/<group_key>')
 @login_required
+@group_required
 def group_switch(group_key):
 
     if not current_user.can_access_group(group_key):

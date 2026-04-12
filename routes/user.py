@@ -3,6 +3,7 @@ from flask_login import login_required, current_user, logout_user
 import os,io,qrcode,shutil,base64,time,stripe
 from PIL import Image
 from io import BytesIO
+from routes.core import group_required
 from extensions import db
 from forms import IconUploadForm
 from firebase_admin import auth as firebase_auth,storage
@@ -313,6 +314,7 @@ def confirm_delete_final():
 
 @user_bp.route('/toggle_share/<group_key>', methods=['POST'])
 @login_required
+@group_required
 def toggle_share(group_key):
 
     if group_key not in ALLOWED_GROUPS:

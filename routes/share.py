@@ -1,7 +1,6 @@
-from flask import Blueprint, render_template, abort, url_for, jsonify
-from flask_login import login_required, current_user
+from flask import Blueprint, render_template, abort
 from models import User, UserPhoto,WantShare
-import qrcode, base64, io
+from routes.core import group_required
 from forstats import get_all_photos, get_user_photo_ids, compute_collection_stats
 from extensions import db
 
@@ -10,6 +9,7 @@ share_bp = Blueprint('share', __name__)
 ALLOWED_GROUPS = {"nogizaka", "sakurazaka", "hinatazaka"}
 
 @share_bp.route('/shared/<group_key>/<public_uuid>')
+@group_required
 def shared_stats(group_key, public_uuid):
 
     if group_key not in ALLOWED_GROUPS:
@@ -32,6 +32,7 @@ def shared_stats(group_key, public_uuid):
     return render_template('shared_stats.html', user=user, stats=stats)
 
 @share_bp.route('/share/<group_key>/<public_uuid>')
+@group_required
 def shared_collection(group_key, public_uuid):
 
     if group_key not in ALLOWED_GROUPS:

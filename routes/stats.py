@@ -2,6 +2,7 @@ from collections import defaultdict
 from flask import Blueprint, render_template, request, abort
 from flask_login import login_required, current_user
 from models import UserPhoto
+from routes.core import group_required
 from services.photo_service import load_required_types, get_missing_photos
 from services.stats_service import get_ordered_members, get_all_costumes_in_order
 stats_bp = Blueprint('stats', __name__)
@@ -24,6 +25,7 @@ def get_group_conf(group_key):
 
 @stats_bp.route('/stats/<group_key>')
 @login_required
+@group_required
 def stats(group_key):
     conf = get_group_conf(group_key)
 
@@ -130,6 +132,7 @@ def stats(group_key):
 
 @stats_bp.route('/missing/<group_key>', methods=['GET'])
 @login_required
+@group_required
 def missing(group_key):
     conf = get_group_conf(group_key)
 
