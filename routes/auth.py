@@ -99,11 +99,10 @@ def create_user():
 def api_me():
 
     user = get_current_user()
-
-    login_user(user, remember=True)
-
     if not user:
         return jsonify({'error': 'unauthorized'}), 401
+
+    login_user(user, remember=True)
 
     is_setup_complete = bool(
         user.username and user.get_selected_groups()

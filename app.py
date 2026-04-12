@@ -46,6 +46,16 @@ app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 
 login_manager = LoginManager()
 login_manager.init_app(app)
+login_manager.login_view = "auth.login"
+
+@login_manager.user_loader
+def load_user(user_id):
+    if not user_id:
+        return None
+    try:
+        return db.session.get(User, int(user_id))
+    except (TypeError, ValueError):
+        return None
 
 # Firebase init
 cred_json = os.environ.get("FIREBASE_KEY_JSON")
@@ -67,12 +77,8 @@ cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache'})
 csrf.init_app(app)
 
 # =========================
-# 🔥 Flask-Login 完全無効化
-# =========================
-# login_manager 削除（重要）
-
-# =========================
-# 🔥 Firebaseベース user取得
+# Firebaseベース user取得（テンプレート・before_request）
+# （@login_required はセッション上の Flask-Login と user_loader を使用）
 # =========================
 from firebase_admin import auth as firebase_auth
 
@@ -150,8 +156,6 @@ def enforce_group_access():
 
     if not user.can_access_group(group_key):
         return redirect(url_for('user.upgrade'))
-
-print("DB URL:", db_url)
 
 app.register_blueprint(photo_bp)
 app.register_blueprint(stats_bp)
