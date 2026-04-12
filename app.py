@@ -1,12 +1,12 @@
 from flask import Flask, request
-from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_caching import Cache
+from flask_login import LoginManager
 from datetime import timedelta
-import os, firebase_admin,json
+import os, firebase_admin, json
 from firebase_admin import credentials
 from config import Config
-from extensions import db,csrf
+from extensions import db, csrf
 from models import User
 from dotenv import load_dotenv
 load_dotenv()
@@ -29,6 +29,7 @@ app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY")
 app.config.from_object(Config)
 app.config['WTF_CSRF_ENABLED'] = True
 
+# Cookie設定（クロスドメイン対応）
 app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
@@ -38,12 +39,15 @@ app.config['REMEMBER_COOKIE_HTTPONLY'] = True
 app.config['REMEMBER_COOKIE_SAMESITE'] = 'None'
 
 db_url = os.environ.get("DATABASE_URL")
-
 if db_url and db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+# Firebase init
 cred_json = os.environ.get("FIREBASE_KEY_JSON")
 cred_path = os.environ.get("FIREBASE_KEY_PATH")
 
@@ -55,43 +59,62 @@ if not firebase_admin._apps:
     else:
         raise ValueError("Firebase credentials not set")
 
-    firebase_admin.initialize_app(cred, {
-        'storageBucket': 'sakamichi-photo-app.appspot.app'
-    })
+    firebase_admin.initialize_app(cred)
 
 db.init_app(app)
 migrate = Migrate(app, db)
 cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache'})
-
 csrf.init_app(app)
 
-login_manager = LoginManager()
-login_manager.login_view = 'auth.login'
-login_manager.init_app(app)
+# =========================
+# 🔥 Flask-Login 完全無効化
+# =========================
+# login_manager 削除（重要）
 
-@login_manager.user_loader
-def load_user(user_id):
-    return db.session.get(User, int(user_id))
+# =========================
+# 🔥 Firebaseベース user取得
+# =========================
+from firebase_admin import auth as firebase_auth
 
+def get_current_user():
+    auth_header = request.headers.get('Authorization', '')
+
+    if not auth_header.startswith("Bearer "):
+        return None
+
+    token = auth_header.split(" ", 1)[1].strip()
+
+    try:
+        decoded = firebase_auth.verify_id_token(token)
+        uid = decoded['uid']
+        return User.query.filter_by(firebase_uid=uid).first()
+    except Exception:
+        return None
+
+# =========================
+# 🔥 context_processor 修正
+# =========================
 @app.context_processor
 def inject_common():
-    from flask import request, url_for
-    from flask_login import current_user
+    from flask import url_for
 
-    if current_user.is_authenticated:
-        icon_url = current_user.icon_url or url_for('static', filename='images/default_icon.png')
+    user = get_current_user()
+
+    if user and user.icon_url:
+        icon_url = user.icon_url
     else:
         icon_url = url_for('static', filename='images/default_icon.png')
 
     return dict(
-        endpoint=request.endpoint,
         icon_url=icon_url
     )
 
+# =========================
+# 🔥 before_request 修正
+# =========================
 @app.before_request
 def enforce_plan_limit():
-    from flask_login import current_user
-    from flask import redirect, url_for, request
+    from flask import redirect, url_for
 
     if request.path.startswith("/finish-login"):
         return
@@ -99,30 +122,25 @@ def enforce_plan_limit():
     if request.path.startswith("/static"):
         return
 
-    if not current_user.is_authenticated:
+    user = get_current_user()
+    if not user:
         return
 
-    if not request.endpoint:
-        return
-
-    selected = current_user.get_selected_groups()
-    allowed = current_user.get_allowed_group_count()
+    selected = user.get_selected_groups()
+    allowed = user.get_allowed_group_count()
 
     if len(selected) > allowed:
         return redirect(url_for('user.force_group_select'))
-    
+
 @app.before_request
 def enforce_group_access():
-    from flask_login import current_user
-    from flask import request, redirect, url_for
+    from flask import redirect, url_for
 
     if request.path.startswith("/finish-login"):
         return
 
-    if not current_user.is_authenticated:
-        return
-
-    if not request.endpoint:
+    user = get_current_user()
+    if not user:
         return
 
     group_key = request.view_args.get('group_key') if request.view_args else None
@@ -130,7 +148,7 @@ def enforce_group_access():
     if not group_key:
         return
 
-    if not current_user.can_access_group(group_key):
+    if not user.can_access_group(group_key):
         return redirect(url_for('user.upgrade'))
 
 print("DB URL:", db_url)
