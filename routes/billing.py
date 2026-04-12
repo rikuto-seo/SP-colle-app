@@ -10,9 +10,9 @@ billing_bp = Blueprint('billing', __name__)
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
 PRICE_IDS = {
-    "lite": "price_1TGViaLpYTfv8wQ04V8pqM8s",
-    "standard": "price_1TGVirLpYTfv8wQ0AMd4gfUO",
-    "premium": "price_1TFEHqLpYTfv8wQ09O2XSR4O"
+    "lite": "price_1TLO7KPvnGX55ydCcJxWWRlb",
+    "standard": "price_1TLO81PvnGX55ydCr2hBb63p",
+    "premium": "price_1TLO8dPvnGX55ydClrsqTyea"
 }
 
 @billing_bp.route("/api/create-checkout-session", methods=["POST"])
