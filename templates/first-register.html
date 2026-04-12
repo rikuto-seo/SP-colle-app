@@ -49,7 +49,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/fireba
 import {
   getAuth,
   onAuthStateChanged,
-  updatePassword
+  updatePassword,
+  setPersistence,
+  browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -60,17 +62,22 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
+// 永続化（超重要）
+await setPersistence(auth, browserLocalPersistence);
+
 let idToken = null;
+let currentUser = null;
 
 // ==========================
-// Firebase復元待ち（完全版）
+// Firebase復元待ち（安定版）
 // ==========================
 function waitForAuth() {
   return new Promise((resolve, reject) => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
-          idToken = await user.getIdToken();
+          currentUser = user;
+          idToken = await user.getIdToken(true); // 常に最新
           unsub();
           resolve(user);
         } catch (e) {
@@ -79,7 +86,6 @@ function waitForAuth() {
       }
     });
 
-    // 念のためタイムアウト
     setTimeout(() => reject("auth timeout"), 10000);
   });
 }
@@ -89,7 +95,7 @@ function waitForAuth() {
 // ==========================
 async function checkLogin() {
   try {
-    const user = await waitForAuth();
+    await waitForAuth();
 
     const res = await fetch("/api/me", {
       method: "POST",
@@ -98,15 +104,16 @@ async function checkLogin() {
       }
     });
 
-    if (!res.ok) throw new Error();
+    if (!res.ok) throw new Error("Flask session invalid");
 
   } catch (err) {
+    console.error("LOGIN CHECK ERROR:", err);
     alert("ログイン状態が無効です");
     window.location.href = "/login";
   }
 }
 
-checkLogin();
+await checkLogin();
 
 
 // ==========================
@@ -134,19 +141,18 @@ document.getElementById("toStep2").addEventListener("click", async () => {
   }
 
   try {
-    const user = auth.currentUser;
-
-    if (!user) {
-      alert("認証エラーです。再ログインしてください");
+    // 🔥 ここ修正：currentUserではなく保証済みuser
+    if (!currentUser) {
+      alert("認証状態が不正です。再ログインしてください");
       location.href = "/login";
       return;
     }
 
-    // 🔐 パスワード設定（ここ重要）
-    await updatePassword(user, password);
+    // 🔐 パスワード設定
+    await updatePassword(currentUser, password);
 
-    // 🔁 トークン強制更新
-    idToken = await user.getIdToken(true);
+    // 🔁 トークン更新
+    idToken = await currentUser.getIdToken(true);
 
     // 👤 ユーザー名保存
     const res = await fetch("/api/setup/username", {
@@ -158,14 +164,18 @@ document.getElementById("toStep2").addEventListener("click", async () => {
       body: JSON.stringify({ username })
     });
 
-    if (!res.ok) throw new Error();
+    if (!res.ok) {
+      const text = await res.text();
+      console.error(text);
+      throw new Error("username save failed");
+    }
 
-    // 次へ
+    // UI遷移
     document.getElementById("step1").classList.add("d-none");
     document.getElementById("step2").classList.remove("d-none");
 
   } catch (err) {
-    console.error(err);
+    console.error("STEP1 ERROR:", err);
 
     if (err.code === "auth/requires-recent-login") {
       alert("セキュリティのため再ログインしてください");
@@ -201,17 +211,21 @@ iconInput.addEventListener("change", (e) => {
 
 document.getElementById("uploadIcon").addEventListener("click", async () => {
 
-  if (base64Image) {
-    await fetch("/api/setup/icon", {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + idToken,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        image: base64Image
-      })
-    });
+  try {
+    if (base64Image) {
+      await fetch("/api/setup/icon", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + idToken,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          image: base64Image
+        })
+      });
+    }
+  } catch (e) {
+    console.error("ICON ERROR:", e);
   }
 
   window.location.href = "/select-group";
