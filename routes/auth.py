@@ -6,7 +6,7 @@ from uuid import uuid4
 import re
 import os
 import base64
-from flask_login import login_user
+from flask_login import login_user, current_user
 
 
 auth_bp = Blueprint('auth', __name__)
@@ -28,6 +28,8 @@ def get_current_user():
 
 @auth_bp.route('/login')
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('auth.home'))
     return render_template('login.html')
 
 
@@ -42,7 +44,23 @@ def first_register():
 
 @auth_bp.route('/')
 def home():
-    return redirect(url_for('auth.login'))
+    if not current_user.is_authenticated:
+        return redirect(url_for('auth.login'))
+
+    if not (current_user.username and current_user.get_selected_groups()):
+        return redirect(url_for('auth.first_register'))
+
+    group_key = current_user.primary_group
+    if group_key and current_user.can_access_group(group_key):
+        return redirect(url_for('photo.index', group_key=group_key))
+
+    selected = current_user.get_selected_groups()
+    if selected:
+        g = selected[0]
+        if current_user.can_access_group(g):
+            return redirect(url_for('photo.index', group_key=g))
+
+    return redirect(url_for('user.select_group'))
 
 @auth_bp.route('/finish-login')
 def finish_login():
