@@ -14,7 +14,13 @@ def group_required(f):
             abort(400)
 
         if not current_user.can_access_group(group_key):
-            abort(403)
+            # 👇 ここ重要
+            selected = current_user.get_selected_groups()
+
+            if selected:
+                return redirect(url_for("photo.index", group_key=selected[0]))
+
+            return redirect(url_for("user.select_group"))
 
         return f(*args, **kwargs)
 
