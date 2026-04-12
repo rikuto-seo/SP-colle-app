@@ -240,14 +240,6 @@ def api_me():
             db.session.add(user)
             db.session.commit()
 
-        # =========================
-        # ログイン状態にする
-        # =========================
-        login_user(user, remember=True)
-
-        # =========================
-        # 初期登録完了判定
-        # =========================
         is_setup_complete = bool(
             user.username and user.get_selected_groups()
         )

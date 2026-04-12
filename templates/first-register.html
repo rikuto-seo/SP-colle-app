@@ -99,12 +99,17 @@ async function checkLogin() {
 
     const res = await fetch("/api/me", {
       method: "POST",
+      credentials: "include",
       headers: {
         Authorization: "Bearer " + idToken
       }
     });
 
-    if (!res.ok) throw new Error("Flask session invalid");
+    const data = await res.json();
+
+    if (!res.ok || data.status !== "ok") {
+      throw new Error("auth failed");
+    }
 
   } catch (err) {
     console.error("LOGIN CHECK ERROR:", err);
