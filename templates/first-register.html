@@ -55,8 +55,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSy...",
+  apiKey: "AIzaSyAJNWrQTo4R78rygPdugp6G7LXlJ0jggLo",
   authDomain: "sakamichi-photo-app.firebaseapp.com",
+  projectId: "sakamichi-photo-app",
+  storageBucket: "sakamichi-photo-app.appspot.com",
+  messagingSenderId: "873667254289",
+  appId: "1:873667254289:web:4441f862542e9c4c9bb9b0",
 };
 
 const app = initializeApp(firebaseConfig);
@@ -162,6 +166,7 @@ document.getElementById("toStep2").addEventListener("click", async () => {
     // 👤 ユーザー名保存
     const res = await fetch("/api/setup/username", {
       method: "POST",
+      credentials: "include",
       headers: {
         "Authorization": "Bearer " + idToken,
         "Content-Type": "application/json"
@@ -220,6 +225,7 @@ document.getElementById("uploadIcon").addEventListener("click", async () => {
     if (base64Image) {
       await fetch("/api/setup/icon", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Authorization": "Bearer " + idToken,
           "Content-Type": "application/json"

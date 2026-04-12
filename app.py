@@ -1,12 +1,11 @@
 from flask import Flask, request
 from flask_migrate import Migrate
 from flask_caching import Cache
-from flask_login import LoginManager
 from datetime import timedelta
 import os, firebase_admin, json
 from firebase_admin import credentials
 from config import Config
-from extensions import db, csrf
+from extensions import db, csrf, login_manager
 from models import User
 from dotenv import load_dotenv
 load_dotenv()
@@ -44,19 +43,6 @@ if db_url and db_url.startswith("postgres://"):
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = "auth.login"
-
-@login_manager.user_loader
-def load_user(user_id):
-    if not user_id:
-        return None
-    try:
-        return db.session.get(User, int(user_id))
-    except (TypeError, ValueError):
-        return None
-
 # Firebase init
 cred_json = os.environ.get("FIREBASE_KEY_JSON")
 cred_path = os.environ.get("FIREBASE_KEY_PATH")
@@ -75,6 +61,20 @@ db.init_app(app)
 migrate = Migrate(app, db)
 cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache'})
 csrf.init_app(app)
+
+login_manager.init_app(app)
+login_manager.login_view = "auth.login"
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    if not user_id:
+        return None
+    try:
+        return db.session.get(User, int(user_id))
+    except (TypeError, ValueError):
+        return None
+
 
 # =========================
 # Firebaseベース user取得（テンプレート・before_request）
