@@ -47,20 +47,22 @@ def mypage():
     if selected_group not in selected_groups:
         selected_group = selected_groups[0]
 
-    # Webhook遅延/取りこぼし対策:
-    # next billing が未設定で subscription_id がある場合だけ Stripe から補完
-    if current_user.stripe_subscription_id and not current_user.current_period_end:
+    if current_user.stripe_subscription_id:
         try:
             sub = stripe.Subscription.retrieve(current_user.stripe_subscription_id)
+
             period_end = sub.get("current_period_end")
             if period_end:
                 current_user.current_period_end = datetime.fromtimestamp(period_end)
+
             current_user.subscription_status = sub.get("status")
             current_user.cancel_at_period_end = sub.get("cancel_at_period_end", False)
+
             db.session.commit()
+
         except Exception as e:
             current_app.logger.warning(f"Stripe subscription refresh failed: {e}")
-
+            
     next_billing = None
     cancel_at_period_end = current_user.cancel_at_period_end
 
@@ -355,9 +357,33 @@ def toggle_dark_mode():
 @user_bp.route('/upgrade')
 @login_required
 def upgrade():
+
+    # Stripeから最新取得（←超重要）
+    if current_user.stripe_subscription_id:
+        try:
+            sub = stripe.Subscription.retrieve(current_user.stripe_subscription_id)
+
+            period_end = sub.get("current_period_end")
+            if period_end:
+                current_user.current_period_end = datetime.fromtimestamp(period_end)
+
+            current_user.cancel_at_period_end = sub.get("cancel_at_period_end", False)
+
+            db.session.commit()
+
+        except Exception as e:
+            current_app.logger.warning(f"Stripe refresh failed: {e}")
+
+    # 表示用
+    next_billing = None
+    if current_user.current_period_end:
+        next_billing = current_user.current_period_end.strftime('%Y-%m-%d')
+
     return render_template(
         'upgrade.html',
-        current_plan=current_user.plan_type
+        current_plan=current_user.plan_type,
+        next_billing=next_billing,
+        cancel_at_period_end=current_user.cancel_at_period_end
     )
 
 @user_bp.route("/payment-success")
