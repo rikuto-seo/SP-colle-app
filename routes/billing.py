@@ -182,67 +182,66 @@ def stripe_webhook():
 
     try:
 
-        # ✅ 初回課金
+        # =========================
+        # checkout.session.completed
+        # =========================
         if event["type"] == "checkout.session.completed":
 
             session_obj = event["data"]["object"]
             user = find_user(session_obj, session_obj.get("customer"))
 
-            if not user:
-                return "ok", 200
+            if user:
 
-            # プラン
-            plan = session_obj.get("metadata", {}).get("target_plan")
-            if plan in ["lite", "standard", "premium"]:
-                user.plan_type = plan
+                plan = session_obj.get("metadata", {}).get("target_plan")
+                if plan in ["lite", "standard", "premium"]:
+                    user.plan_type = plan
 
-            # グループ
-            groups_str = session_obj.get("metadata", {}).get("groups")
-            if groups_str:
-                user.selected_groups = groups_str
+                groups_str = session_obj.get("metadata", {}).get("groups")
+                if groups_str:
+                    user.selected_groups = groups_str
 
-            # サブスク情報取得
-            subscription_id = session_obj.get("subscription")
-            if subscription_id:
-                sub = stripe.Subscription.retrieve(subscription_id)
+                subscription_id = session_obj.get("subscription")
 
-                user.stripe_subscription_id = subscription_id
-                user.subscription_status = sub.status
-                user.cancel_at_period_end = sub.cancel_at_period_end
+                if subscription_id:
+                    sub = stripe.Subscription.retrieve(subscription_id)
 
-                if sub.current_period_end:
-                    from datetime import datetime, timezone
-                    user.current_period_end = datetime.fromtimestamp(
-                        sub.current_period_end,
-                        tz=timezone.utc
-                    )
+                    user.stripe_subscription_id = subscription_id
+                    user.subscription_status = sub.status
+                    user.cancel_at_period_end = sub.cancel_at_period_end
 
-            db.session.commit()
+                    if sub.current_period_end:
+                        from datetime import datetime
 
-        # ✅ 更新（解約予約・更新など全部ここに来る）
+                        user.current_period_end = datetime.fromtimestamp(
+                            sub.current_period_end
+                        )
+
+        # =========================
+        # subscription update
+        # =========================
         elif event["type"] == "customer.subscription.updated":
 
-            subscription = event["data"]["object"]
-            user = find_user(customer_id=subscription.get("customer"))
+            sub = event["data"]["object"]
+            user = find_user(customer_id=sub.get("customer"))
 
             if user:
-                user.subscription_status = subscription.get("status")
-                user.cancel_at_period_end = subscription.get("cancel_at_period_end", False)
+                user.subscription_status = sub.get("status")
+                user.cancel_at_period_end = sub.get("cancel_at_period_end", False)
 
-                if subscription.get("current_period_end"):
-                    from datetime import datetime, timezone
+                if sub.get("current_period_end"):
+                    from datetime import datetime
+
                     user.current_period_end = datetime.fromtimestamp(
-                        subscription["current_period_end"],
-                        tz=timezone.utc
+                        sub["current_period_end"]
                     )
 
-                db.session.commit()
-
-        # ✅ 完全解約
+        # =========================
+        # subscription deleted
+        # =========================
         elif event["type"] == "customer.subscription.deleted":
 
-            subscription = event["data"]["object"]
-            user = find_user(customer_id=subscription.get("customer"))
+            sub = event["data"]["object"]
+            user = find_user(customer_id=sub.get("customer"))
 
             if user:
                 user.plan_type = "free"
@@ -251,9 +250,9 @@ def stripe_webhook():
                 user.cancel_at_period_end = False
                 user.current_period_end = None
 
-                db.session.commit()
-
-        # ✅ 支払い成功（更新）
+        # =========================
+        # invoice paid
+        # =========================
         elif event["type"] == "invoice.payment_succeeded":
 
             invoice = event["data"]["object"]
@@ -268,16 +267,16 @@ def stripe_webhook():
                     user.subscription_status = sub.status
 
                     if sub.current_period_end:
-                        from datetime import datetime, timezone
-                        user.current_period_end = datetime.fromtimestamp(
-                            sub.current_period_end,
-                            tz=timezone.utc
-                        )
+                        from datetime import datetime
 
-                    db.session.commit()
+                        user.current_period_end = datetime.fromtimestamp(
+                            sub.current_period_end
+                        )
 
         else:
             print("ℹ️ UNHANDLED EVENT:", event["type"])
+
+        db.session.commit()
 
     except Exception as e:
         db.session.rollback()
