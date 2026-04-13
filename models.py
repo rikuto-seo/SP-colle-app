@@ -67,6 +67,12 @@ class User(UserMixin, db.Model):
     )
     subscription_status = db.Column(db.String(50))  
 
+    want_list = db.relationship(
+        'WantPhoto',
+        back_populates='user',
+        cascade='all, delete-orphan'
+    )
+    
     current_period_end = db.Column(db.DateTime)
     cancel_at_period_end = db.Column(db.Boolean, default=False)
 
@@ -259,8 +265,8 @@ class WantPhoto(db.Model):
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    user = db.relationship('User', backref='want_list')
-
+    user = db.relationship('User', back_populates='want_list')
+    
     __table_args__ = (
         db.UniqueConstraint(
             'user_id', 'group_key', 'member', 'costume', 'photo_type'

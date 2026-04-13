@@ -282,6 +282,7 @@ def confirm_delete_final():
                 try:
                     stripe.Subscription.delete(current_user.stripe_subscription_id)
                 except Exception as e:
+                    db.session.rollback()
                     current_app.logger.error(f"Stripe解約失敗: {e}")
 
             db.session.delete(current_user)
@@ -291,6 +292,7 @@ def confirm_delete_final():
             flash('アカウントを完全に削除しました。', 'success')
             return redirect(url_for('photo.index'))
         except Exception as e:
+            db.session.rollback()
             current_app.logger.error(f"[アカウント削除エラー] {e}")
             flash('削除中にエラーが発生しました。', 'danger')
 
