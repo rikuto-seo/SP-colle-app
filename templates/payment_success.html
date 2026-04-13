@@ -45,8 +45,6 @@ async function checkStatus() {
   setTimeout(checkStatus, 1000);
 }
 
-checkStatus();
-
 async function waitForPlanUpdate(expectedPlan) {
 
   for (let i = 0; i < 10; i++) {

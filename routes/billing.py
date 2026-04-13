@@ -163,6 +163,12 @@ def stripe_webhook():
 
     print("🔥 EVENT:", event["type"])
 
+    def to_datetime(ts):
+        if not ts:
+            return None
+        from datetime import datetime
+        return datetime.fromtimestamp(ts)
+
     def find_user(session_obj=None, customer_id=None):
         if session_obj:
             metadata = session_obj.get("metadata", {})
@@ -206,15 +212,9 @@ def stripe_webhook():
                     sub = stripe.Subscription.retrieve(subscription_id)
 
                     user.stripe_subscription_id = subscription_id
-                    user.subscription_status = sub.status
-                    user.cancel_at_period_end = sub.cancel_at_period_end
-
-                    if sub.current_period_end:
-                        from datetime import datetime
-
-                        user.current_period_end = datetime.fromtimestamp(
-                            sub.current_period_end
-                        )
+                    user.subscription_status = sub.get("status")
+                    user.cancel_at_period_end = sub.get("cancel_at_period_end", False)
+                    user.current_period_end = to_datetime(sub.get("current_period_end"))
 
         # =========================
         # subscription update
@@ -227,13 +227,7 @@ def stripe_webhook():
             if user:
                 user.subscription_status = sub.get("status")
                 user.cancel_at_period_end = sub.get("cancel_at_period_end", False)
-
-                if sub.get("current_period_end"):
-                    from datetime import datetime
-
-                    user.current_period_end = datetime.fromtimestamp(
-                        sub["current_period_end"]
-                    )
+                user.current_period_end = to_datetime(sub.get("current_period_end"))
 
         # =========================
         # subscription deleted
@@ -264,14 +258,8 @@ def stripe_webhook():
                 if sub_id:
                     sub = stripe.Subscription.retrieve(sub_id)
 
-                    user.subscription_status = sub.status
-
-                    if sub.current_period_end:
-                        from datetime import datetime
-
-                        user.current_period_end = datetime.fromtimestamp(
-                            sub.current_period_end
-                        )
+                    user.subscription_status = sub.get("status")
+                    user.current_period_end = to_datetime(sub.get("current_period_end"))
 
         else:
             print("ℹ️ UNHANDLED EVENT:", event["type"])
