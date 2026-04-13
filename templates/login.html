@@ -111,7 +111,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
 
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const token = await userCredential.user.getIdToken();
+    const token = await userCredential.user.getIdToken(true);
 
     const res = await fetch("/api/me", {
       method: "POST",

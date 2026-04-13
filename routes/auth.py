@@ -138,7 +138,13 @@ def api_me():
             db.session.add(user)
             db.session.commit()
 
-    except Exception:
+    except firebase_auth.ExpiredIdTokenError:
+        return jsonify({'error': 'token_expired'}), 401
+    except firebase_auth.InvalidIdTokenError as e:
+        current_app.logger.error(f"api_me invalid token: {e}")
+        return jsonify({'error': 'invalid_token'}), 401
+    except Exception as e:
+        current_app.logger.error(f"api_me verify/token error: {e}", exc_info=True)
         return jsonify({'error': 'unauthorized'}), 401
 
     login_user(user, remember=True)
