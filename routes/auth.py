@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, jsonif
 from firebase_admin import auth as firebase_auth
 from models import User
 from extensions import db, csrf
+from sqlalchemy.exc import IntegrityError
 from uuid import uuid4
 import re
 import os
@@ -87,8 +88,16 @@ def create_user():
             email = email.lower()
 
         user = User.query.filter_by(firebase_uid=uid).first()
+        if not user and email:
+            user = User.query.filter_by(email=email).first()
 
-        if not user:
+        if user:
+            if user.firebase_uid != uid:
+                user.firebase_uid = uid
+            if email and user.email != email:
+                user.email = email
+            db.session.commit()
+        else:
             user = User(
                 firebase_uid=uid,
                 email=email,
@@ -98,7 +107,15 @@ def create_user():
             user.set_selected_groups([])
 
             db.session.add(user)
-            db.session.commit()
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                user = User.query.filter_by(firebase_uid=uid).first()
+                if not user and email:
+                    user = User.query.filter_by(email=email).first()
+                if not user:
+                    raise
 
         return jsonify({'status': 'ok'})
 
@@ -127,7 +144,16 @@ def api_me():
         email = (decoded.get('email') or '').lower() or None
 
         user = User.query.filter_by(firebase_uid=uid).first()
-        if not user:
+        if not user and email:
+            user = User.query.filter_by(email=email).first()
+
+        if user:
+            if user.firebase_uid != uid:
+                user.firebase_uid = uid
+            if email and user.email != email:
+                user.email = email
+            db.session.commit()
+        else:
             user = User(
                 firebase_uid=uid,
                 email=email,
@@ -136,7 +162,15 @@ def api_me():
             )
             user.set_selected_groups([])
             db.session.add(user)
-            db.session.commit()
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                user = User.query.filter_by(firebase_uid=uid).first()
+                if not user and email:
+                    user = User.query.filter_by(email=email).first()
+                if not user:
+                    raise
 
     except firebase_auth.ExpiredIdTokenError:
         return jsonify({'error': 'token_expired'}), 401
