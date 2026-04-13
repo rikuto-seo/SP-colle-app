@@ -115,9 +115,30 @@ def create_user():
 @auth_bp.route('/api/me', methods=['POST'])
 @csrf.exempt
 def api_me():
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith("Bearer "):
+        return jsonify({'error': 'unauthorized'}), 401
 
-    user = get_current_user()
-    if not user:
+    token = auth_header.split(" ", 1)[1].strip()
+
+    try:
+        decoded = firebase_auth.verify_id_token(token)
+        uid = decoded['uid']
+        email = (decoded.get('email') or '').lower() or None
+
+        user = User.query.filter_by(firebase_uid=uid).first()
+        if not user:
+            user = User(
+                firebase_uid=uid,
+                email=email,
+                username=None,
+                primary_group=None,
+            )
+            user.set_selected_groups([])
+            db.session.add(user)
+            db.session.commit()
+
+    except Exception:
         return jsonify({'error': 'unauthorized'}), 401
 
     login_user(user, remember=True)
