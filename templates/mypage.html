@@ -11,66 +11,81 @@
   <div class="card mb-4 border-warning">
     <div class="card-body d-flex flex-column gap-3">
 
-      <div class="d-flex align-items-center gap-3">
-        <img src="{{ icon_url }}" style="width:64px;height:64px;object-fit:cover;border-radius:50%;">
+      <div class="card-body">
+        <div class="d-flex align-items-start gap-3">
 
-        <div>
-          <div class="d-flex align-items-center gap-2 mb-1">
-            <h5 class="card-title mb-0">
-              {{ current_user.username if current_user.username else 'ゲスト' }}
-            </h5>
+          <!-- アイコン -->
+          <img src="{{ icon_url }}" style="width:64px;height:64px;object-fit:cover;border-radius:50%;">
 
-            <div class="ms-2 d-flex gap-2">
-              {% if current_user.twitter_id %}
-              <a href="https://x.com/{{ current_user.twitter_id }}" target="_blank">
-                <i class="fa-brands fa-x-twitter"></i>
-              </a>
-              {% endif %}
+          <!-- 右側 -->
+          <div class="flex-grow-1">
 
-              {% if current_user.instagram_id %}
-              <a href="https://www.instagram.com/{{ current_user.instagram_id }}" target="_blank">
-                <i class="fa-brands fa-instagram"></i>
-              </a>
-              {% endif %}
+            <!-- 上：ユーザー名＋SNS -->
+            <div class="d-flex align-items-center gap-3 mb-2">
+              <h5 class="mb-0">
+                {{ current_user.username if current_user.username else 'ゲスト' }}
+              </h5>
+
+              <div class="d-flex gap-2">
+                {% if current_user.twitter_id %}
+                <a href="https://x.com/{{ current_user.twitter_id }}" target="_blank">
+                  <i class="fa-brands fa-x-twitter"></i>
+                </a>
+                {% endif %}
+
+                {% if current_user.instagram_id %}
+                <a href="https://www.instagram.com/{{ current_user.instagram_id }}" target="_blank">
+                  <i class="fa-brands fa-instagram"></i>
+                </a>
+                {% endif %}
+              </div>
             </div>
+
+            <!-- 下：プラン情報（横並び） -->
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+
+              <!-- プラン -->
+              <div>
+                <span class="text-muted small">現在のプラン：</span>
+                <span class="fw-bold">
+                  {% if current_user.plan_type == "free" %}
+                  無料
+                  {% elif current_user.plan_type == "lite" %}
+                  ライト
+                  {% elif current_user.plan_type == "standard" %}
+                  スタンダード
+                  {% else %}
+                  プレミアム
+                  {% endif %}
+                </span>
+              </div>
+
+              <!-- 更新日 -->
+              <div class="text-muted small">
+                {% if cancel_at_period_end %}
+                {% if next_billing %}
+                {{ next_billing }}で終了
+                {% else %}
+                終了日取得中
+                {% endif %}
+                {% else %}
+                {% if next_billing %}
+                次回：{{ next_billing }}
+                {% else %}
+                次回未設定
+                {% endif %}
+                {% endif %}
+              </div>
+
+              <!-- ボタン -->
+              <a href="{{ url_for('user.upgrade') }}" class="btn btn-warning btn-sm">
+                プラン変更
+              </a>
+
+            </div>
+
           </div>
         </div>
-      </div>
-
-      <div class="text-end">
-        <div class="text-muted small">現在のプラン</div>
-
-        <div class="fw-bold">
-          {% if current_user.plan_type == "free" %}
-          無料
-          {% elif current_user.plan_type == "lite" %}
-          ライト
-          {% elif current_user.plan_type == "standard" %}
-          スタンダード
-          {% else %}
-          プレミアム
-          {% endif %}
-        </div>
-
-        <div class="text-muted small">
-          {% if cancel_at_period_end %}
-          {% if next_billing %}
-          ※このプランは{{ next_billing }}で終了します
-          {% else %}
-          ※終了日取得中
-          {% endif %}
-          {% else %}
-          {% if next_billing %}
-          次回請求日：{{ next_billing }}
-          {% else %}
-          次回請求日：未設定
-          {% endif %}
-          {% endif %}
-        </div>
-
-        <a href="{{ url_for('user.upgrade') }}" class="btn btn-warning btn-sm mt-2">
-          プラン変更
-        </a>
       </div>
 
     </div>
