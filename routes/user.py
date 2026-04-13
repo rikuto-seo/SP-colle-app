@@ -47,7 +47,20 @@ def mypage():
     if selected_group not in selected_groups:
         selected_group = selected_groups[0]
 
-    # ✅ Stripe API完全排除
+    # Webhook遅延/取りこぼし対策:
+    # next billing が未設定で subscription_id がある場合だけ Stripe から補完
+    if current_user.stripe_subscription_id and not current_user.current_period_end:
+        try:
+            sub = stripe.Subscription.retrieve(current_user.stripe_subscription_id)
+            period_end = sub.get("current_period_end")
+            if period_end:
+                current_user.current_period_end = datetime.fromtimestamp(period_end)
+            current_user.subscription_status = sub.get("status")
+            current_user.cancel_at_period_end = sub.get("cancel_at_period_end", False)
+            db.session.commit()
+        except Exception as e:
+            current_app.logger.warning(f"Stripe subscription refresh failed: {e}")
+
     next_billing = None
     cancel_at_period_end = current_user.cancel_at_period_end
 

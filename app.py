@@ -1,4 +1,5 @@
 from flask import Flask, request
+from flask_login import current_user
 from flask_migrate import Migrate
 from flask_caching import Cache
 from datetime import timedelta
@@ -104,7 +105,8 @@ def get_current_user():
 def inject_common():
     from flask import url_for
 
-    user = get_current_user()
+    # Prefer Flask-Login session user for normal page requests.
+    user = current_user if current_user.is_authenticated else get_current_user()
 
     if user and user.icon_url:
         icon_url = user.icon_url
