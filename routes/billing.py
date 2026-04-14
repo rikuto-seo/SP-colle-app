@@ -165,7 +165,10 @@ def stripe_webhook():
         print("❌ Webhook signature error:", e)
         return "invalid signature", 400
 
-    print("🔥 EVENT:", event["type"])
+    event_type = event["type"]
+    data = event["data"]["object"]
+
+    print("🔥 EVENT:", event_type)
 
     # =========================
     # 共通ユーティリティ
@@ -181,7 +184,8 @@ def stripe_webhook():
         return datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(jst)
 
     def find_user(session_obj=None, customer_id=None, subscription_id=None):
-        # ① metadata優先（最も確実）
+
+        # ① metadata（最優先）
         if session_obj:
             metadata = session_obj.get("metadata", {})
             user_id = metadata.get("user_id")
@@ -208,9 +212,6 @@ def stripe_webhook():
 
     try:
 
-        event_type = event["type"]
-        data = event["data"]["object"]
-
         # =========================
         # checkout.session.completed
         # =========================
@@ -221,41 +222,68 @@ def stripe_webhook():
                 customer_id=data.get("customer")
             )
 
+            print("👤 USER (checkout):", user)
+
             if user:
 
-                # プラン更新
                 plan = data.get("metadata", {}).get("target_plan")
                 if plan in ["lite", "standard", "premium"]:
                     user.plan_type = plan
 
-                # グループ更新
                 groups_str = data.get("metadata", {}).get("groups")
                 if groups_str:
                     user.selected_groups = groups_str
 
-                # サブスク情報（ここ重要：API叩かない）
                 subscription_id = data.get("subscription")
+
                 if subscription_id:
                     user.stripe_subscription_id = subscription_id
 
+                    # 🔥 初回同期（最重要）
+                    try:
+                        sub = stripe.Subscription.retrieve(subscription_id)
+
+                        print("📦 SUB RETRIEVED:", sub["id"])
+
+                        user.current_period_end = to_jst_datetime(
+                            sub.get("current_period_end")
+                        )
+                        user.cancel_at_period_end = sub.get("cancel_at_period_end", False)
+                        user.subscription_status = sub.get("status")
+
+                        print("📅 current_period_end(saved):", user.current_period_end)
+
+                    except Exception as e:
+                        print("❌ SUB RETRIEVE ERROR:", e)
+
         # =========================
-        # subscription updated
+        # subscription created / updated
         # =========================
-        elif event_type == "customer.subscription.updated":
+        elif event_type in [
+            "customer.subscription.created",
+            "customer.subscription.updated"
+        ]:
 
             sub = data
+
+            print("📡 SUB EVENT:", sub.get("id"))
 
             user = find_user(
                 customer_id=sub.get("customer"),
                 subscription_id=sub.get("id")
             )
 
+            print("👤 USER (sub):", user)
+
             if user:
                 user.subscription_status = sub.get("status")
                 user.cancel_at_period_end = sub.get("cancel_at_period_end", False)
+
                 user.current_period_end = to_jst_datetime(
                     sub.get("current_period_end")
                 )
+
+                print("📅 current_period_end(updated):", user.current_period_end)
 
         # =========================
         # subscription deleted
@@ -289,10 +317,7 @@ def stripe_webhook():
             )
 
             if user:
-                # ここでは最低限だけ（API叩かない）
                 user.subscription_status = "active"
-
-                # current_period_endは基本 subscription.updated で来るので補助的扱い
 
         else:
             print("ℹ️ UNHANDLED EVENT:", event_type)
