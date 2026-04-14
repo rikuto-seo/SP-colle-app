@@ -42,6 +42,9 @@ def create_checkout_session():
 
         domain = request.host_url.rstrip("/")
 
+        groups = current_user.get_selected_groups() or []
+        groups_str = ",".join(map(str, groups)) if groups else ""
+
         session = stripe.checkout.Session.create(
             customer=customer_id,
             line_items=[{
@@ -54,13 +57,14 @@ def create_checkout_session():
                 "metadata": {
                     "user_id": str(current_user.id),
                     "target_plan": plan,
-                    "groups": ",".join(current_user.get_selected_groups())
+                    "groups": groups_str
                 }
             },
 
             metadata={
                 "user_id": str(current_user.id),
-                "target_plan": plan
+                "target_plan": plan,
+                "groups": groups_str
             },
 
             success_url=f"{domain}/payment-success?plan={plan}",
@@ -163,22 +167,38 @@ def stripe_webhook():
 
     print("🔥 EVENT:", event["type"])
 
-    def to_datetime(ts):
+    # =========================
+    # 共通ユーティリティ
+    # =========================
+    from datetime import datetime, timezone
+    import pytz
+
+    jst = pytz.timezone("Asia/Tokyo")
+
+    def to_jst_datetime(ts):
         if not ts:
             return None
-        from datetime import datetime
-        return datetime.fromtimestamp(ts)
+        return datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(jst)
 
-    def find_user(session_obj=None, customer_id=None):
+    def find_user(session_obj=None, customer_id=None, subscription_id=None):
+        # ① metadata優先（最も確実）
         if session_obj:
             metadata = session_obj.get("metadata", {})
             user_id = metadata.get("user_id")
-
             if user_id:
                 user = db.session.get(User, int(user_id))
                 if user:
                     return user
 
+        # ② subscription_id
+        if subscription_id:
+            user = User.query.filter_by(
+                stripe_subscription_id=subscription_id
+            ).first()
+            if user:
+                return user
+
+        # ③ customer_id
         if customer_id:
             return User.query.filter_by(
                 stripe_customer_id=customer_id
@@ -188,54 +208,66 @@ def stripe_webhook():
 
     try:
 
+        event_type = event["type"]
+        data = event["data"]["object"]
+
         # =========================
         # checkout.session.completed
         # =========================
-        if event["type"] == "checkout.session.completed":
+        if event_type == "checkout.session.completed":
 
-            session_obj = event["data"]["object"]
-            user = find_user(session_obj, session_obj.get("customer"))
+            user = find_user(
+                session_obj=data,
+                customer_id=data.get("customer")
+            )
 
             if user:
 
-                plan = session_obj.get("metadata", {}).get("target_plan")
+                # プラン更新
+                plan = data.get("metadata", {}).get("target_plan")
                 if plan in ["lite", "standard", "premium"]:
                     user.plan_type = plan
 
-                groups_str = session_obj.get("metadata", {}).get("groups")
+                # グループ更新
+                groups_str = data.get("metadata", {}).get("groups")
                 if groups_str:
                     user.selected_groups = groups_str
 
-                subscription_id = session_obj.get("subscription")
-
+                # サブスク情報（ここ重要：API叩かない）
+                subscription_id = data.get("subscription")
                 if subscription_id:
-                    sub = stripe.Subscription.retrieve(subscription_id)
-
                     user.stripe_subscription_id = subscription_id
-                    user.subscription_status = sub.get("status")
-                    user.cancel_at_period_end = sub.get("cancel_at_period_end", False)
-                    user.current_period_end = to_datetime(sub.get("current_period_end"))
 
         # =========================
-        # subscription update
+        # subscription updated
         # =========================
-        elif event["type"] == "customer.subscription.updated":
+        elif event_type == "customer.subscription.updated":
 
-            sub = event["data"]["object"]
-            user = find_user(customer_id=sub.get("customer"))
+            sub = data
+
+            user = find_user(
+                customer_id=sub.get("customer"),
+                subscription_id=sub.get("id")
+            )
 
             if user:
                 user.subscription_status = sub.get("status")
                 user.cancel_at_period_end = sub.get("cancel_at_period_end", False)
-                user.current_period_end = to_datetime(sub.get("current_period_end"))
+                user.current_period_end = to_jst_datetime(
+                    sub.get("current_period_end")
+                )
 
         # =========================
         # subscription deleted
         # =========================
-        elif event["type"] == "customer.subscription.deleted":
+        elif event_type == "customer.subscription.deleted":
 
-            sub = event["data"]["object"]
-            user = find_user(customer_id=sub.get("customer"))
+            sub = data
+
+            user = find_user(
+                customer_id=sub.get("customer"),
+                subscription_id=sub.get("id")
+            )
 
             if user:
                 user.plan_type = "free"
@@ -245,29 +277,31 @@ def stripe_webhook():
                 user.current_period_end = None
 
         # =========================
-        # invoice paid
+        # invoice payment succeeded
         # =========================
-        elif event["type"] == "invoice.payment_succeeded":
+        elif event_type == "invoice.payment_succeeded":
 
-            invoice = event["data"]["object"]
-            user = find_user(customer_id=invoice.get("customer"))
+            invoice = data
+
+            user = find_user(
+                customer_id=invoice.get("customer"),
+                subscription_id=invoice.get("subscription")
+            )
 
             if user:
-                sub_id = invoice.get("subscription")
+                # ここでは最低限だけ（API叩かない）
+                user.subscription_status = "active"
 
-                if sub_id:
-                    sub = stripe.Subscription.retrieve(sub_id)
-
-                    user.subscription_status = sub.get("status")
-                    user.current_period_end = to_datetime(sub.get("current_period_end"))
+                # current_period_endは基本 subscription.updated で来るので補助的扱い
 
         else:
-            print("ℹ️ UNHANDLED EVENT:", event["type"])
+            print("ℹ️ UNHANDLED EVENT:", event_type)
 
         db.session.commit()
 
     except Exception as e:
         db.session.rollback()
         print("❌ WEBHOOK ERROR:", e)
+        return "error", 500
 
     return "ok", 200
