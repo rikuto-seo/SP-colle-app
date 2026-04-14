@@ -132,8 +132,6 @@ def save_groups():
     if groups:
         current_user.primary_group = groups[0]
 
-    current_user.needs_group_selection = False
-    
     db.session.commit()
 
     return {"status": "ok"}

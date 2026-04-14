@@ -161,23 +161,6 @@ def enforce_group_and_plan():
     if group_key and not user.can_access_group(group_key):
         return redirect(url_for("user.upgrade"))
 
-@app.before_request
-def enforce_group_selection():
-    from flask import redirect, url_for
-
-    if request.path.startswith("/static"):
-        return
-
-    if request.path.startswith("/force-select-group"):
-        return
-
-    user = get_current_user()
-    if not user:
-        return
-
-    if user.needs_group_selection:
-        return redirect(url_for('user.force_group_select'))
-    
 app.register_blueprint(photo_bp)
 app.register_blueprint(stats_bp)
 app.register_blueprint(core_bp)

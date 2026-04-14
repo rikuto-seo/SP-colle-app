@@ -39,8 +39,6 @@ class User(UserMixin, db.Model):
 
     twitter_id = db.Column(db.String(100))
     instagram_id = db.Column(db.String(100))
-
-    needs_group_selection = db.Column(db.Boolean, default=False)
     
     public_uuid = db.Column(
         db.String(36),
