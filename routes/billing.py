@@ -170,9 +170,6 @@ def stripe_webhook():
 
     print("🔥 EVENT:", event_type)
 
-    # =========================
-    # 共通ユーティリティ
-    # =========================
     from datetime import datetime, timezone
     import pytz
 
@@ -185,7 +182,6 @@ def stripe_webhook():
 
     def find_user(session_obj=None, customer_id=None, subscription_id=None):
 
-        # ① metadata（最優先）
         if session_obj:
             metadata = session_obj.get("metadata", {})
             user_id = metadata.get("user_id")
@@ -194,7 +190,6 @@ def stripe_webhook():
                 if user:
                     return user
 
-        # ② subscription_id
         if subscription_id:
             user = User.query.filter_by(
                 stripe_subscription_id=subscription_id
@@ -202,7 +197,6 @@ def stripe_webhook():
             if user:
                 return user
 
-        # ③ customer_id
         if customer_id:
             return User.query.filter_by(
                 stripe_customer_id=customer_id
@@ -225,7 +219,6 @@ def stripe_webhook():
             print("👤 USER (checkout):", user)
 
             if user:
-
                 plan = data.get("metadata", {}).get("target_plan")
                 if plan in ["lite", "standard", "premium"]:
                     user.plan_type = plan
@@ -235,29 +228,11 @@ def stripe_webhook():
                     user.selected_groups = groups_str
 
                 subscription_id = data.get("subscription")
-
                 if subscription_id:
                     user.stripe_subscription_id = subscription_id
 
-                    # 🔥 初回同期（最重要）
-                    try:
-                        sub = stripe.Subscription.retrieve(subscription_id)
-
-                        print("📦 SUB RETRIEVED:", sub["id"])
-
-                        user.current_period_end = to_jst_datetime(
-                            sub.get("current_period_end")
-                        )
-                        user.cancel_at_period_end = sub.get("cancel_at_period_end", False)
-                        user.subscription_status = sub.get("status")
-
-                        print("📅 current_period_end(saved):", user.current_period_end)
-
-                    except Exception as e:
-                        print("❌ SUB RETRIEVE ERROR:", e)
-
         # =========================
-        # subscription created / updated
+        # subscription created / updated（補助）
         # =========================
         elif event_type in [
             "customer.subscription.created",
@@ -265,8 +240,6 @@ def stripe_webhook():
         ]:
 
             sub = data
-
-            print("📡 SUB EVENT:", sub.get("id"))
 
             user = find_user(
                 customer_id=sub.get("customer"),
@@ -279,11 +252,42 @@ def stripe_webhook():
                 user.subscription_status = sub.get("status")
                 user.cancel_at_period_end = sub.get("cancel_at_period_end", False)
 
-                user.current_period_end = to_jst_datetime(
-                    sub.get("current_period_end")
-                )
+                # ⚠️ ここでは current_period_end は触らない（未確定のため）
 
-                print("📅 current_period_end(updated):", user.current_period_end)
+        # =========================
+        # 💥 最重要：確定タイミング
+        # =========================
+        elif event_type == "invoice.payment_succeeded":
+
+            invoice = data
+
+            user = find_user(
+                customer_id=invoice.get("customer"),
+                subscription_id=invoice.get("subscription")
+            )
+
+            print("👤 USER (invoice):", user)
+
+            if user:
+                user.subscription_status = "active"
+
+                sub_id = invoice.get("subscription")
+
+                if sub_id:
+                    try:
+                        sub = stripe.Subscription.retrieve(sub_id)
+
+                        print("📦 FINAL SUB:", sub["id"])
+
+                        user.current_period_end = to_jst_datetime(
+                            sub.get("current_period_end")
+                        )
+                        user.cancel_at_period_end = sub.get("cancel_at_period_end", False)
+
+                        print("✅ FINAL current_period_end:", user.current_period_end)
+
+                    except Exception as e:
+                        print("❌ SUB RETRIEVE ERROR:", e)
 
         # =========================
         # subscription deleted
@@ -303,21 +307,6 @@ def stripe_webhook():
                 user.subscription_status = "canceled"
                 user.cancel_at_period_end = False
                 user.current_period_end = None
-
-        # =========================
-        # invoice payment succeeded
-        # =========================
-        elif event_type == "invoice.payment_succeeded":
-
-            invoice = data
-
-            user = find_user(
-                customer_id=invoice.get("customer"),
-                subscription_id=invoice.get("subscription")
-            )
-
-            if user:
-                user.subscription_status = "active"
 
         else:
             print("ℹ️ UNHANDLED EVENT:", event_type)
