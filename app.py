@@ -117,48 +117,50 @@ def inject_common():
         icon_url=icon_url
     )
 
-# =========================
-# 🔥 before_request 修正
-# =========================
 @app.before_request
-def enforce_plan_limit():
+def enforce_group_and_plan():
+
     from flask import redirect, url_for
 
-    if request.path.startswith("/finish-login"):
+    # 🔒 除外（超重要）
+    if request.path.startswith((
+        "/static",
+        "/api/",
+        "/stripe/webhook",
+        "/finish-login"
+    )):
         return
 
-    if request.path.startswith("/static"):
+    if request.endpoint in [
+        "user.force_group_select",
+        "auth.login",
+        "auth.logout"
+    ]:
         return
 
-    user = get_current_user()
-    if not user:
+    # ✅ Flask-Loginを優先
+    if not current_user.is_authenticated:
         return
 
-    selected = user.get_selected_groups()
+    user = current_user
+
+    # =========================
+    # ① グループ整合性チェック
+    # =========================
+    selected = user.get_selected_groups() or []
     allowed = user.get_allowed_group_count()
 
-    if len(selected) > allowed:
-        return redirect(url_for('user.force_group_select'))
+    if len(selected) != allowed:
+        return redirect(url_for("user.force_group_select"))
 
-@app.before_request
-def enforce_group_access():
-    from flask import redirect, url_for
+    # =========================
+    # ② グループアクセス制御
+    # =========================
+    group_key = request.view_args.get("group_key") if request.view_args else None
 
-    if request.path.startswith("/finish-login"):
-        return
-
-    user = get_current_user()
-    if not user:
-        return
-
-    group_key = request.view_args.get('group_key') if request.view_args else None
-
-    if not group_key:
-        return
-
-    if not user.can_access_group(group_key):
-        return redirect(url_for('user.upgrade'))
-
+    if group_key and not user.can_access_group(group_key):
+        return redirect(url_for("user.upgrade"))
+    
 app.register_blueprint(photo_bp)
 app.register_blueprint(stats_bp)
 app.register_blueprint(core_bp)
