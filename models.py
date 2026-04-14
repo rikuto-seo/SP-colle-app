@@ -128,7 +128,9 @@ class User(UserMixin, db.Model):
             return 1
         elif self.plan_type == "standard":
             return 2
-        return 999  
+        elif self.plan_type == "premium":
+            return 3
+        return 1  # fallback
     
     def can_access_group(self, group_key: str) -> bool:
         if not group_key:
@@ -143,11 +145,9 @@ class User(UserMixin, db.Model):
         selected = self.get_selected_groups()
         allowed = self.get_allowed_group_count()
 
+        # 上限カット
         if len(selected) > allowed:
             selected = selected[:allowed]
-
-        if self.is_free():
-            selected = selected[:1]
 
         self.set_selected_groups(selected)
 
