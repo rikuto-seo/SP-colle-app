@@ -221,9 +221,6 @@ def stripe_webhook():
             if user:
                 plan = data.get("metadata", {}).get("target_plan")
                 if plan in ["lite", "standard", "premium"]:
-                    if user.plan_type != plan:
-                        user.needs_group_selection = True
-
                     user.plan_type = plan
 
                 groups_str = data.get("metadata", {}).get("groups")
