@@ -168,7 +168,9 @@ function showTempMessage(msg) {
   div.style.zIndex = "9999";
 
   document.body.appendChild(div);
-  setTimeout(() => div.remove(), 2000);
+  setTimeout(() => {
+    window.location.href = "{{ url_for('user.force_group_select') }}";
+  }, 2000);
 }
 </script>
 

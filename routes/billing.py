@@ -232,7 +232,7 @@ def stripe_webhook():
                     user.stripe_subscription_id = subscription_id
 
         # =========================
-        # subscription created / updated（補助）
+        # subscription created / updated
         # =========================
         elif event_type in [
             "customer.subscription.created",
@@ -246,16 +246,15 @@ def stripe_webhook():
                 subscription_id=sub.get("id")
             )
 
-            print("👤 USER (sub):", user)
-
             if user:
                 user.subscription_status = sub.get("status")
                 user.cancel_at_period_end = sub.get("cancel_at_period_end", False)
 
-                # ⚠️ ここでは current_period_end は触らない（未確定のため）
+                # ❌ ここで current_period_end は触らない
+                # （ズレの原因になる）
 
         # =========================
-        # 💥 最重要：確定タイミング
+        # 💥 唯一の正解イベント
         # =========================
         elif event_type == "invoice.payment_succeeded":
 
