@@ -22,47 +22,6 @@ const MAX_RETRY = 30;
 const params = new URLSearchParams(window.location.search);
 const plan = params.get("plan");
 
-async function checkStatus() {
-
-  if (retry > MAX_RETRY) {
-    showError("反映に時間がかかっています。ページを再読み込みしてください。");
-    return;
-  }
-
-  retry++;
-
-  try {
-    const res = await fetch(`/api/check-plan?plan=${plan}`);
-    const data = await res.json();
-
-    if (data.ready) {
-      window.location.href = redirectUrl;
-      return;
-    }
-
-  } catch (e) {}
-
-  setTimeout(checkStatus, 1000);
-}
-
-async function waitForPlanUpdate(expectedPlan) {
-
-  for (let i = 0; i < 10; i++) {
-
-    const res = await fetch(`/api/check-plan?plan=${expectedPlan}`);
-    const data = await res.json();
-
-    if (data.ready) {
-      location.href = "/"; 
-      return;
-    }
-
-    await new Promise(r => setTimeout(r, 1000));
-  }
-
-  alert("反映に時間がかかっています。再読み込みしてください");
-}
-
 function showError(msg) {
   const text = document.getElementById("statusText");
   text.textContent = msg;
@@ -77,7 +36,6 @@ function showError(msg) {
   document.querySelector(".container").appendChild(btn);
 }
 
-checkStatus();
 </script>
 
 {% endblock %}
