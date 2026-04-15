@@ -23,25 +23,26 @@
     </div>
   </div>
 
-  {% if is_check and not want.is_infinite %}
-  {% if infinite_wants %}
-  <div class="card border-warning bg-warning-subtle shadow-sm mb-4">
-    <div class="card-body text-center">
+  {% if is_check %}
+    {% if infinite_wants %}
+    <div class="card border-warning bg-warning-subtle shadow-sm mb-4">
+      <div class="card-body text-center">
 
-      <h5 class="fw-bold text-warning mb-2">
-        ∞ 無限回収中
-      </h5>
+        <h5 class="fw-bold text-warning mb-2">
+          ∞ 無限回収中
+        </h5>
 
-      <div class="d-flex flex-wrap justify-content-center gap-2">
-        {% for want in infinite_wants %}
-        <span class="badge bg-light text-dark border">
-          {{ want.member or "全メンバー" }}
-        </span>
-        {% endfor %}
+        <div class="d-flex flex-wrap justify-content-center gap-2">
+          {% for want in infinite_wants %}
+          <span class="badge bg-light text-dark border">
+            {{ want.member or "全メンバー" }}
+          </span>
+          {% endfor %}
+        </div>
+
       </div>
-
     </div>
-  </div>
+    {% endif %}
   {% endif %}
 
   <div class="d-flex flex-column flex-md-row justify-content-center mb-3 gap-2">
