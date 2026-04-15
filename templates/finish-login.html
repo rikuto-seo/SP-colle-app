@@ -37,6 +37,10 @@
 
   async function finishLogin() {
     try {
+      // 🔗 next取得（ここに統合）
+      const params = new URLSearchParams(window.location.search);
+      const next = params.get("next");
+
       // 🔍 メールリンク判定
       if (!isSignInWithEmailLink(auth, window.location.href)) {
         showError("無効なリンクです。");
@@ -72,7 +76,7 @@
         }
       });
 
-      // 🔴 ここ重要：レスポンスチェック強化
+      // 🔴 レスポンスチェック
       if (!res.ok) {
         const errText = await res.text();
         console.error("API ERROR:", errText);
@@ -90,16 +94,16 @@
         throw new Error("ログイン状態が不正です");
       }
 
-      // 🚀 分岐
+      // 🚀 分岐（ここが修正ポイント）
       if (!data.is_setup_complete) {
         window.location.href = "/first-register";
       } else {
-        window.location.href = "/";
+        // nextがあれば優先、なければトップ
+        window.location.href = next || "/";
       }
 
     } catch (err) {
       console.error("LOGIN ERROR:", err);
-
       showError(err.message || "ログインに失敗しました。\nもう一度やり直してください。");
     }
   }
