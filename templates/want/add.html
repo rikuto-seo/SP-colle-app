@@ -20,8 +20,11 @@
 
   <input type="hidden" id="group_key" value="{{ group_key }}">
 
-  <div class="card shadow-sm">
+  <!-- 🔹 通常追加 -->
+  <div class="card shadow-sm mb-4">
     <div class="card-body">
+
+      <h5 class="fw-bold mb-3">通常登録</h5>
 
       <form method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -41,15 +44,40 @@
           <select name="photo_type" id="photo_type"></select>
         </div>
 
-        <div class="form-check mb-4">
-          <input class="form-check-input" type="checkbox" name="is_infinite" id="infinite">
-          <label class="form-check-label fw-bold">
-            無限回収（メンバーのみで全対象）
-          </label>
-        </div>
+        <!-- 無限回収はここでは使わせない -->
+        <input type="hidden" name="is_infinite" value="0">
 
         <button type="submit" class="btn btn-success w-100 fw-bold">
           ＋ 追加する
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- 🔥 無限回収専用 -->
+  <div class="card border-warning shadow-sm">
+    <div class="card-body">
+
+      <h5 class="fw-bold text-warning mb-3">
+        ∞ 無限回収設定
+      </h5>
+
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="is_infinite" value="1">
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">メンバー</label>
+          <select name="member" id="infinite_member"></select>
+        </div>
+
+        <!-- 無限回収は衣装・種類なし -->
+        <input type="hidden" name="costume" value="">
+        <input type="hidden" name="photo_type" value="">
+
+        <button type="submit" class="btn btn-warning w-100 fw-bold">
+          ∞ 無限回収を追加
         </button>
 
       </form>
@@ -82,6 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const ANY_OPTION = { value: "", text: "指定しない（すべて）" };
 
+  // 通常
   const memberTS = new TomSelect("#member", {
     create: false,
     maxItems: 1,
@@ -100,6 +129,14 @@ document.addEventListener("DOMContentLoaded", () => {
     placeholder: "指定しない（すべて）"
   });
 
+  // 🔥 無限回収用
+  const infiniteMemberTS = new TomSelect("#infinite_member", {
+    create: false,
+    maxItems: 1,
+    placeholder: "メンバーを選択"
+  });
+
+  // メンバー取得
   fetch(`/get_members?group=${encodeURIComponent(groupKey)}`)
     .then(res => res.json())
     .then(data => {
@@ -107,13 +144,18 @@ document.addEventListener("DOMContentLoaded", () => {
       memberTS.clearOptions();
       memberTS.addOption(ANY_OPTION);
 
+      infiniteMemberTS.clearOptions();
+
       data.members.forEach(m => {
         memberTS.addOption({ value: m, text: m });
+        infiniteMemberTS.addOption({ value: m, text: m });
       });
 
       memberTS.refreshOptions(false);
+      infiniteMemberTS.refreshOptions(false);
     });
 
+  // 衣装
   memberTS.on("change", (member) => {
 
     costumeTS.clear();
@@ -130,12 +172,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         costumeTS.refreshOptions(false);
-      })
-      .catch(err => {
-        console.error("衣装取得失敗", err);
       });
   });
 
+  // 種類
   costumeTS.on("change", (costume) => {
 
     typeTS.clear();
@@ -161,17 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         typeTS.refreshOptions(false);
-      })
-      .catch(err => {
-        console.error("type取得失敗", err);
       });
-  });
-
-  document.getElementById("infinite").addEventListener("change", (e) => {
-    if (e.target.checked) {
-      costumeTS.clear();
-      typeTS.clear();
-    }
   });
 
 });
