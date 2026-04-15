@@ -266,6 +266,7 @@ class WantPhoto(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', back_populates='want_list')
+    is_infinite = db.Column(db.Boolean, default=False)
     
     __table_args__ = (
         db.UniqueConstraint(
