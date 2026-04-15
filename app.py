@@ -66,7 +66,15 @@ csrf.init_app(app)
 login_manager.init_app(app)
 login_manager.login_view = "auth.login"
 
-
+@login_manager.user_loader
+def load_user(user_id):
+    if not user_id:
+        return None
+    try:
+        return db.session.get(User, int(user_id))
+    except (TypeError, ValueError):
+        return None
+    
 @login_manager.unauthorized_handler
 def unauthorized():
     # API系（trade）はJSONで返す
