@@ -50,27 +50,16 @@
       交換チェック
     </button>
 
-    {% if current_user.is_authenticated and not is_check %}
+    {% if current_user.is_authenticated %}
+    <button id="tradeBtn" class="btn btn-success btn-sm w-100 w-md-auto">
+      交換チェック
+    </button>
+    {% else %}
     <a href="{{ url_for(
-        'want.public_want',
-        public_uuid=uuid,
-        group_key=group_key,
-        check=1
-    ) }}" class="btn btn-primary btn-sm w-100 w-md-auto">
-      所持チェック
-    </a>
-
-    {% elif not current_user.is_authenticated and not is_check %}
-    <a href="{{ url_for(
-        'auth.login',
-        next=url_for(
-            'want.public_want',
-            public_uuid=uuid,
-            group_key=group_key,
-            check=1
-        )
-    ) }}" class="btn btn-outline-primary btn-sm w-100 w-md-auto">
-      ログインして確認
+    'auth.login',
+    next=request.full_path
+) }}" class="btn btn-outline-success btn-sm w-100 w-md-auto">
+      ログインして交換チェック
     </a>
     {% endif %}
 
@@ -130,8 +119,17 @@
   `;
 
     fetch(`/trade/match/{{ uuid }}/{{ group_key }}`)
-      .then(res => res.json())
+      .then(res => {
+        if (res.status === 401) {
+          return res.json().then(data => {
+            window.location.href = data.redirect;
+          });
+        }
+        return res.json();
+      })
       .then(data => {
+
+        if (!data) return; // ← リダイレクト時のガード
 
         const safe = (v, fallback) => v || fallback;
 

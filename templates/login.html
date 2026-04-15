@@ -64,122 +64,133 @@
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAJNWrQTo4R78rygPdugp6G7LXlJ0jggLo",
-  authDomain: "sakamichi-photo-app.firebaseapp.com",
-  projectId: "sakamichi-photo-app",
-};
+  const firebaseConfig = {
+    apiKey: "AIzaSyAJNWrQTo4R78rygPdugp6G7LXlJ0jggLo",
+    authDomain: "sakamichi-photo-app.firebaseapp.com",
+    projectId: "sakamichi-photo-app",
+  };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
 
-function getJapaneseMessage(errorCode) {
-  switch (errorCode) {
-    case "auth/user-not-found":
-    case "auth/wrong-password":
-    case "auth/invalid-credential":
-      return "メールアドレスまたはパスワードが正しくありません。";
-    case "auth/too-many-requests":
-      return "何度も失敗したため一時的にロックされています。";
-    default:
-      return "ログインに失敗しました。";
-  }
-}
-
-/* ログイン処理 */
-document.getElementById("loginForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const btn = document.getElementById("loginBtn");
-  if (btn.disabled) return;
-
-  btn.disabled = true;
-
-  const loginText = document.getElementById("loginText");
-  const spinner = document.getElementById("loginSpinner");
-  const errorDiv = document.getElementById("errorMessage");
-
-  errorDiv.classList.add("d-none");
-  loginText.textContent = "ログイン中...";
-  spinner.classList.remove("d-none");
-
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const token = await userCredential.user.getIdToken(true);
-
-    const res = await fetch("/api/me", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Authorization": "Bearer " + token }
-    });
-
-    if (!res.ok) throw new Error("ログイン処理失敗");
-
-    const data = await res.json();
-
-    window.location.href = data.is_setup_complete ? "/" : "/first-register";
-
-  } catch (err) {
-    errorDiv.textContent = getJapaneseMessage(err.code || "");
-    errorDiv.classList.remove("d-none");
-
-    btn.disabled = false;
-    loginText.textContent = "ログイン";
-    spinner.classList.add("d-none");
-  }
-});
-
-/* パスワードリセット */
-document.getElementById("forgotPasswordLink").addEventListener("click", (e) => {
-  e.preventDefault();
-  document.getElementById("resetModal").style.display = "flex";
-
-  document.getElementById("resetEmail").value =
-    document.getElementById("email").value;
-});
-
-window.closeResetModal = function() {
-  document.getElementById("resetModal").style.display = "none";
-};
-
-window.sendResetEmail = async function() {
-  const email = document.getElementById("resetEmail").value;
-
-  if (!email) {
-    alert("メールアドレスを入力してください");
-    return;
+  function getJapaneseMessage(errorCode) {
+    switch (errorCode) {
+      case "auth/user-not-found":
+      case "auth/wrong-password":
+      case "auth/invalid-credential":
+        return "メールアドレスまたはパスワードが正しくありません。";
+      case "auth/too-many-requests":
+        return "何度も失敗したため一時的にロックされています。";
+      default:
+        return "ログインに失敗しました。";
+    }
   }
 
-  try {
-    await sendPasswordResetEmail(auth, email);
-    closeResetModal();
-    showToast("リセットメールを送信しました");
-  } catch (err) {
-    alert(getJapaneseMessage(err.code));
-  }
-};
+  /* ログイン処理 */
+  document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-/* トースト */
-function showToast(msg) {
-  const div = document.createElement("div");
-  div.textContent = msg;
-  div.style.position = "fixed";
-  div.style.bottom = "20px";
-  div.style.left = "50%";
-  div.style.transform = "translateX(-50%)";
-  div.style.background = "#333";
-  div.style.color = "#fff";
-  div.style.padding = "10px 20px";
-  div.style.borderRadius = "8px";
-  document.body.appendChild(div);
-  setTimeout(() => div.remove(), 2000);
-}
+    const btn = document.getElementById("loginBtn");
+    if (btn.disabled) return;
+
+    btn.disabled = true;
+
+    const loginText = document.getElementById("loginText");
+    const spinner = document.getElementById("loginSpinner");
+    const errorDiv = document.getElementById("errorMessage");
+
+    errorDiv.classList.add("d-none");
+    loginText.textContent = "ログイン中...";
+    spinner.classList.remove("d-none");
+
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const token = await userCredential.user.getIdToken(true);
+
+      const res = await fetch("/api/me", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Authorization": "Bearer " + token }
+      });
+
+      if (!res.ok) throw new Error("ログイン処理失敗");
+
+      const data = await res.json();
+
+      const params = new URLSearchParams(window.location.search);
+      const next = params.get("next");
+
+      if (data.is_setup_complete) {
+        if (next) {
+          window.location.href = next;
+        } else {
+          window.location.href = "/";
+        }
+      } else {
+        window.location.href = "/first-register";
+      }
+
+    } catch (err) {
+      errorDiv.textContent = getJapaneseMessage(err.code || "");
+      errorDiv.classList.remove("d-none");
+
+      btn.disabled = false;
+      loginText.textContent = "ログイン";
+      spinner.classList.add("d-none");
+    }
+  });
+
+  /* パスワードリセット */
+  document.getElementById("forgotPasswordLink").addEventListener("click", (e) => {
+    e.preventDefault();
+    document.getElementById("resetModal").style.display = "flex";
+
+    document.getElementById("resetEmail").value =
+      document.getElementById("email").value;
+  });
+
+  window.closeResetModal = function () {
+    document.getElementById("resetModal").style.display = "none";
+  };
+
+  window.sendResetEmail = async function () {
+    const email = document.getElementById("resetEmail").value;
+
+    if (!email) {
+      alert("メールアドレスを入力してください");
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      closeResetModal();
+      showToast("リセットメールを送信しました");
+    } catch (err) {
+      alert(getJapaneseMessage(err.code));
+    }
+  };
+
+  /* トースト */
+  function showToast(msg) {
+    const div = document.createElement("div");
+    div.textContent = msg;
+    div.style.position = "fixed";
+    div.style.bottom = "20px";
+    div.style.left = "50%";
+    div.style.transform = "translateX(-50%)";
+    div.style.background = "#333";
+    div.style.color = "#fff";
+    div.style.padding = "10px 20px";
+    div.style.borderRadius = "8px";
+    document.body.appendChild(div);
+    setTimeout(() => div.remove(), 2000);
+  }
 </script>
 
 {% endblock %}

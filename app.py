@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request,jsonify,redirect, url_for, request
 from flask_login import current_user
 from flask_migrate import Migrate
 from flask_caching import Cache
@@ -67,15 +67,17 @@ login_manager.init_app(app)
 login_manager.login_view = "auth.login"
 
 
-@login_manager.user_loader
-def load_user(user_id):
-    if not user_id:
-        return None
-    try:
-        return db.session.get(User, int(user_id))
-    except (TypeError, ValueError):
-        return None
+@login_manager.unauthorized_handler
+def unauthorized():
+    # API系（trade）はJSONで返す
+    if request.path.startswith("/trade/"):
+        return jsonify({
+            "error": "login_required",
+            "redirect": url_for("auth.login", next=request.url)
+        }), 401
 
+    # 通常ページはリダイレクト
+    return redirect(url_for("auth.login", next=request.url))
 
 # =========================
 # Firebaseベース user取得（テンプレート・before_request）
