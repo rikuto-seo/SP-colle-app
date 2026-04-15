@@ -20,16 +20,15 @@
     <!-- OGP -->
     <meta property="og:title" content="坂道グループ 生写真アプリ">
     <meta property="og:description" content="坂道グループの生写真を管理・記録できるアプリ">
-    <meta property="og:image" content="{{ url_for('static', filename='images/ogp.png', _external=True) }}">
-    <meta property="og:url" content="{{ request.url_root }}">
+    <meta property="og:image" content="https://spcolle.com/static/images/ogp.png">
+    <meta property="og:url" content="https://spcolle.com/">
     <meta property="og:type" content="website">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="坂道グループ 生写真アプリ">
     <meta name="twitter:description" content="坂道グループの生写真を管理・記録できるアプリ">
-    <meta name="twitter:image" content="{{ url_for('static', filename='images/ogp.png', _external=True) }}">
-
+    <meta name="twitter:image" content="https://spcolle.com/static/images/ogp.png">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <link rel="icon" href="{{ url_for('static', filename='images/icon-192.png') }}">
