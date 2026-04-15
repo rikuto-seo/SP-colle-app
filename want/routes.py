@@ -160,8 +160,6 @@ def public_want(public_uuid, group_key):
         }
 
         for want in wants:
-
-            # 無限回収は判定しない
             if want.is_infinite:
                 want.is_owned = False
                 continue
@@ -172,14 +170,15 @@ def public_want(public_uuid, group_key):
                 want.photo_type
             ) in owned_keys
 
-            return render_template(
-                'want/public_base.html',
-                owner=user,
-                wants=wants,
-                group_key=group_key,
-                uuid=public_uuid,
-                is_check=is_check
-            )
+    # 🔥 ここに移動（超重要）
+    return render_template(
+        'want/public_base.html',
+        owner=user,
+        wants=wants,
+        group_key=group_key,
+        uuid=public_uuid,
+        is_check=is_check
+    )
 
 @want_bp.route('/share_redirect/<group_key>')
 def public_want_redirect(group_key):
