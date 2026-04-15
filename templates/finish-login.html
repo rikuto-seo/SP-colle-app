@@ -9,17 +9,6 @@
   </div>
 </div>
 
-<script>
-  const params = new URLSearchParams(window.location.search);
-  const next = params.get("next");
-
-  if (next) {
-    window.location.href = next;
-  } else {
-    window.location.href = "/";
-  }
-</script>
-
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
   import {
