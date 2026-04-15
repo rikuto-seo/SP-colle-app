@@ -270,24 +270,20 @@ def stripe_webhook():
             if user:
                 user.subscription_status = "active"
 
-                sub_id = invoice.get("subscription")
+                try:
+                    period_end = invoice.get("lines", {}).get("data", [{}])[0].get("period", {}).get("end")
 
-                if sub_id:
-                    try:
-                        sub = stripe.Subscription.retrieve(sub_id)
+                    if period_end:
+                        user.current_period_end = to_jst_datetime(period_end)
 
-                        print("📦 FINAL SUB:", sub["id"])
+                    # 👇 ここは invoice には無いので触らない or 既存維持
+                    # user.cancel_at_period_end はここで更新しない
 
-                        user.current_period_end = to_jst_datetime(
-                            sub.get("current_period_end")
-                        )
-                        user.cancel_at_period_end = sub.get("cancel_at_period_end", False)
+                    print("✅ FINAL current_period_end:", user.current_period_end)
 
-                        print("✅ FINAL current_period_end:", user.current_period_end)
-
-                    except Exception as e:
-                        print("❌ SUB RETRIEVE ERROR:", e)
-
+                except Exception as e:
+                    print("❌ INVOICE PARSE ERROR:", e)
+                    
         # =========================
         # subscription deleted
         # =========================
