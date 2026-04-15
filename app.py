@@ -132,7 +132,13 @@ def enforce_group_and_plan():
 
     from flask import redirect, url_for
 
-    # 🔒 除外（超重要）
+    # 🔥 追加（最重要）
+    try:
+        user = current_user
+    except Exception:
+        return
+
+    # 🔒 除外
     if request.path.startswith((
         "/static",
         "/api/",
@@ -148,24 +154,17 @@ def enforce_group_and_plan():
     ]:
         return
 
-    # ✅ Flask-Loginを優先
-    if not current_user.is_authenticated:
+    # ✅ ここから user を使う
+    if not user.is_authenticated:
         return
 
-    user = current_user
-
-    # =========================
-    # ① グループ整合性チェック
-    # =========================
+    # ↓ 以下そのまま
     selected = user.get_selected_groups() or []
     allowed = user.get_allowed_group_count()
 
     if len(selected) != allowed:
         return redirect(url_for("user.force_group_select"))
 
-    # =========================
-    # ② グループアクセス制御
-    # =========================
     group_key = request.view_args.get("group_key") if request.view_args else None
 
     if group_key and not user.can_access_group(group_key):
