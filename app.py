@@ -7,6 +7,7 @@ import os, firebase_admin, json
 from firebase_admin import credentials
 from config import Config
 from extensions import db, csrf, login_manager
+from werkzeug.middleware.proxy_fix import ProxyFix
 from models import User
 from dotenv import load_dotenv
 load_dotenv()
@@ -43,6 +44,8 @@ if db_url and db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Firebase init
 cred_json = os.environ.get("FIREBASE_KEY_JSON")

@@ -136,7 +136,11 @@ def public_want(public_uuid, group_key):
     user = User.query.filter_by(public_uuid=public_uuid).first_or_404()
 
     if not user.is_want_share_enabled(group_key):
-        abort(404)
+        return render_template(
+            'want/public_private.html',
+            owner=user,
+            group_key=group_key
+        )
 
     wants = WantPhoto.query.filter_by(
         user_id=user.id,
