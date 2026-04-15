@@ -23,6 +23,15 @@
     </div>
   </div>
 
+  {% if not current_user.is_authenticated or current_user.plan_type == "free" %}
+  <div class="text-center my-3">
+    <!-- admax -->
+    <script src="https://adm.shinobi.jp/s/d2d9624476345d4e42507216938d6dd5"></script>
+    <!-- admax -->
+  </div>
+  {% endif %}
+
+
   {% if infinite_wants %}
   <div class="card border-warning bg-warning-subtle shadow-sm mb-4">
     <div class="card-body text-center">
@@ -63,6 +72,14 @@
     {% endif %}
 
   </div>
+
+  {% if not current_user.is_authenticated or current_user.plan_type == "free" %}
+  <div class="text-center my-3">
+    <!-- admax -->
+    <script src="https://adm.shinobi.jp/s/d2d9624476345d4e42507216938d6dd5"></script>
+    <!-- admax -->
+  </div>
+  {% endif %}
 
   <div id="tradeResult" class="mt-4"></div>
 

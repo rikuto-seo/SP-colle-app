@@ -83,6 +83,15 @@
 
   <br>
 
+  <!-- 🔥 広告ここ -->
+  {% if current_user.plan_type == "free" %}
+  <div class="text-center my-3">
+    <!-- admax -->
+    <script src="https://adm.shinobi.jp/s/f44799c3a6fdcd4c01a772860347050c"></script>
+    <!-- admax -->
+  </div>
+  {% endif %}
+
   <div class="row row-cols-2 row-cols-md-3 g-2">
 
     {% for card in cards %}

@@ -19,6 +19,16 @@
     </div>
   </div>
 
+  {% if current_user.plan_type == "free" %}
+  <hr class="my-4">
+
+  <div class="text-center my-4">
+    <!-- admax -->
+    <script src="https://adm.shinobi.jp/s/8890e2c5f971e124a72be43676893507"></script>
+    <!-- admax -->
+  </div>
+  {% endif %}
+
   <div class="card shadow-sm bg-body text-body">
     <div class="card-body">
 
@@ -90,7 +100,7 @@
     const memberTS = new TomSelect("#member", {
       create: false,
       maxItems: 1,
-      maxOptions : null,
+      maxOptions: null,
       placeholder: "メンバーを選択",
       onChange: value => memberHidden.value = value
     });

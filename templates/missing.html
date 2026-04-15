@@ -31,59 +31,63 @@
     </div>
   </div>
 
+  {% if current_user.is_authenticated and current_user.plan_type == "free" %}
+  <div class="text-center my-3">
+    <!-- admax -->
+    <script src="https://adm.shinobi.jp/s/0042afa1755a706a5ad67107fbb59b94"></script>
+    <!-- admax -->
+  </div>
+  {% endif %}
+
   {% if not grouped_missing %}
-    <div class="alert alert-success text-center rounded-4">
-      <i class="fa-solid fa-party-horn me-2"></i>
-      全ての生写真を所持しています！
-    </div>
+  <div class="alert alert-success text-center rounded-4">
+    <i class="fa-solid fa-party-horn me-2"></i>
+    全ての生写真を所持しています！
+  </div>
   {% else %}
-    <div class="accordion custom-accordion" id="accordionMissingList">
-      {% for member, photos in grouped_missing.items() %}
-        {% if photos %}
-          <div class="accordion-item mb-3 shadow-sm rounded-4 border-0">
+  <div class="accordion custom-accordion" id="accordionMissingList">
+    {% for member, photos in grouped_missing.items() %}
+    {% if photos %}
+    <div class="accordion-item mb-3 shadow-sm rounded-4 border-0">
 
-            <h2 class="accordion-header">
-              <button class="accordion-button collapsed d-flex align-items-center"
-                      type="button"
-                      data-bs-toggle="collapse"
-                      data-bs-target="#collapse-{{ loop.index }}">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed d-flex align-items-center" type="button" data-bs-toggle="collapse"
+          data-bs-target="#collapse-{{ loop.index }}">
 
-                <div class="d-flex align-items-center gap-2">
-                  <span class="fw-bold">{{ member }}</span>
+          <div class="d-flex align-items-center gap-2">
+            <span class="fw-bold">{{ member }}</span>
 
-                  <span class="badge
+            <span class="badge
                     {% if photos|length > 10 %}bg-danger
                     {% elif photos|length > 5 %}bg-warning text-dark
                     {% else %}bg-secondary{% endif %}
                     rounded-pill">
-                    {{ photos|length }}
-                  </span>
-                </div>
-              </button>
-            </h2>
-
-            <div id="collapse-{{ loop.index }}"
-                 class="accordion-collapse collapse"
-                 data-bs-parent="#accordionMissingList">
-
-              <div class="accordion-body bg-light rounded-bottom-4 p-3">
-
-                <div class="d-flex flex-wrap gap-2">
-                  {% for photo in photos %}
-                    <div class="missing-item">
-                      <span class="costume">{{ photo.costume }}</span>
-                      <span class="type">{{ photo.type }}</span>
-                    </div>
-                  {% endfor %}
-                </div>
-
-              </div>
-
-            </div>
+              {{ photos|length }}
+            </span>
           </div>
-        {% endif %}
-      {% endfor %}
+        </button>
+      </h2>
+
+      <div id="collapse-{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#accordionMissingList">
+
+        <div class="accordion-body bg-light rounded-bottom-4 p-3">
+
+          <div class="d-flex flex-wrap gap-2">
+            {% for photo in photos %}
+            <div class="missing-item">
+              <span class="costume">{{ photo.costume }}</span>
+              <span class="type">{{ photo.type }}</span>
+            </div>
+            {% endfor %}
+          </div>
+
+        </div>
+
+      </div>
     </div>
+    {% endif %}
+    {% endfor %}
+  </div>
   {% endif %}
 </div>
 
@@ -91,12 +95,13 @@
 <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("DOMContentLoaded", function () {
 
-  const memberEl = document.getElementById("member");
-  const costumeEl = document.getElementById("costume");
+    const memberEl = document.getElementById("member");
+    const costumeEl = document.getElementById("costume");
 
-  const members = {{ member_list | tojson }};
+    const members = {{ member_list | tojson
+  }};
   const initialCostumes = {{ costume_list | tojson }};
 
   const selectedMember = "{{ search_member or '' }}";
