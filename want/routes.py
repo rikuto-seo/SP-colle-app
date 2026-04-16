@@ -60,7 +60,7 @@ def add_want(group_key):
             member=request.form['member'],
             costume=request.form['costume'],
             photo_type=request.form['photo_type'],
-            is_infinite=bool(request.form.get('is_infinite'))
+            is_infinite=request.form.get('is_infinite') == '1'
         )
         db.session.add(want)
 
