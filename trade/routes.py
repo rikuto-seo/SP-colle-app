@@ -41,6 +41,16 @@ def match_trade(public_uuid, group_key):
     print("my_wants:", len(my_wants))
     print("target_wants:", len(target_wants))
 
+    print("=== FULL DEBUG ===")
+    print("current_user.id:", current_user.id)
+    print("group_key:", group_key)
+
+    all_my = UserPhoto.query.all()
+    print("ALL UserPhoto:", [
+        (p.user_id, p.group_key, p.member, p.available_quantity)
+        for p in all_my
+    ])
+
     def key(p):
         return (p.member, p.costume, p.photo_type)
 
