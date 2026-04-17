@@ -25,21 +25,14 @@
 
   {% if not current_user.is_authenticated or current_user.plan_type == "free" %}
   <div class="text-center my-3">
-    <!-- admax -->
     <script src="https://adm.shinobi.jp/s/d2d9624476345d4e42507216938d6dd5"></script>
-    <!-- admax -->
   </div>
   {% endif %}
-
 
   {% if infinite_wants %}
   <div class="card border-warning bg-warning-subtle shadow-sm mb-4">
     <div class="card-body text-center">
-
-      <h5 class="fw-bold text-warning mb-2">
-        ∞ 無限回収中
-      </h5>
-
+      <h5 class="fw-bold text-warning mb-2">∞ 無限回収中</h5>
       <div class="d-flex flex-wrap justify-content-center gap-2">
         {% for want in infinite_wants %}
         <span class="badge bg-light text-dark border">
@@ -47,26 +40,20 @@
         </span>
         {% endfor %}
       </div>
-
     </div>
   </div>
   {% endif %}
 
-  <div class="d-flex flex-column flex-md-row justify-content-center mb-3 gap-2">
-
-    <button id="tradeBtn" class="btn btn-success btn-sm w-100 w-md-auto">
-      交換チェック
-    </button>
+  <!-- ✅ ボタンは1つだけ -->
+  <div class="text-center mb-3">
 
     {% if current_user.is_authenticated %}
     <button id="tradeBtn" class="btn btn-success btn-sm w-100 w-md-auto">
       交換チェック
     </button>
     {% else %}
-    <a href="{{ url_for(
-    'auth.login',
-    next=request.full_path
-) }}" class="btn btn-outline-success btn-sm w-100 w-md-auto">
+    <a href="{{ url_for('auth.login', next=request.full_path + '?auto_trade=1') }}"
+       class="btn btn-outline-success btn-sm w-100 w-md-auto">
       ログインして交換チェック
     </a>
     {% endif %}
@@ -75,45 +62,30 @@
 
   {% if not current_user.is_authenticated or current_user.plan_type == "free" %}
   <div class="text-center my-3">
-    <!-- admax -->
     <script src="https://adm.shinobi.jp/s/d2d9624476345d4e42507216938d6dd5"></script>
-    <!-- admax -->
   </div>
   {% endif %}
 
   <div id="tradeResult" class="mt-4"></div>
 
   <div class="row row-cols-2 row-cols-md-3 g-2 mt-2">
-
     {% for want in normal_wants %}
     <div class="col">
       <div class="card shadow-sm p-2 h-100 bg-body text-body position-relative">
-
         <div class="fw-bold small text-truncate">
           {{ want.member or "全メンバー" }}
         </div>
-
         <div class="small text-muted text-truncate">
           {{ want.costume or "全衣装" }}
         </div>
-
         <div class="small mt-1">
           {{ want.photo_type or "全種類" }}
         </div>
-
-        {% if is_check %}
-        {% if want.is_owned %}
-        <span class="badge bg-success mt-1">所持</span>
-        {% else %}
-        <span class="badge bg-secondary mt-1">未所持</span>
-        {% endif %}
-        {% endif %}
-
       </div>
     </div>
     {% endfor %}
-
   </div>
+
 </div>
 
 <footer class="text-center text-muted mt-5 mb-3 small">
@@ -121,117 +93,78 @@
 </footer>
 
 <script>
-  document.getElementById("tradeBtn")?.addEventListener("click", () => {
-    const container = document.getElementById("tradeResult");
-    const btn = document.getElementById("tradeBtn");
+function runTradeCheck() {
+  const container = document.getElementById("tradeResult");
+  const btn = document.getElementById("tradeBtn");
 
-    btn.disabled = true;
-    btn.innerText = "取得中...";
+  if (!btn) return;
 
-    container.innerHTML = `
+  btn.disabled = true;
+  btn.innerText = "取得中...";
+
+  container.innerHTML = `
     <div class="text-center text-muted">
       トレード候補を計算中...
     </div>
   `;
 
-    fetch(`/trade/match/{{ uuid }}/{{ group_key }}`)
-      .then(res => {
-        if (res.status === 401) {
-          return res.json().then(data => {
-            window.location.href = data.redirect;
-          });
-        }
-        return res.json();
-      })
-      .then(data => {
+  fetch(`/trade/match/{{ uuid }}/{{ group_key }}`)
+    .then(res => {
+      if (!res.ok) throw new Error();
+      return res.json();
+    })
+    .then(data => {
 
-        if (!data) return; // ← リダイレクト時のガード
+      const safe = (v, fallback) => v || fallback;
+      let html = "";
 
-        const safe = (v, fallback) => v || fallback;
+      html += `<h4 class="mt-4 text-success">交換成立候補</h4>`;
 
-        let html = "";
-
-        html += `<h4 class="mt-4 text-success">交換成立候補</h4>`;
-
-        if (data.mutual.length === 0) {
-          html += `<p class="text-muted">成立するトレードはありません</p>`;
-        } else {
-          data.mutual.forEach(m => {
-            html += `
-            <div class="card mb-2 border-success shadow-sm">
-              <div class="card-body d-flex justify-content-between">
-
-                <div>
-                  <div class="text-muted small">あなた → 相手</div>
-                  <div class="fw-bold">${safe(m.give.member, "全メンバー")}</div>
-                  <div>${safe(m.give.costume, "全衣装")}</div>
-                  <div>${safe(m.give.type, "全種類")}</div>
-                </div>
-
-                <div class="align-self-center fs-4">⇄</div>
-
-                <div>
-                  <div class="text-muted small">相手 → あなた</div>
-                  <div class="fw-bold">${safe(m.receive.member, "全メンバー")}</div>
-                  <div>${safe(m.receive.costume, "全衣装")}</div>
-                  <div>${safe(m.receive.type, "全種類")}</div>
-                </div>
-
+      if (data.mutual.length === 0) {
+        html += `<p class="text-muted">成立するトレードはありません</p>`;
+      } else {
+        data.mutual.forEach(m => {
+          html += `
+          <div class="card mb-2 border-success shadow-sm">
+            <div class="card-body d-flex justify-content-between">
+              <div>
+                <div class="text-muted small">あなた → 相手</div>
+                <div class="fw-bold">${safe(m.give.member, "全メンバー")}</div>
+                <div>${safe(m.give.costume, "全衣装")}</div>
+                <div>${safe(m.give.type, "全種類")}</div>
+              </div>
+              <div class="align-self-center fs-4">⇄</div>
+              <div>
+                <div class="text-muted small">相手 → あなた</div>
+                <div class="fw-bold">${safe(m.receive.member, "全メンバー")}</div>
+                <div>${safe(m.receive.costume, "全衣装")}</div>
+                <div>${safe(m.receive.type, "全種類")}</div>
               </div>
             </div>
-          `;
-          });
-        }
+          </div>`;
+        });
+      }
 
-        html += `<h5 class="mt-4">あなたが出せる</h5>`;
-        if (data.i_can_give.length === 0) {
-          html += `<p class="text-muted">なし</p>`;
-        } else {
-          html += `<div class="row">`;
-          data.i_can_give.forEach(p => {
-            html += `
-            <div class="col-md-4">
-              <div class="card p-2 mb-2">
-                <div class="fw-bold">${safe(p.member, "全メンバー")}</div>
-                <div>${safe(p.costume, "全衣装")}</div>
-                <div>${safe(p.type, "全種類")} ×${p.available}</div>
-              </div>
-            </div>
-          `;
-          });
-          html += `</div>`;
-        }
+      container.innerHTML = html;
 
-        html += `<h5 class="mt-4">相手が出せる</h5>`;
-        if (data.they_can_give.length === 0) {
-          html += `<p class="text-muted">なし</p>`;
-        } else {
-          html += `<div class="row">`;
-          data.they_can_give.forEach(p => {
-            html += `
-            <div class="col-md-4">
-              <div class="card p-2 mb-2">
-                <div class="fw-bold">${safe(p.member, "全メンバー")}</div>
-                <div>${safe(p.costume, "全衣装")}</div>
-                <div>${safe(p.type, "全種類")} ×${p.available}</div>
-              </div>
-            </div>
-          `;
-          });
-          html += `</div>`;
-        }
+      btn.disabled = false;
+      btn.innerText = "トレード候補を表示";
+    })
+    .catch(() => {
+      container.innerHTML = `<p class="text-danger">取得に失敗しました</p>`;
+      btn.disabled = false;
+      btn.innerText = "トレード候補を表示";
+    });
+}
 
-        container.innerHTML = html;
+// ✅ クリック
+document.getElementById("tradeBtn")?.addEventListener("click", runTradeCheck);
 
-        btn.disabled = false;
-        btn.innerText = "トレード候補を表示";
-      })
-      .catch(() => {
-        container.innerHTML = `<p class="text-danger">取得に失敗しました</p>`;
-        btn.disabled = false;
-        btn.innerText = "トレード候補を表示";
-      });
-  });
+// ✅ ログイン後自動実行
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get("auto_trade") === "1") {
+  runTradeCheck();
+}
 </script>
 
 {% endblock %}
