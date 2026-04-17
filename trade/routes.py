@@ -35,6 +35,12 @@ def match_trade(public_uuid, group_key):
         group_key=group_key
     ).all()
 
+    print("=== DEBUG ===")
+    print("my_photos:", len(my_photos))
+    print("target_photos:", len(target_photos))
+    print("my_wants:", len(my_wants))
+    print("target_wants:", len(target_wants))
+
     def key(p):
         return (p.member, p.costume, p.photo_type)
 
