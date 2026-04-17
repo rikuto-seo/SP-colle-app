@@ -81,12 +81,31 @@ def match_trade(public_uuid, group_key):
             })
 
     mutual_matches = []
-    for my_item in i_can_give:
-        for their_item in they_can_give:
-            mutual_matches.append({
-                "give": my_item,
-                "receive": their_item
-            })
+
+    for my_k, my_p in my_available_map.items():
+        if my_k not in target_want_keys:
+            continue
+
+        for their_k, their_p in target_available_map.items():
+            if their_k not in my_want_keys:
+                continue
+
+            if (my_p.available_quantity or 0) > 0 and (their_p.available_quantity or 0) > 0:
+                mutual_matches.append({
+                    "give": {
+                        "member": my_p.member,
+                        "costume": my_p.costume,
+                        "type": my_p.photo_type,
+                        "available": my_p.available_quantity
+                    },
+                    "receive": {
+                        "member": their_p.member,
+                        "costume": their_p.costume,
+                        "type": their_p.photo_type,
+                        "available": their_p.available_quantity
+                    }
+                })
+                
 
     return jsonify({
         "i_can_give": i_can_give,
