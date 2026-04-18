@@ -5,6 +5,7 @@ from models import UserPhoto
 from routes.core import group_required
 from services.photo_service import load_required_types, get_missing_photos
 from services.stats_service import get_ordered_members, get_all_costumes_in_order
+from services.type_normalizer import normalize_type
 stats_bp = Blueprint('stats', __name__)
 
 
@@ -44,11 +45,17 @@ def stats(group_key):
     owned_dict = defaultdict(lambda: defaultdict(set))
 
     for p in user_photos:
-        m, c, t = p.member.strip(), p.costume.strip(), p.photo_type.strip()
+        m = p.member.strip()
+        c = p.costume.strip()
+        raw_t = p.photo_type.strip()
 
+        # --- そのまま使う領域 ---
         member_stats[m] += p.quantity
-        type_stats[t] += p.quantity
-        owned_dict[m][c].add(t)
+        owned_dict[m][c].add(raw_t)
+
+        # --- 統計だけ正規化 ---
+        normalized_t = normalize_type(m, c, raw_t)
+        type_stats[normalized_t] += p.quantity
 
     comp_stats = {}
     comp_ranking_list = []
