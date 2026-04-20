@@ -183,6 +183,12 @@ def enforce_group_and_plan():
     if group_key and not user.can_access_group(group_key):
         return redirect(url_for("user.upgrade"))
 
+from services.type_normalizer import normalize_type
+
+@app.template_filter('normalize_type')
+def normalize_type_filter(photo_type, member, costume):
+    return normalize_type(member, costume, photo_type)
+
 app.register_blueprint(photo_bp)
 app.register_blueprint(stats_bp)
 app.register_blueprint(core_bp)
