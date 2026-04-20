@@ -5,6 +5,7 @@
 <div class="container mt-4">
 
   {% set has_paid_plan = current_user.is_lite() or current_user.is_standard() or current_user.is_premium() %}
+  {% set is_premium = current_user.is_premium() %}
   {% set is_locked = (not current_user.can_access_group(group_key)) or (not has_paid_plan) %}
 
   <div class="text-center mb-4">
@@ -50,6 +51,7 @@
 
     <div class="accordion" id="statsAccordion">
 
+      <!-- コンプランキング -->
       <div class="accordion-item">
         <h2 class="accordion-header">
           <button class="accordion-button" data-bs-toggle="collapse" data-bs-target="#compRanking">
@@ -74,6 +76,7 @@
         </div>
       </div>
 
+      <!-- メンバー別所持数 -->
       <div class="accordion-item">
         <h2 class="accordion-header">
           <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#memberStats">
@@ -82,6 +85,7 @@
         </h2>
         <div id="memberStats" class="accordion-collapse collapse">
           <div class="accordion-body">
+
             {% if member_stats %}
             <ul class="list-group list-group-flush">
               {% for member, count in member_stats %}
@@ -94,10 +98,35 @@
             {% else %}
             <p class="text-muted">データがありません。</p>
             {% endif %}
+
           </div>
         </div>
       </div>
 
+      <!-- ★ グラフ専用（新規）
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#memberGraph">
+            <i class="fa-solid fa-chart-bar text-info me-2"></i> メンバー別グラフ
+          </button>
+        </h2>
+        <div id="memberGraph" class="accordion-collapse collapse">
+          <div class="accordion-body">
+
+            {% if is_premium and member_stats_sorted %}
+            <div style="height: {{ member_stats_sorted|length * 20 }}px;">
+              <canvas id="memberChart"></canvas>
+            </div>
+            {% else %}
+            <p class="text-muted">プレミアムプラン限定機能です。</p>
+            {% endif %}
+
+          </div>
+        </div>
+      </div>
+    -->
+
+      <!-- 種類別 -->
       <div class="accordion-item">
         <h2 class="accordion-header">
           <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#typeStats">
@@ -122,6 +151,7 @@
         </div>
       </div>
 
+      <!-- コンプ詳細 -->
       <div class="accordion-item">
         <h2 class="accordion-header">
           <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#compStats">
@@ -133,7 +163,6 @@
 
             {% if comp_stats %}
             <div class="accordion" id="innerAccordion">
-
               {% for member, costumes in comp_stats.items() %}
               <div class="accordion-item">
                 <h2 class="accordion-header">
@@ -167,7 +196,6 @@
                 </div>
               </div>
               {% endfor %}
-
             </div>
             {% else %}
             <p class="text-muted">コンプ詳細データがありません。</p>
@@ -180,4 +208,65 @@
     </div>
   </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!--{% if is_premium and member_stats_sorted %}
+<script>
+  const labels = [
+    {% for member, count in member_stats_sorted %}
+      "{{ member }}",
+    {% endfor %}
+  ];
+
+  const data = [
+    {% for member, count in member_stats_sorted %}
+      {{ count }},
+    {% endfor %}
+  ];
+
+  // ★ 色を自動生成
+  const colors = labels.map((_, i) => {
+    const hue = i * 360 / labels.length;
+    return `hsl(${hue}, 70%, 60%)`;
+  });
+
+  const ctx = document.getElementById('memberChart').getContext('2d');
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: data,
+        backgroundColor: colors,  // ←ここ追加
+        barThickness: 6
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true
+        },
+        y: {
+          ticks: {
+            font: {
+              size: 10
+            }
+          }
+        }
+      }
+    }
+  });
+</script>
+{% endif %}-->
+
 {% endblock %}

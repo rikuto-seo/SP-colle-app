@@ -120,6 +120,12 @@ def stats(group_key):
         for m in ordered_members
     ]
 
+    member_stats_sorted = sorted(
+        member_stats.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )
+
     return render_template(
         'stats.html',
         endpoint=request.endpoint,
@@ -127,6 +133,7 @@ def stats(group_key):
         group_name=conf['name'],
         group_color=conf['color'],
         member_stats=member_stats_ordered,
+        member_stats_sorted=member_stats_sorted,
         type_stats=sorted(type_stats.items()),
         progress_list=progress_list,
         comp_stats=comp_stats,
