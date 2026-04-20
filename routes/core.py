@@ -13,8 +13,12 @@ def group_required(f):
         if not group_key:
             abort(400)
 
+        # ✅ 未ログインならスルー（重要）
+        if not current_user.is_authenticated:
+            return f(*args, **kwargs)
+
+        # ✅ ログインしている場合のみチェック
         if not current_user.can_access_group(group_key):
-            # 👇 ここ重要
             selected = current_user.get_selected_groups()
 
             if selected:
