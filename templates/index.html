@@ -42,7 +42,8 @@
           <div class="row g-2">
 
             <div class="col-6 col-md-4">
-              <input type="text" name="query" value="{{ request.args.get('query', '') }}"
+              <input type="text" name="query"
+                value="{{ request.args.get('query', '') }}"
                 class="form-control form-control-sm" placeholder="検索">
             </div>
 
@@ -70,7 +71,8 @@
 
             <div class="col-12 mt-1">
               <button type="submit" class="btn btn-outline-secondary w-100 mb-1">検索</button>
-              <a href="{{ url_for('photo.index', group_key=group_key) }}" class="btn btn-danger w-100 btn-sm">条件クリア</a>
+              <a href="{{ url_for('photo.index', group_key=group_key) }}"
+                 class="btn btn-danger w-100 btn-sm">条件クリア</a>
             </div>
 
           </div>
@@ -83,24 +85,25 @@
 
   <br>
 
-  <!-- 🔥 広告ここ -->
   {% if current_user.plan_type == "free" %}
   <div class="text-center my-3">
-    <!-- admax -->
     <script src="https://adm.shinobi.jp/s/f44799c3a6fdcd4c01a772860347050c"></script>
-    <!-- admax -->
   </div>
   {% endif %}
 
+  <!-- =========================
+       カード一覧
+  ========================== -->
   <div class="row row-cols-2 row-cols-md-3 g-2">
 
     {% for card in cards %}
     <div class="col">
-      <div class="card shadow-sm p-2 h-100 bg-body text-body card-item" style="cursor:pointer"
-        data-card='{{ card | tojson | safe }}'>
+      <div class="card shadow-sm p-2 h-100 bg-body text-body card-item"
+           style="cursor:pointer"
+           data-card='{{ card | tojson | safe }}'>
 
         {% if card.has_favorite %}
-        <div style="position:absolute; top:6px; right:8px; font-size:16px;">
+        <div style="position:absolute; top:6px; right:8px;">
           <i class="fa-solid fa-star text-warning"></i>
         </div>
         {% endif %}
@@ -133,47 +136,49 @@
   </div>
 
 </div>
-</div>
 
+<!-- =========================
+     ページネーション
+========================= -->
 <nav class="mt-4">
   <ul class="pagination justify-content-center">
 
-    {% if pagination.has_prev %}
-    <li class="page-item">
-      <a class="page-link" href="{{ url_for('photo.index',
-           group_key=group_key,
-           page=pagination.prev_num
-         ) }}">
+    {# --- 前へ --- #}
+    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+      <a class="page-link" 
+         href="{{ url_for('photo.index', group_key=group_key, page=pagination.prev_num, **request.args) if pagination.has_prev else '#' }}">
         前へ
       </a>
     </li>
-    {% endif %}
 
-    {% for p in pagination.iter_pages() %}
-    <li class="page-item {% if p == pagination.page %}active{% endif %}">
-      <a class="page-link" href="{{ url_for('photo.index',
-           group_key=group_key,
-           page=p
-         ) }}">
-        {{ p }}
-      </a>
-    </li>
+    {# --- ページ番号 (iter_pages) --- #}
+    {% for p in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
+      {% if p %}
+        <li class="page-item {% if p == pagination.page %}active{% endif %}">
+          <a class="page-link" href="{{ url_for('photo.index', group_key=group_key, page=p, **request.args) }}">
+            {{ p }}
+          </a>
+        </li>
+      {% else %}
+        {# 省略記号 ... #}
+        <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+      {% endif %}
     {% endfor %}
 
-    {% if pagination.has_next %}
-    <li class="page-item">
-      <a class="page-link" href="{{ url_for('photo.index',
-           group_key=group_key,
-           page=pagination.next_num
-         ) }}">
+    {# --- 次へ --- #}
+    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+      <a class="page-link" 
+         href="{{ url_for('photo.index', group_key=group_key, page=pagination.next_num, **request.args) if pagination.has_next else '#' }}">
         次へ
       </a>
     </li>
-    {% endif %}
 
   </ul>
 </nav>
 
+<!-- =========================
+     モーダル
+========================= -->
 <div class="modal fade" id="detailModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -197,94 +202,84 @@
 
 {% block scripts %}
 <script>
-  const groupKey = "{{ group_key }}";
+const groupKey = "{{ group_key }}";
 
-  document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll(".card-item").forEach(el => {
-      el.addEventListener("click", () => {
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".card-item").forEach(el => {
+    el.addEventListener("click", () => {
+      try {
         const card = JSON.parse(el.dataset.card);
         openGroupModal(card);
-      });
+      } catch (e) {
+        console.error("JSON parse error", e);
+      }
     });
   });
+});
 
-  function openGroupModal(card) {
-    const container = document.getElementById("detailList");
-    container.innerHTML = "";
+function openGroupModal(card) {
+  const container = document.getElementById("detailList");
+  container.innerHTML = "";
 
-    document.getElementById("detailTitle").textContent =
-      `${card.member} / ${card.costume}`;
+  document.getElementById("detailTitle").textContent =
+    `${card.member} / ${card.costume}`;
 
-    (card.details || []).forEach(d => {
-      const html = `
-            <form method="POST"
-                  action="/update_user_photo/${groupKey}/${d.id}"
-                  class="border p-2 mb-2 rounded">
-
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                <div class="d-flex justify-content-between">
-                    <strong>${d.type}</strong>
-                    ${d.is_favorite ? '<i class="fa-solid fa-star text-warning"></i>' : ''}
-                </div>
-
-                <div>所持数</div>
-                <input type="number" name="quantity"
-                       value="${d.quantity ?? 0}"
-                       class="form-control mt-1">
-
-                <div>交換可能数</div>
-                <input type="number" name="available_quantity"
-                       value="${d.available ?? 0}"
-                       class="form-control mt-1">
-
-                <div>メモ</div>
-                <input type="text" name="memo"
-                       value="${d.memo ?? ''}"
-                       class="form-control mt-1">
-
-                <div>入手日</div>
-                <input type="date" name="date"
-                       value="${d.date ?? ''}"
-                       class="form-control mt-1">
-
-                <div class="form-check mt-2">
-                    <input class="form-check-input"
-                           type="checkbox"
-                           name="is_favorite"
-                           ${d.is_favorite ? 'checked' : ''}>
-                    <label class="form-check-label">お気に入り</label>
-                </div>
-
-                <div class="d-flex gap-2 mt-3">
-                    <button type="submit"
-                            class="btn btn-primary btn-sm w-100">
-                        更新
-                    </button>
-
-                    <button type="button"
-                            class="btn btn-danger btn-sm w-100"
-                            onclick="deletePhoto(${d.id})">
-                        削除
-                    </button>
-                </div>
-            </form>
-        `;
-
-      container.insertAdjacentHTML("beforeend", html);
-    });
-
-    new bootstrap.Modal(
-      document.getElementById("detailModal")
-    ).show();
+  if (!card.details || card.details.length === 0) {
+    container.innerHTML = "<p class='text-muted'>所持データなし</p>";
   }
 
-  function deletePhoto(id) {
-    if (!confirm("本当に削除しますか？")) return;
+  (card.details || []).forEach(d => {
+    const html = `
+      <form method="POST"
+            action="/update_user_photo/${groupKey}/${d.id}"
+            class="border p-2 mb-2 rounded">
 
-    const form = document.getElementById("deleteForm");
-    form.action = `/delete_user_photo/${groupKey}/${id}`;
-    form.submit();
-  }
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="d-flex justify-content-between">
+          <strong>${d.type}</strong>
+          ${d.is_favorite ? '<i class="fa-solid fa-star text-warning"></i>' : ''}
+        </div>
+
+        <div>所持数</div>
+        <input type="number" name="quantity" value="${d.quantity ?? 0}" class="form-control mt-1">
+
+        <div>交換可能数</div>
+        <input type="number" name="available_quantity" value="${d.available ?? 0}" class="form-control mt-1">
+
+        <div>メモ</div>
+        <input type="text" name="memo" value="${d.memo ?? ''}" class="form-control mt-1">
+
+        <div>入手日</div>
+        <input type="date" name="date" value="${d.date ?? ''}" class="form-control mt-1">
+
+        <div class="form-check mt-2">
+          <input class="form-check-input" type="checkbox" name="is_favorite"
+            ${d.is_favorite ? 'checked' : ''}>
+          <label class="form-check-label">お気に入り</label>
+        </div>
+
+        <div class="d-flex gap-2 mt-3">
+          <button type="submit" class="btn btn-primary btn-sm w-100">更新</button>
+          <button type="button" class="btn btn-danger btn-sm w-100"
+                  onclick="deletePhoto(${d.id})">削除</button>
+        </div>
+
+      </form>
+    `;
+
+    container.insertAdjacentHTML("beforeend", html);
+  });
+
+  new bootstrap.Modal(document.getElementById("detailModal")).show();
+}
+
+function deletePhoto(id) {
+  if (!confirm("本当に削除しますか？")) return;
+
+  const form = document.getElementById("deleteForm");
+  form.action = `/delete_user_photo/${groupKey}/${id}`;
+  form.submit();
+}
 </script>
 {% endblock %}

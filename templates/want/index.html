@@ -8,14 +8,12 @@
   {% set infinite_wants = wants | selectattr("is_infinite") | list %}
   {% set normal_wants = wants | rejectattr("is_infinite") | list %}
 
-  <!-- タイトル -->
   <div class="text-center mb-3">
     <h1 class="fw-bold text-body p-2 rounded section-title">
       欲しい写真一覧
     </h1>
   </div>
 
-  <!-- QR -->
   {% if qr_base64 %}
   <div class="card mb-3">
     <div class="card-body text-center p-3">
@@ -25,108 +23,69 @@
   </div>
   {% endif %}
 
-  <!-- 操作 -->
   <div class="d-flex justify-content-between align-items-center mb-3">
     <form method="POST" action="{{ url_for('want.toggle_want_share', group_key=group_key) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button class="btn btn-sm btn-outline-primary">
-        {% if qr_base64 %}
-        公開停止
-        {% else %}
-        公開する
-        {% endif %}
+        {% if qr_base64 %}公開停止{% else %}公開する{% endif %}
       </button>
     </form>
 
-    <a href="{{ url_for('want.add_want', group_key=group_key) }}"
-      class="btn btn-sm btn-success">
+    <a href="{{ url_for('want.add_want', group_key=group_key) }}" class="btn btn-sm btn-success">
       ＋追加
     </a>
   </div>
 
-  <!-- 🔥 無限回収 -->
   {% if infinite_wants %}
   <div class="card border-warning bg-warning-subtle shadow-sm mb-4">
     <div class="card-body text-center">
-
-      <h5 class="fw-bold text-warning mb-2">
-        ∞ 無限回収中
-      </h5>
-
+      <h5 class="fw-bold text-warning mb-2">∞ 無限回収中</h5>
       <div class="d-flex flex-wrap justify-content-center gap-2">
-
         {% for want in infinite_wants %}
         <div class="position-relative">
-
-          <!-- 削除 -->
-          <form method="POST"
-            action="{{ url_for('want.delete_want', want_id=want.id) }}"
-            class="position-absolute top-0 end-0">
-
+          <form method="POST" action="{{ url_for('want.delete_want', want_id=want.id) }}" class="position-absolute top-0 end-0">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
             <button class="btn btn-sm btn-outline-danger border-0 p-0">✕</button>
           </form>
-
           <span class="badge bg-light text-dark border px-3 py-2">
-            {{ want.member or "全メンバー" }}
+            {{ want.photo.member.name }}
           </span>
-
         </div>
         {% endfor %}
-
       </div>
-
     </div>
   </div>
   {% endif %}
 
-  <!-- 🔽 通常一覧 -->
   <div class="row row-cols-2 row-cols-md-3 g-2">
-
     {% for want in normal_wants %}
     <div class="col">
       <div class="card shadow-sm p-2 position-relative h-100 small-card">
-
-        <!-- 削除 -->
-        <form method="POST"
-          action="{{ url_for('want.delete_want', want_id=want.id) }}"
-          class="position-absolute top-0 end-0 m-1">
-
+        <form method="POST" action="{{ url_for('want.delete_want', want_id=want.id) }}" class="position-absolute top-0 end-0 m-1">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-          <button type="submit"
-            class="btn btn-sm btn-outline-danger border-0 p-1">
-            ✕
-          </button>
+          <button type="submit" class="btn btn-sm btn-outline-danger border-0 p-1">✕</button>
         </form>
 
-        <!-- 内容 -->
         <div class="fw-bold text-truncate small">
-          {{ want.member or "全メンバー" }}
+          {{ want.photo.member.name }}
         </div>
 
         <div class="text-secondary text-truncate small">
-          {{ want.costume or "全衣装" }}
+          {{ want.photo.costume.name }}
         </div>
 
         <div class="small mt-1">
-          {{ want.photo_type or "全種類" }}
+          {{ want.photo.photo_type.name }}
         </div>
 
       </div>
     </div>
     {% endfor %}
-
   </div>
 
-  <!-- 空状態 -->
   {% if wants|length == 0 %}
-  <p class="text-center text-secondary mt-3">
-    まだ登録されていません
-  </p>
+  <p class="text-center text-secondary mt-3">まだ登録されていません</p>
   {% endif %}
 
 </div>
-
 {% endblock %}

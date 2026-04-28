@@ -1,97 +1,97 @@
-import os,csv
-from flask_login import current_user
-from models import UserPhoto
 from collections import defaultdict
-from flask import current_app
+from sqlalchemy import exists
+from models import db, Member, Costume, PhotoType, Photo, UserPhoto, Group
 
-def load_required_types(group_key):
-    base = os.path.join(current_app.root_path, 'members_csv', group_key)
-    required = defaultdict(lambda: defaultdict(set))
 
-    for filename in os.listdir(base):
-        if not filename.endswith(".csv"):
-            continue
-
-        if filename == "members_master.csv":
-            continue
-
-        with open(os.path.join(base, filename), encoding="utf-8") as f:
-            reader = csv.reader(f)
-            next(reader, None)
-
-            for row in reader:
-                if len(row) < 3:
-                    continue
-
-                member = row[0].strip()
-                costume = row[1].strip()
-                photo_type = row[2].strip()
-
-                required[member][costume].add(photo_type)
-
-    return required
-
-def get_photos_by_group(group_key):
-    folder_path = f'members_csv/{group_key}'
-    photos_by_member = {}
-
-    for filename in os.listdir(folder_path):
-        if filename.endswith('.csv'):
-            member_name = filename.replace('.csv', '')
-            member_photos = []
-            csv_path = os.path.join(folder_path, filename)
-            with open(csv_path, encoding='utf-8') as f:
-                reader = csv.reader(f)
-                next(reader, None)
-                for row in reader:
-                    if len(row) == 3:
-                        member, costume, photo_type = row
-                        member_photos.append({
-                            'member': member,
-                            'costume': costume,
-                            'photo_type': photo_type
-                        })
-            photos_by_member[member_name] = member_photos
-
-    return photos_by_member
-
-def get_missing_photos(search_member='', search_costume='', group_key='hinatazaka'):
-    """
-    CSVを正として未所持写真を算出する
-    """
-
-    required = load_required_types(group_key)
-
-    owned = {
-        (
-            p.member.strip(),
-            p.costume.strip(),
-            p.photo_type.strip()
+def get_required_dict(group_id):
+    rows = (
+        db.session.query(
+            Member.name,
+            Costume.name,
+            PhotoType.name
         )
-        for p in UserPhoto.query.filter_by(
-            user_id=current_user.id,
-            group_key=group_key
-        ).all()
-    }
+        .join(Photo)
+        .join(Costume)
+        .join(PhotoType)
+        .filter(Member.group_id == group_id)
+        .all()
+    )
+
+    result = defaultdict(lambda: defaultdict(set))
+
+    for m, c, t in rows:
+        result[m][c].add(t)
+
+    return result
+
+
+def get_members(group_id):
+    members = (
+        Member.query
+        .filter_by(group_id=group_id)
+        .order_by(Member.generation, Member.display_order)
+        .all()
+    )
+    return [m.name for m in members]
+
+
+def get_costumes(group_id, member_name=None):
+    q = (
+        db.session.query(Costume.name)
+        .join(Photo)
+        .join(Member)
+        .filter(Member.group_id == group_id)
+    )
+
+    if member_name:
+        q = q.filter(Member.name == member_name)
+
+    return sorted({c for (c,) in q.all()})
+
+
+def get_types(group_id, member_name, costume_name):
+    rows = (
+        db.session.query(PhotoType.name)
+        .join(Photo)
+        .join(Member)
+        .join(Costume)
+        .filter(
+            Member.group_id == group_id,
+            Member.name == member_name,
+            Costume.name == costume_name
+        )
+        .all()
+    )
+
+    return sorted({t for (t,) in rows})
+
+
+def get_missing_photos(user_id, group_id):
+    rows = (
+        db.session.query(
+            Member.name,
+            Costume.name,
+            PhotoType.name
+        )
+        .join(Photo)
+        .join(Costume)
+        .join(PhotoType)
+        .filter(Member.group_id == group_id)
+        .filter(
+            ~exists().where(
+                (UserPhoto.user_id == user_id) &
+                (UserPhoto.photo_id == Photo.id)
+            )
+        )
+        .all()
+    )
 
     grouped = defaultdict(list)
 
-    for member, costumes in required.items():
-
-        if search_member and search_member not in member:
-            continue
-
-        for costume, types in costumes.items():
-
-            if search_costume and search_costume not in costume:
-                continue
-
-            for photo_type in types:
-                key = (member, costume, photo_type)
-                if key not in owned:
-                    grouped[member].append({
-                        'costume': costume,
-                        'type': photo_type
-                    })
+    for m, c, t in rows:
+        grouped[m].append({
+            "costume": c,
+            "type": t
+        })
 
     return grouped

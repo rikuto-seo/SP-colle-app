@@ -5,26 +5,6 @@ from flask_login import UserMixin
 from sqlalchemy import CheckConstraint, Index, event
 from extensions import db
 
-
-class Photo(db.Model):
-    __tablename__ = "photo"
-
-    id = db.Column(db.Integer, primary_key=True)
-    member = db.Column(db.String(64), nullable=False)
-    costume = db.Column(db.String(128), nullable=False)
-    photo_type = db.Column(db.String(64), nullable=False)
-    group_key = db.Column(db.String(64), nullable=False)
-    group = db.Column(db.String(64), nullable=False)
-    is_favorite = db.Column(db.Boolean, default=False)
-
-    __table_args__ = (
-        db.UniqueConstraint(
-            'member', 'costume', 'photo_type', 'group_key',
-            name='_photo_uc'
-        ),
-        Index('idx_photo_group', 'group_key')
-    )
-
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
 
@@ -198,82 +178,24 @@ class User(UserMixin, db.Model):
 def receive_before_save(mapper, connection, target):
     target.normalize_groups()
 
-class UserPhoto(db.Model):
-    __tablename__ = "user_photos"
-
-    id = db.Column(db.Integer, primary_key=True)
-
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey('users.id'),
-        nullable=False,
-        index=True
-    )
-
-    photo_id = db.Column(
-        db.Integer,
-        db.ForeignKey('photo.id'),
-        nullable=False
-    )
-
-    member = db.Column(db.String(64), nullable=False)
-    costume = db.Column(db.String(128), nullable=False)
-    photo_type = db.Column(db.String(64), nullable=False)
-    group_key = db.Column(db.String(64), nullable=False, index=True)
-    group = db.Column(db.String(64), nullable=False)
-
-    has_owner = db.Column(db.Boolean, default=True, nullable=False)
-
-    memo = db.Column(db.String)
-    date = db.Column(db.Date)
-
-    quantity = db.Column(db.Integer, default=1, nullable=False)
-    available_quantity = db.Column(db.Integer, default=0, nullable=False)
-
-    is_favorite = db.Column(db.Boolean, default=False)
-    
-    photo = db.relationship('Photo', backref='user_photos')
-    user = db.relationship('User', backref='owned_photos')
-
-    __table_args__ = (
-        db.UniqueConstraint(
-            'user_id', 'member', 'costume', 'photo_type', 'group',
-            name='_user_photo_uc'
-        ),
-        CheckConstraint('quantity >= 0'),
-        CheckConstraint('available_quantity >= 0'),
-        CheckConstraint('available_quantity <= quantity'),
-        Index('idx_userphoto_user', 'user_id')
-    )
-
 class WantPhoto(db.Model):
-    __tablename__ = 'want_photos'
+    __tablename__ = "want_photos"
 
     id = db.Column(db.Integer, primary_key=True)
 
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey('users.id'),
-        nullable=False,
-        index=True
-    )
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    photo_id = db.Column(db.Integer, db.ForeignKey("photos.id"), nullable=False)
 
-    group_key = db.Column(db.String(64), nullable=False, index=True)
-    member = db.Column(db.String(64), nullable=False)
-    costume = db.Column(db.String(128), nullable=False)
-    photo_type = db.Column(db.String(64), nullable=False)
-
+    is_infinite = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    user = db.relationship('User', back_populates='want_list')
-    is_infinite = db.Column(db.Boolean, default=False)
-    
-    __table_args__ = (
-        db.UniqueConstraint(
-            'user_id', 'group_key', 'member', 'costume', 'photo_type'
-        ),
-    )
+    photo = db.relationship("Photo")
+    user = db.relationship("User", back_populates="want_list")
 
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'photo_id'),
+    )
+    
 class WantShare(db.Model):
     __tablename__ = 'want_shares'
 
@@ -326,3 +248,85 @@ class WantShare(db.Model):
             db.session.add(share)
 
         return share
+
+class UserPhoto(db.Model):
+    __tablename__ = "user_photos"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    photo_id = db.Column(db.Integer, db.ForeignKey("photos.id"), nullable=False)
+
+    quantity = db.Column(db.Integer, default=1, nullable=False)
+    available_quantity = db.Column(db.Integer, default=0, nullable=False)
+
+    has_owner = db.Column(db.Boolean, default=True, nullable=False)
+    is_favorite = db.Column(db.Boolean, default=False)
+
+    memo = db.Column(db.String)
+    date = db.Column(db.Date)
+
+    photo = db.relationship("Photo")
+    user = db.relationship("User", backref="owned_photos")
+
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'photo_id'),
+        CheckConstraint('quantity >= 0'),
+        CheckConstraint('available_quantity >= 0'),
+        CheckConstraint('available_quantity <= quantity'),
+    )
+
+class Photo(db.Model):
+    __tablename__ = "photos"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    member_id = db.Column(db.Integer, db.ForeignKey("members.id"), nullable=False)
+    costume_id = db.Column(db.Integer, db.ForeignKey("costumes.id"), nullable=False)
+    type_id = db.Column(db.Integer, db.ForeignKey("photo_types.id"), nullable=False)
+
+    member = db.relationship("Member")
+    costume = db.relationship("Costume")
+    photo_type = db.relationship("PhotoType")
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            'member_id', 'costume_id', 'type_id',
+            name='uq_photo'
+        ),
+    )
+
+class PhotoType(db.Model):
+    __tablename__ = "photo_types"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String, unique=True, nullable=False)
+
+class Costume(db.Model):
+    __tablename__ = "costumes"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String, nullable=False)
+
+    group_id = db.Column(db.Integer, db.ForeignKey("groups.id"), nullable=False)
+
+    group = db.relationship("Group", backref="costumes")
+
+class Member(db.Model):
+    __tablename__ = "members"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String, nullable=False)
+
+    group_id = db.Column(db.Integer, db.ForeignKey("groups.id"), nullable=False)
+    generation = db.Column(db.Integer)
+    display_order = db.Column(db.Integer)
+
+    group = db.relationship("Group", backref="members")
+
+class Group(db.Model):
+    __tablename__ = "groups"
+
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String, unique=True, nullable=False)
+    name = db.Column(db.String, nullable=False)

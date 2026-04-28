@@ -55,6 +55,8 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     "pool_pre_ping": True,
     "pool_recycle": 300,
+    "pool_size": 10,       # 同時接続の基本数
+    "max_overflow": 20,    # 溢れた時の予備接続数
 }
 
 # Firebase init

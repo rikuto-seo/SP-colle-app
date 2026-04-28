@@ -1,13 +1,10 @@
-from collections import defaultdict
-from flask import Blueprint, render_template, request, abort
+from flask import Blueprint, render_template, abort
 from flask_login import login_required, current_user
-from models import UserPhoto
-from routes.core import group_required
-from services.photo_service import load_required_types, get_missing_photos
-from services.stats_service import get_ordered_members, get_all_costumes_in_order
-from services.type_normalizer import normalize_type
-stats_bp = Blueprint('stats', __name__)
+from sqlalchemy import exists
+from models import db, Member, Costume, PhotoType, Photo, UserPhoto
+from services.stats_service import build_stats_data
 
+stats_bp = Blueprint('stats', __name__)
 
 GROUP_CONFIG = {
     'nogizaka': {'name': '乃木坂46', 'color': 'bg-nogizaka'},
@@ -17,173 +14,116 @@ GROUP_CONFIG = {
 
 
 def get_group_conf(group_key):
-    """グループ設定を取得。存在しない場合は404を返す"""
     conf = GROUP_CONFIG.get(group_key.strip().lower())
     if not conf:
-        abort(404, "不正なグループキーです")
+        abort(404)
     return conf
 
 
+# =========================
+# stats
+# =========================
 @stats_bp.route('/stats/<group_key>')
 @login_required
-@group_required
 def stats(group_key):
     conf = get_group_conf(group_key)
+
+    data = build_stats_data(current_user.id, group_key)
+
+    # --- ここで総所持数を計算 ---
+    stats_owned = sum(data["member_stats"].values())
+    # -----------------------
 
     share_attr = f"is_{group_key}_shared"
     is_shared = getattr(current_user, share_attr, False)
 
-    required_dict = load_required_types(group_key)
-
-    user_photos = UserPhoto.query.filter_by(
-        user_id=current_user.id, group_key=group_key).all()
-
-    total_photos = sum(p.quantity for p in user_photos)
-
-    member_stats = defaultdict(int) 
-    type_stats = defaultdict(int) 
-    owned_dict = defaultdict(lambda: defaultdict(set))
-
-    for p in user_photos:
-        m = p.member.strip()
-        c = p.costume.strip()
-        raw_t = p.photo_type.strip()
-
-        # --- そのまま使う領域 ---
-        member_stats[m] += p.quantity
-        owned_dict[m][c].add(raw_t)
-
-        # --- 統計だけ正規化 ---
-        normalized_t = normalize_type(m, c, raw_t)
-        type_stats[normalized_t] += p.quantity
-
-    comp_stats = {}
-    comp_ranking_list = []
-    costume_progress_map = defaultdict(lambda: {"owned": 0, "total": 0})
-
-    ordered_members = get_ordered_members(group_key)
-
-    for member in ordered_members:
-        costumes = required_dict.get(member, {})
-
-        member_comp_count = 0
-        member_results = []
-
-        for costume, required_types in costumes.items():
-            owned_types = owned_dict[member][costume]
-
-            valid_owned_types = required_types.intersection(owned_types)
-            owned_count = len(valid_owned_types)
-            total_count = len(required_types)
-
-            is_complete = (owned_count == total_count and total_count > 0)
-            if is_complete:
-                member_comp_count += 1
-
-            member_results.append({
-                "costume": costume,
-                "owned": owned_count,
-                "total": total_count,
-                "is_complete": is_complete
-            })
-
-            costume_progress_map[costume]["owned"] += owned_count
-            costume_progress_map[costume]["total"] += total_count
-
-        comp_stats[member] = member_results
-
-        comp_ranking_list.append({
-            'member': member,
-            'complete_count': member_comp_count
-        })
-
-    comp_ranking = sorted(
-        comp_ranking_list, key=lambda x: x['complete_count'], reverse=True)
-
-    total_complete = sum(x['complete_count'] for x in comp_ranking_list)
-
-    ordered_costumes = get_all_costumes_in_order(group_key)
-
-    progress_list = []
-    for c in ordered_costumes:
-        data = costume_progress_map.get(c, {"owned": 0, "total": 0})
-
-        progress_list.append({
-            'costume': c,
-            'owned': data["owned"],
-            'total': data["total"],
-            'rate': (data["owned"] / data["total"] * 100) if data["total"] > 0 else 0
-        })
-
     member_stats_ordered = [
-        (m, member_stats.get(m, 0))
-        for m in ordered_members
+        (m, data["member_stats"].get(m, 0))
+        for m in data["ordered_members"]
     ]
 
     member_stats_sorted = sorted(
-        member_stats.items(),
+        data["member_stats"].items(),
         key=lambda x: x[1],
         reverse=True
     )
 
+    total_complete = sum(
+        x["complete_count"] for x in data["comp_ranking"]
+    )
+
     return render_template(
         'stats.html',
-        endpoint=request.endpoint,
         group_key=group_key,
         group_name=conf['name'],
         group_color=conf['color'],
+        stats_owned=stats_owned,  # ← ここを追加！
         member_stats=member_stats_ordered,
         member_stats_sorted=member_stats_sorted,
-        type_stats=sorted(type_stats.items()),
-        progress_list=progress_list,
-        comp_stats=comp_stats,
-        comp_ranking=comp_ranking,
+        type_stats=sorted(data["type_stats"].items()),
+        progress_list=data["progress_list"],
+        comp_stats=data["comp_stats"],
+        comp_ranking=data["comp_ranking"],
         is_shared=is_shared,
-        total_photos=total_photos,
         total_complete=total_complete
     )
 
-
-@stats_bp.route('/missing/<group_key>', methods=['GET'])
+# =========================
+# missing（完全修正版）
+# =========================
+@stats_bp.route('/missing/<group_key>')
 @login_required
-@group_required
 def missing(group_key):
     conf = get_group_conf(group_key)
 
-    search_member = request.args.get('member', '').strip()
-    search_costume = request.args.get('costume', '').strip()
+    data = build_stats_data(current_user.id, group_key)
+    group = data["group"]
 
-    # --- 未所持データ ---
-    grouped = get_missing_photos(search_member, search_costume, group_key)
+    # =========================
+    # 未所持（最適化版）
+    # =========================
+    missing_rows = (
+        db.session.query(
+            Member.name,
+            Costume.name,
+            PhotoType.name
+        )
+        .join(Photo, Photo.member_id == Member.id)
+        .join(Costume, Costume.id == Photo.costume_id)
+        .join(PhotoType, PhotoType.id == Photo.type_id)
+        .filter(Member.group_id == group.id)
+        .filter(
+            ~exists().where(
+                (UserPhoto.user_id == current_user.id) &
+                (UserPhoto.photo_id == Photo.id)
+            )
+        )
+        .all()
+    )
 
-    # --- 並び順取得（masterベース） ---
-    ordered_members = get_ordered_members(group_key)
+    # =========================
+    # グルーピング
+    # =========================
+    grouped = {}
+    for m, c, t in missing_rows:
+        grouped.setdefault(m, []).append({
+            "costume": c,
+            "type": t
+        })
 
-    # --- 表示用：順序付き＆存在するメンバーのみ ---
-    ordered_grouped_missing = {
+    # =========================
+    # 順序適用
+    # =========================
+    ordered_grouped = {
         m: grouped.get(m, [])
-        for m in ordered_members
+        for m in data["ordered_members"]
         if m in grouped
     }
 
-    # --- セレクトボックス用メンバー ---
-    member_list = ordered_members
-
-    # --- 衣装リスト（CSVベース） ---
-    required_dict = load_required_types(group_key)
-    costume_set = set()
-    for member_data in required_dict.values():
-        for c in member_data.keys():
-            costume_set.add(c)
-
     return render_template(
         'missing.html',
-        endpoint=request.endpoint,
-        grouped_missing=ordered_grouped_missing,
-        member_list=member_list,
+        grouped_missing=ordered_grouped,
+        member_list=data["ordered_members"],
         group_key=group_key,
-        group_color=conf['color'],
-        search_member=search_member,
-        search_costume=search_costume,
-        costume_list=get_all_costumes_in_order(group_key)
+        group_color=conf['color']
     )
