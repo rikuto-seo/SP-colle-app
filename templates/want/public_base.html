@@ -2,16 +2,16 @@
 
 {% block title %}欲しい生写真一覧{% endblock %}
 
-{% set infinite_wants = wants | selectattr("is_infinite") | list %}
-{% set normal_wants = wants | rejectattr("is_infinite") | list %}
+{% set infinite_wants = wants | selectattr("want.is_infinite") | list %}
+{% set normal_wants = wants | rejectattr("want.is_infinite") | list %}
 
 {% block content %}
 <div class="container mt-4 {{ group_color }}">
 
   {% set group_names = {
-  'nogizaka': '乃木坂46',
-  'sakurazaka': '櫻坂46',
-  'hinatazaka': '日向坂46'
+    'nogizaka': '乃木坂46',
+    'sakurazaka': '櫻坂46',
+    'hinatazaka': '日向坂46'
   } %}
 
   <div class="text-center mb-4">
@@ -33,18 +33,22 @@
   <div class="card border-warning bg-warning-subtle shadow-sm mb-4">
     <div class="card-body text-center">
       <h5 class="fw-bold text-warning mb-2">∞ 無限回収中</h5>
+
       <div class="d-flex flex-wrap justify-content-center gap-2">
-        {% for want in infinite_wants %}
-        <span class="badge bg-light text-dark border">
-          {{ want.member or "全メンバー" }}
-        </span>
+        {% for item in infinite_wants %}
+          {% set want = item.want %}
+
+          <span class="badge bg-light text-dark border px-3 py-2">
+            {{ want.photo.member.name }}
+          </span>
         {% endfor %}
       </div>
+
     </div>
   </div>
   {% endif %}
 
-  <!-- ✅ ボタンは1つだけ -->
+  <!-- ボタン -->
   <div class="text-center mb-3">
 
     {% if current_user.is_authenticated %}
@@ -69,22 +73,44 @@
   <div id="tradeResult" class="mt-4"></div>
 
   <div class="row row-cols-2 row-cols-md-3 g-2 mt-2">
-    {% for want in normal_wants %}
-    <div class="col">
-      <div class="card shadow-sm p-2 h-100 bg-body text-body position-relative">
-        <div class="fw-bold small text-truncate">
-          {{ want.member or "全メンバー" }}
-        </div>
-        <div class="small text-muted text-truncate">
-          {{ want.costume or "全衣装" }}
-        </div>
-        <div class="small mt-1">
-          {{ want.photo_type or "全種類" }}
+
+    {% for item in normal_wants %}
+      {% set want = item.want %}
+      {% set is_owned = item.is_owned %}
+
+      <div class="col">
+        <div class="card shadow-sm p-2 h-100 bg-body text-body position-relative">
+
+          {% if is_owned %}
+          <span class="position-absolute top-0 end-0 badge bg-success m-1">
+            所持
+          </span>
+          {% endif %}
+
+          <div class="fw-bold small text-truncate">
+            {{ want.photo.member.name }}
+          </div>
+
+          <div class="small text-muted text-truncate">
+            {{ want.photo.costume.name }}
+          </div>
+
+          <div class="small mt-1">
+            {{ want.photo.photo_type.name }}
+          </div>
+
         </div>
       </div>
-    </div>
+
     {% endfor %}
+
   </div>
+
+  {% if wants|length == 0 %}
+  <p class="text-center text-secondary mt-3">
+    欲しい写真は登録されていません
+  </p>
+  {% endif %}
 
 </div>
 
@@ -123,25 +149,52 @@ function runTradeCheck() {
       if (data.mutual.length === 0) {
         html += `<p class="text-muted">成立するトレードはありません</p>`;
       } else {
+
         data.mutual.forEach(m => {
+
           html += `
           <div class="card mb-2 border-success shadow-sm">
             <div class="card-body d-flex justify-content-between">
+
               <div>
                 <div class="text-muted small">あなた → 相手</div>
-                <div class="fw-bold">${safe(m.give.member, "全メンバー")}</div>
-                <div>${safe(m.give.costume, "全衣装")}</div>
-                <div>${safe(m.give.type, "全種類")}</div>
+
+                <div class="fw-bold">
+                  ${safe(m.give.member, "不明")}
+                </div>
+
+                <div>
+                  ${safe(m.give.costume, "不明")}
+                </div>
+
+                <div>
+                  ${safe(m.give.type, "不明")}
+                </div>
               </div>
-              <div class="align-self-center fs-4">⇄</div>
+
+              <div class="align-self-center fs-4">
+                ⇄
+              </div>
+
               <div>
                 <div class="text-muted small">相手 → あなた</div>
-                <div class="fw-bold">${safe(m.receive.member, "全メンバー")}</div>
-                <div>${safe(m.receive.costume, "全衣装")}</div>
-                <div>${safe(m.receive.type, "全種類")}</div>
+
+                <div class="fw-bold">
+                  ${safe(m.receive.member, "不明")}
+                </div>
+
+                <div>
+                  ${safe(m.receive.costume, "不明")}
+                </div>
+
+                <div>
+                  ${safe(m.receive.type, "不明")}
+                </div>
               </div>
+
             </div>
-          </div>`;
+          </div>
+          `;
         });
       }
 
@@ -151,17 +204,24 @@ function runTradeCheck() {
       btn.innerText = "トレード候補を表示";
     })
     .catch(() => {
-      container.innerHTML = `<p class="text-danger">取得に失敗しました</p>`;
+
+      container.innerHTML = `
+        <p class="text-danger">
+          取得に失敗しました
+        </p>
+      `;
+
       btn.disabled = false;
       btn.innerText = "トレード候補を表示";
     });
 }
 
-// ✅ クリック
+// クリック
 document.getElementById("tradeBtn")?.addEventListener("click", runTradeCheck);
 
-// ✅ ログイン後自動実行
+// ログイン後自動実行
 const urlParams = new URLSearchParams(window.location.search);
+
 if (urlParams.get("auto_trade") === "1") {
   runTradeCheck();
 }
