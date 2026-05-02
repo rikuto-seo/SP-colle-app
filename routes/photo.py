@@ -112,13 +112,17 @@ def index(group_key):
     members_list = [m.name for m in Member.query.filter_by(group_id=group.id).order_by(Member.name).all()]
     costumes_list = [c.name for c in Costume.query.filter_by(group_id=group.id).order_by(Costume.name).all()]
 
+    args = request.args.to_dict()
+    args.pop("page", None)
+
     return render_template(
         'index.html',
         group_key=group_key,
         cards=cards,
         pagination=pagination_obj,  # 辞書ではなくオブジェクトをそのまま渡す
-        members=members_list,        # 追加
-        costumes=costumes_list       # 追加
+        members=members_list, 
+        costumes=costumes_list,
+        args=args
     )
 
 @photo_bp.route('/delete_user_photo/<group_key>/<int:photo_id>', methods=['POST'])

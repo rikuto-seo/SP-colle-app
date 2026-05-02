@@ -141,9 +141,6 @@
      ページネーション
 ========================= -->
 
-{% set args = request.args.to_dict() %}
-{% do args.pop('page', None) %}
-
 <nav class="mt-4">
   <ul class="pagination justify-content-center">
 
