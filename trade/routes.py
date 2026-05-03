@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, abort
 from flask_login import login_required, current_user
-from models import User, WantPhoto, UserPhoto, Group, Photo
+from models import User, WantPhoto, UserPhoto, Group, Photo, Member
 from extensions import db
 
 trade_bp = Blueprint('trade', __name__, url_prefix='/trade')
@@ -17,16 +17,10 @@ def match_trade(public_uuid, group_key):
         abort(404)
 
     # =========================
-    # 🔥 必要データ（全部photo_idで統一）
+    # 🔥 必要データ取得
     # =========================
-
-    target_wants = WantPhoto.query.filter_by(
-        user_id=target_user.id
-    ).all()
-
-    my_wants = WantPhoto.query.filter_by(
-        user_id=current_user.id
-    ).all()
+    target_wants = WantPhoto.query.filter_by(user_id=target_user.id).all()
+    my_wants = WantPhoto.query.filter_by(user_id=current_user.id).all()
 
     my_photos = UserPhoto.query.filter(
         UserPhoto.user_id == current_user.id,
@@ -39,7 +33,7 @@ def match_trade(public_uuid, group_key):
     ).all()
 
     # =========================
-    # 🔥 groupフィルタ（Photo経由）
+    # 🔥 groupフィルタ（正しい経路：Photo → Member → Group）
     # =========================
     def filter_group(items):
         photo_ids = [x.photo_id for x in items]
@@ -47,9 +41,12 @@ def match_trade(public_uuid, group_key):
             return []
 
         valid_ids = {
-            p.id for p in db.session.query(Photo.id)
-            .join(Group, Group.id == Photo.group_id)
-            .filter(Group.id == group.id, Photo.id.in_(photo_ids))
+            pid for (pid,) in db.session.query(Photo.id)
+            .join(Member, Member.id == Photo.member_id)
+            .filter(
+                Member.group_id == group.id,
+                Photo.id.in_(photo_ids)
+            )
             .all()
         }
 
@@ -61,7 +58,7 @@ def match_trade(public_uuid, group_key):
     target_photos = filter_group(target_photos)
 
     # =========================
-    # 🔥 キーはphoto_id
+    # 🔥 IDセット化
     # =========================
     target_want_ids = {w.photo_id for w in target_wants}
     my_want_ids = {w.photo_id for w in my_wants}
@@ -70,23 +67,23 @@ def match_trade(public_uuid, group_key):
     target_available_map = {p.photo_id: p for p in target_photos}
 
     # =========================
-    # 🔥 表示用補助（Photo情報取得）
+    # 🔥 表示用Photoまとめ取得（N+1防止）
     # =========================
+    all_photo_ids = set(my_available_map.keys()) | set(target_available_map.keys())
+
     photo_map = {
         p.id: p for p in db.session.query(Photo)
-        .filter(Photo.id.in_(
-            list(my_available_map.keys()) +
-            list(target_available_map.keys())
-        ))
+        .join(Member)
+        .filter(Photo.id.in_(all_photo_ids))
         .all()
     }
 
     def to_dict(p):
         ph = photo_map.get(p.photo_id)
         return {
-            "member": ph.member if ph else "",
-            "costume": ph.costume if ph else "",
-            "type": ph.photo_type if ph else "",
+            "member": ph.member.name if ph else "",
+            "costume": ph.costume.name if ph else "",
+            "type": ph.photo_type.name if ph else "",
             "available": p.available_quantity
         }
 
@@ -94,18 +91,21 @@ def match_trade(public_uuid, group_key):
     # 🔥 マッチング
     # =========================
 
+    # 自分が渡せる
     i_can_give = [
         to_dict(p)
         for pid, p in my_available_map.items()
         if pid in target_want_ids
     ]
 
+    # 相手が渡せる
     they_can_give = [
         to_dict(p)
         for pid, p in target_available_map.items()
         if pid in my_want_ids
     ]
 
+    # 相互トレード
     mutual_matches = []
 
     for my_pid, my_p in my_available_map.items():
