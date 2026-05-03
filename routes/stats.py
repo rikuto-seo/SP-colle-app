@@ -120,10 +120,18 @@ def missing(group_key):
         if m in grouped
     }
 
+    costume_list = [
+        c.name for c in Costume.query
+        .filter_by(group_id=group.id)
+        .order_by(Costume.name)
+        .all()
+    ]
+
     return render_template(
         'missing.html',
         grouped_missing=ordered_grouped,
         member_list=data["ordered_members"],
         group_key=group_key,
+        costume_list=costume_list,
         group_color=conf['color']
     )
