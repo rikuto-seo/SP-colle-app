@@ -54,11 +54,22 @@ def index(group_key):
     # 検索フィルタの適用
     selected_member = request.args.get('member', '').strip()
     selected_costume = request.args.get('costume', '').strip()
-    if selected_member:
-        summary_query = summary_query.filter(Member.name == selected_member)
-    if selected_costume:
-        summary_query = summary_query.filter(Costume.name == selected_costume)
+    query = request.args.get('query', '').strip()
 
+    if selected_member:
+        summary_query = summary_query.filter(Member.name.ilike(f"%{selected_member}%"))
+
+    if selected_costume:
+        summary_query = summary_query.filter(Costume.name.ilike(f"%{selected_costume}%"))
+
+    if query:
+        summary_query = summary_query.filter(
+            db.or_(
+                Member.name.ilike(f"%{query}%"),
+                Costume.name.ilike(f"%{query}%")
+            )
+        )
+        
     # ページネーション実行（ここでSQLが1回走る）
     pagination_obj = summary_query.paginate(page=page, per_page=per_page, error_out=False)
     display_rows = pagination_obj.items
