@@ -232,14 +232,6 @@
     </script>
     {% block scripts %}{% endblock %}
 
-    {% if current_user.is_authenticated and current_user.plan_type == "free" %}
-    <div class="text-center my-4">
-        <!-- admax -->
-        <script src="https://adm.shinobi.jp/s/da92d64bbf8334c3927e2da0dc38ffea"></script>
-        <!-- admax -->
-    </div>
-    {% endif %}
-
 </body>
 
 <footer class="app-footer mt-5 py-3">
