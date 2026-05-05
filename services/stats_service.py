@@ -1,6 +1,7 @@
 from collections import defaultdict
 from sqlalchemy import func
 from models import db, Group, Member, Costume, PhotoType, Photo, UserPhoto
+from services.type_normalizer import normalize_type
 
 
 def build_stats_data(user_id, group_key):
@@ -19,7 +20,7 @@ def build_stats_data(user_id, group_key):
     ]
 
     # =========================
-    # ユーザー所持（最重要修正）
+    # ユーザー所持
     # =========================
     rows = (
         db.session.query(
@@ -45,9 +46,11 @@ def build_stats_data(user_id, group_key):
     owned_dict = defaultdict(lambda: defaultdict(set))
 
     for m, c, t, qty in rows:
+        normalized = normalize_type(m, c, t)
+
         member_stats[m] += qty
-        type_stats[t] += qty
-        owned_dict[m][c].add(t)
+        type_stats[normalized] += qty
+        owned_dict[m][c].add(normalized)
 
     # =========================
     # required（Photoそのもの）
@@ -67,7 +70,8 @@ def build_stats_data(user_id, group_key):
 
     required_dict = defaultdict(lambda: defaultdict(set))
     for m, c, t in required_rows:
-        required_dict[m][c].add(t)
+        normalized = normalize_type(m, c, t)
+        required_dict[m][c].add(normalized)
 
     # =========================
     # コンプ
@@ -154,7 +158,7 @@ def build_stats_data(user_id, group_key):
     return {
         "group": group,
         "member_stats": member_stats,
-        "type_stats": type_stats,
+        "type_stats": dict(type_stats),  # ← Jinja用にdict化
         "comp_stats": comp_stats,
         "comp_ranking": comp_ranking,
         "progress_list": sorted(progress_list, key=lambda x: x["costume"]),

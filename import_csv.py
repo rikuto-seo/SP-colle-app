@@ -55,17 +55,25 @@ def execute_with_retry(query, params):
 
 
 # -----------------------------
-# 🔥 追加：メンバー単位スキップ判定
+# typeを動的生成
 # -----------------------------
-def is_member_done(member_id):
-    with engine.connect() as conn:
-        result = conn.execute(text("""
-            SELECT 1 FROM photos
-            WHERE member_id = :m
-            LIMIT 1
-        """), {"m": member_id}).first()
+def get_or_create_type_id(conn, type_name, type_map):
+    if type_name in type_map:
+        return type_map[type_name]
 
-    return result is not None
+    conn.execute(text("""
+        INSERT INTO photo_types (name)
+        VALUES (:name)
+        ON CONFLICT (name) DO NOTHING
+    """), {"name": type_name})
+
+    type_id = conn.execute(
+        text("SELECT id FROM photo_types WHERE name=:name"),
+        {"name": type_name}
+    ).scalar()
+
+    type_map[type_name] = type_id
+    return type_id
 
 
 # -----------------------------
@@ -95,7 +103,10 @@ def seed_photo_types():
         ON CONFLICT (name) DO NOTHING
     """)
 
-    for t in ["ヨリ", "チュウ", "ヒキ", "座り"]:
+    base_types = ["ヨリ", "チュウ", "ヒキ", "座り"]
+    number_types = [f"{i:02d}" for i in range(1, 101)]
+
+    for t in base_types + number_types:
         execute_with_retry(query, {"name": t})
 
 
@@ -133,7 +144,7 @@ def import_members(group_key):
 
 
 # -----------------------------
-# costumes（NULL完全防止）
+# costumes
 # -----------------------------
 def insert_costumes(group_key):
     with engine.begin() as conn:
@@ -173,7 +184,7 @@ def insert_costumes(group_key):
 
 
 # -----------------------------
-# 🔥 photos（完全再開対応）
+# photos（完全版）
 # -----------------------------
 def insert_photos(group_key):
     print(f"  → inserting photos ({group_key})")
@@ -194,13 +205,6 @@ def insert_photos(group_key):
         if member_name not in member_map:
             continue
 
-        member_id = member_map[member_name]
-
-        # 🔥 ここが最重要（再開）
-        if is_member_done(member_id):
-            print(f"    → {file} (skip)")
-            continue
-
         print(f"    → {file}")
 
         path = os.path.join(group_dir, file)
@@ -210,49 +214,50 @@ def insert_photos(group_key):
         with open(path, encoding="utf-8") as f:
             reader = csv.DictReader(f)
 
-            for row in reader:
-                m = safe_str(row.get("member"))
-                c = safe_str(row.get("costume"))
-                t = safe_str(row.get("type"))
+            with engine.begin() as conn:
+                for row in reader:
+                    m = safe_str(row.get("member"))
+                    c = safe_str(row.get("costume"))
+                    t = safe_str(row.get("type"))
 
-                if not m or not c or not t:
-                    continue
+                    if not m or not c or not t:
+                        continue
 
-                if m not in member_map:
-                    continue
-                if c not in costume_map:
-                    continue
-                if t not in type_map:
-                    continue
+                    if m not in member_map:
+                        continue
+                    if c not in costume_map:
+                        continue
 
-                batch.append({
-                    "m": member_map[m],
-                    "c": costume_map[c],
-                    "t": type_map[t],
-                })
+                    type_id = get_or_create_type_id(conn, t, type_map)
 
-                if len(batch) >= BATCH_SIZE:
-                    flush(batch)
+                    batch.append({
+                        "m": member_map[m],
+                        "c": costume_map[c],
+                        "t": type_id,
+                    })
+
+                    if len(batch) >= BATCH_SIZE:
+                        conn.execute(text("""
+                            INSERT INTO photos (member_id, costume_id, type_id)
+                            VALUES (:m, :c, :t)
+                            ON CONFLICT (member_id, costume_id, type_id) DO NOTHING
+                        """), batch)
+
+                        total += len(batch)
+                        print(f"      inserted: {total}")
+                        batch.clear()
+
+                if batch:
+                    conn.execute(text("""
+                        INSERT INTO photos (member_id, costume_id, type_id)
+                        VALUES (:m, :c, :t)
+                        ON CONFLICT (member_id, costume_id, type_id) DO NOTHING
+                    """), batch)
+
                     total += len(batch)
                     print(f"      inserted: {total}")
-                    batch.clear()
 
-        if batch:
-            flush(batch)
-            total += len(batch)
-            print(f"      inserted: {total}")
-
-        time.sleep(0.3)
-
-
-def flush(batch):
-    query = text("""
-        INSERT INTO photos (member_id, costume_id, type_id)
-        VALUES (:m, :c, :t)
-        ON CONFLICT (member_id, costume_id, type_id) DO NOTHING
-    """)
-
-    execute_with_retry(query, batch)
+        time.sleep(0.2)
 
 
 # -----------------------------
@@ -264,7 +269,7 @@ def main():
     seed_groups()
     seed_photo_types()
 
-    for group_key in ["sakurazaka"]:
+    for group_key in ["hinatazaka", "sakurazaka"]:
         print(f"Processing {group_key}...")
 
         import_members(group_key)
