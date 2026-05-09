@@ -1,30 +1,23 @@
 {% extends "base.html" %}
 {% block title %}プラン変更{% endblock %}
 
-{% set plan_order = {
-"free": 0,
-"lite": 1,
-"standard": 2,
-"premium": 3
-} %}
-
 {% block content %}
-<div class="container mt-5" style="max-width: 1100px;">
+<div class="container mt-5" style="max-width: 900px;">
 
-  <!-- ✅ 契約状態 -->
-  <div class="alert alert-light border mb-4">
+  <!-- 契約状態 -->
+  <div class="alert alert-light border mb-4 rounded-4">
     <div class="fw-bold mb-2">現在の契約状況</div>
 
     {% if cancel_at_period_end %}
     <div class="text-warning">
-      現在のプランは <b>{{ current_plan|upper }}</b> です。<br>
+      現在のプランは <b>SUPPORTER</b> です。<br>
       <b>{{ next_billing }}</b> に解約予定です。<br>
       それまでは引き続きご利用いただけます。
     </div>
 
     {% elif current_plan != "free" %}
     <div>
-      現在のプランは <b>{{ current_plan|upper }}</b> です。<br>
+      現在のプランは <b>SUPPORTER</b> です。<br>
       次回請求日：<b>{{ next_billing }}</b>
     </div>
 
@@ -35,234 +28,256 @@
     {% endif %}
   </div>
 
+  <!-- タイトル -->
   <div class="text-center mb-5">
     <h2 class="fw-bold">プランを選択</h2>
-    <p class="text-muted mt-2">
-      ※有料プランは毎月自動更新されます
+
+    <p class="text-muted mt-3">
+      生写真管理の基本機能は無料で利用できます
     </p>
-    <p class="text-muted small mt-2">
-      ※プランにより利用できる機能が異なります。<br>
-      ※一部機能は上位プラン限定、または先行提供となります。
+
+    <p class="text-muted small">
+      より多くのグループを管理したい方向けに<br>
+      SUPPORTERプランを用意しています
     </p>
   </div>
 
   <div class="row g-4 justify-content-center">
 
     <!-- FREE -->
-    <div class="col-6">
-      <div class="plan-card border">
-        <h6 class="text-muted">FREE</h6>
-        <h3 class="fw-bold mt-2">¥0</h3>
+    <div class="col-md-6">
+      <div class="plan-card border h-100 p-4 rounded-4 d-flex flex-column">
 
-        <ul class="plan-list">
-          <li>広告あり</li>
-          <li>検索制限</li>
-          <li>統計制限</li>
-          <li>1グループ</li>
-        </ul>
+        <div>
+          <h6 class="text-muted fw-bold">FREE</h6>
 
-        {% if cancel_at_period_end %}
-        <button class="btn btn-warning w-100 mt-auto" disabled>
-          {{ next_billing }} に解約予定
-        </button>
+          <h2 class="fw-bold mt-2">¥0</h2>
 
-        {% elif current_plan == "free" %}
-        <button class="btn btn-secondary w-100 mt-auto" disabled>
-          現在のプラン
-        </button>
+          <p class="text-muted small mt-2">
+            まずは無料で気軽に利用
+          </p>
 
-        {% else %}
-        <button class="btn btn-outline-secondary w-100 mt-auto" onclick="handlePlanChange('free')">
-          解約する
-        </button>
-        {% endif %}
+          <ul class="plan-list mt-4">
+            <li>1グループ管理</li>
+            <li>全基本機能利用可能</li>
+            <li>広告なし</li>
+          </ul>
+        </div>
+
+        <div class="mt-auto pt-4">
+
+          {% if cancel_at_period_end %}
+          <button class="btn btn-warning w-100" disabled>
+            {{ next_billing }} に解約予定
+          </button>
+
+          {% elif current_plan == "free" %}
+          <button class="btn btn-secondary w-100" disabled>
+            現在のプラン
+          </button>
+
+          {% else %}
+          <button class="btn btn-outline-secondary w-100"
+                  onclick="handlePlanChange('free')">
+            無料プランへ変更
+          </button>
+          {% endif %}
+
+        </div>
       </div>
     </div>
 
-    <!-- LITE -->
-    <div class="col-6">
-      <div class="plan-card border">
-        <h6>LITE</h6>
-        <h3 class="fw-bold mt-2">¥200/月</h3>
+    <!-- SUPPORTER -->
+    <div class="col-md-6">
+      <div class="plan-card border-premium h-100 p-4 rounded-4 d-flex flex-column position-relative">
 
-        <ul class="plan-list">
-          <li>広告なし</li>
-          <li>検索開放</li>
-          <li>統計基本解放</li>
-          <li class="text-muted small">※一部の高度機能は利用できません</li>
-        </ul>
+        <div class="position-absolute top-0 end-0 mt-3 me-3">
+          <span class="badge bg-danger">
+            SUPPORT
+          </span>
+        </div>
 
-        {% if current_plan == "lite" %}
-        <button class="btn btn-secondary w-100 mt-auto" disabled>現在のプラン</button>
-        {% else %}
-        <button class="btn btn-outline-primary w-100 mt-auto" onclick="handlePlanChange('lite')">
-          {{ "アップグレード" if plan_order["lite"] > plan_order[current_plan] else "変更" }}
-        </button>
-        {% endif %}
-      </div>
-    </div>
+        <div>
+          <h6 class="text-danger fw-bold">SUPPORTER</h6>
 
-    <!-- STANDARD -->
-    <div class="col-6">
-      <div class="plan-card highlight">
-        <h6 class="text-primary fw-bold">STANDARD</h6>
-        <h3 class="fw-bold mt-2">¥350/月</h3>
+          <h2 class="fw-bold mt-2">¥500<span class="fs-6">/月</span></h2>
 
-        <ul class="plan-list">
-          <li>2グループ</li>
-          <li class="text-muted small">※機能はLiteと同等</li>
-        </ul>
+          <p class="text-muted small mt-2">
+            より快適に利用したい方・運営を応援したい方向け
+          </p>
 
-        {% if current_plan == "standard" %}
-        <button class="btn btn-primary w-100 mt-auto" disabled>現在のプラン</button>
-        {% else %}
-        <button class="btn btn-primary w-100 mt-auto" onclick="handlePlanChange('standard')">
-          {{ "アップグレード" if plan_order["standard"] > plan_order[current_plan] else "変更" }}
-        </button>
-        {% endif %}
-      </div>
-    </div>
+          <ul class="plan-list mt-4">
+            <li>全グループ管理</li>
+            <li>新機能の先行利用</li>
+            <li>サービス運営をサポート</li>
+          </ul>
+        </div>
 
-    <!-- PREMIUM -->
-    <div class="col-6">
-      <div class="plan-card border-premium">
-        <h6 class="text-danger fw-bold">PREMIUM</h6>
-        <h3 class="fw-bold mt-2">¥500/月</h3>
+        <div class="mt-auto pt-4">
 
-        <ul class="plan-list">
-          <li>全グループ</li>
-          <li>新機能の先行利用</li>
-          <li class="text-muted small">
-            ※新機能は一定期間後、他プランでも利用可能になります
-          </li>
-        </ul>
+          {% if current_plan == "premium" %}
+          <button class="btn btn-danger w-100" disabled>
+            現在のプラン
+          </button>
 
-        {% if current_plan == "premium" %}
-        <button class="btn btn-danger w-100 mt-auto" disabled>現在のプラン</button>
-        {% else %}
-        <button class="btn btn-danger w-100 mt-auto" onclick="handlePlanChange('premium')">
-          {{ "アップグレード" if plan_order["premium"] > plan_order[current_plan] else "変更" }}
-        </button>
-        {% endif %}
+          {% else %}
+          <button class="btn btn-danger w-100"
+                  onclick="handlePlanChange('premium')">
+            SUPPORTERになる
+          </button>
+          {% endif %}
+
+        </div>
       </div>
     </div>
 
   </div>
 
+  <!-- 補足 -->
+  <div class="text-center mt-5">
+    <p class="text-muted small">
+      このサービスは継続的な改善・機能追加を行っています。<br>
+      SUPPORTERプランによる支援が運営継続の力になります。
+    </p>
+  </div>
+
   <!-- 解約モーダル -->
   <div id="cancelModal" class="modal-overlay" style="display:none;">
     <div class="modal-box">
+
       <h5 class="fw-bold">解約の確認</h5>
+
       <p id="cancelText" class="mt-3 small"></p>
 
-      <div class="d-flex gap-2 mt-3">
-        <button class="btn btn-secondary w-50" onclick="closeCancelModal()">戻る</button>
-        <button class="btn btn-danger w-50" onclick="confirmCancel()">解約する</button>
+      <div class="d-flex gap-2 mt-4">
+        <button class="btn btn-secondary w-50"
+                onclick="closeCancelModal()">
+          戻る
+        </button>
+
+        <button class="btn btn-danger w-50"
+                onclick="confirmCancel()">
+          解約する
+        </button>
       </div>
+
     </div>
   </div>
 
 </div>
 
 <script>
-  let loading = false;
-  let nextBillingDate = "{{ next_billing or '' }}";
 
-  async function handlePlanChange(plan) {
+let loading = false;
+let nextBillingDate = "{{ next_billing or '' }}";
 
-    if (loading) return;
-    loading = true;
+async function handlePlanChange(plan) {
 
-    if (plan === "free") {
+  if (loading) return;
+  loading = true;
 
-      const text = nextBillingDate
-        ? `現在のプランはすぐには解約されません。
+  if (plan === "free") {
+
+    const text = nextBillingDate
+      ? `現在のプランはすぐには解約されません。
 
 ・${nextBillingDate}までは引き続き利用できます
 ・その後、自動的に無料プランへ変更されます
 ・追加の請求は発生しません
 
 解約してもよろしいですか？`
-        : `解約は次回更新時に適用されます。
+      : `解約は次回更新時に適用されます。
 
 追加の請求は発生しません。
 
 解約してもよろしいですか？`;
 
-      document.getElementById("cancelText").textContent = text;
-      document.getElementById("cancelModal").style.display = "flex";
-
-      loading = false;
-      return;
-    }
-
-    try {
-      const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-
-      const res = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken,
-          "X-CSRF-Token": csrfToken
-        },
-        body: JSON.stringify({ plan })
-      });
-
-      const data = await res.json();
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        showToast("決済エラー");
-      }
-
-    } catch {
-      showToast("通信エラー");
-    }
+    document.getElementById("cancelText").textContent = text;
+    document.getElementById("cancelModal").style.display = "flex";
 
     loading = false;
+    return;
   }
 
-  function closeCancelModal() {
-    document.getElementById("cancelModal").style.display = "none";
-  }
+  try {
 
-  async function confirmCancel() {
+    const csrfToken = document.querySelector(
+      'meta[name="csrf-token"]'
+    ).content;
 
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-
-    const res = await fetch("/api/downgrade", {
+    const res = await fetch("/api/create-checkout-session", {
       method: "POST",
       headers: {
+        "Content-Type": "application/json",
         "X-CSRFToken": csrfToken,
         "X-CSRF-Token": csrfToken
-      }
+      },
+      body: JSON.stringify({ plan })
     });
 
     const data = await res.json();
 
-    if (data.status === "ok") {
-      location.reload();
+    if (data.url) {
+      window.location.href = data.url;
     } else {
-      showToast("失敗しました");
+      showToast("決済エラー");
     }
+
+  } catch {
+    showToast("通信エラー");
   }
 
-  function showToast(msg) {
-    const div = document.createElement("div");
-    div.textContent = msg;
-    div.style.position = "fixed";
-    div.style.bottom = "20px";
-    div.style.left = "50%";
-    div.style.transform = "translateX(-50%)";
-    div.style.background = "#333";
-    div.style.color = "#fff";
-    div.style.padding = "10px 20px";
-    div.style.borderRadius = "8px";
-    document.body.appendChild(div);
-    setTimeout(() => div.remove(), 2000);
+  loading = false;
+}
+
+function closeCancelModal() {
+  document.getElementById("cancelModal").style.display = "none";
+}
+
+async function confirmCancel() {
+
+  const csrfToken = document.querySelector(
+    'meta[name="csrf-token"]'
+  ).content;
+
+  const res = await fetch("/api/downgrade", {
+    method: "POST",
+    headers: {
+      "X-CSRFToken": csrfToken,
+      "X-CSRF-Token": csrfToken
+    }
+  });
+
+  const data = await res.json();
+
+  if (data.status === "ok") {
+    location.reload();
+  } else {
+    showToast("失敗しました");
   }
+}
+
+function showToast(msg) {
+
+  const div = document.createElement("div");
+
+  div.textContent = msg;
+
+  div.style.position = "fixed";
+  div.style.bottom = "20px";
+  div.style.left = "50%";
+  div.style.transform = "translateX(-50%)";
+  div.style.background = "#333";
+  div.style.color = "#fff";
+  div.style.padding = "10px 20px";
+  div.style.borderRadius = "8px";
+  div.style.zIndex = "9999";
+
+  document.body.appendChild(div);
+
+  setTimeout(() => div.remove(), 2000);
+}
+
 </script>
 
 {% endblock %}

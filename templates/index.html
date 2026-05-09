@@ -5,8 +5,10 @@
 {% block content %}
 <div class="container mt-4">
 
+  <!--
   {% set is_free = current_user.plan_type == "free" %}
   {% set is_search_locked = is_free %}
+-->
 
   <div class="text-center mb-3">
     <h1 class="fw-bold text-body p-2 rounded section-title">生写真一覧</h1>
@@ -16,6 +18,7 @@
 
     <div class="card shadow-sm bg-body text-body position-relative">
 
+    <!--
       {% if is_search_locked %}
       <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
         style="background: rgba(255,255,255,0.6); z-index:10; backdrop-filter: blur(2px);">
@@ -34,10 +37,11 @@
 
       </div>
       {% endif %}
-
       <div class="card-body p-3"
         style="{% if is_search_locked %}filter: blur(6px); pointer-events:none; user-select:none;{% endif %}">
-
+    -->
+      
+      <div class="card-body p-3"> 
         <form method="get" action="{{ url_for('photo.index', group_key=group_key) }}">
           <div class="row g-2">
 

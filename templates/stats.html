@@ -4,9 +4,11 @@
 {% block content %}
 <div class="container mt-4">
 
+  <!--
   {% set has_paid_plan = current_user.is_lite() or current_user.is_standard() or current_user.is_premium() %}
   {% set is_premium = current_user.is_premium() %}
   {% set is_locked = (not current_user.can_access_group(group_key)) or (not has_paid_plan) %}
+-->
 
   <div class="text-center mb-4">
     <h1 class="display-5 fw-bold text-black p-3 rounded section-title">
@@ -37,6 +39,7 @@
     </div>
   </div>
 
+  <!--
   {% if is_locked %}
   <div class="alert alert-warning mt-3">
     <i class="fa-solid fa-lock"></i> 詳細な統計情報の閲覧にはプランのアップグレードが必要です
@@ -47,8 +50,10 @@
   </div>
   {% endif %}
 
-  <div style="{% if is_locked %}filter: blur(8px); pointer-events:none; user-select:none;{% endif %}">
 
+  <div style="{% if is_locked %}filter: blur(8px); pointer-events:none; user-select:none;{% endif %}">
+  -->
+    
     <div class="accordion" id="statsAccordion">
 
       <!-- コンプランキング -->
