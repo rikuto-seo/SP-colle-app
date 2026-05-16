@@ -19,6 +19,18 @@ class User(UserMixin, db.Model):
 
     twitter_id = db.Column(db.String(100))
     instagram_id = db.Column(db.String(100))
+
+    show_twitter = db.Column(
+        db.Boolean,
+        default=True,
+        nullable=False
+    )
+
+    show_instagram = db.Column(
+        db.Boolean,
+        default=False,
+        nullable=False
+    )
     
     public_uuid = db.Column(
         db.String(36),
