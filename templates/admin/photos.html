@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Photo Admin</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+
+        body {
+            font-family: sans-serif;
+        }
+
+        .photo-row:hover {
+            background: #f9fafb;
+        }
+
+        .delete-btn:hover {
+            opacity: 0.7;
+        }
+
+        .checkbox-area {
+            max-height: 260px;
+            overflow-y: auto;
+        }
+
+    </style>
+
+</head>
+
+<body class="bg-gray-100 p-8">
+
+<div class="max-w-7xl mx-auto bg-white rounded-2xl shadow p-6">
+
+    <h1 class="text-3xl font-bold mb-8">
+        生写真管理
+    </h1>
+
+    <!-- GROUP -->
+
+    <form method="GET" class="mb-8">
+
+        <label class="block text-sm font-medium mb-2">
+            Group
+        </label>
+
+        <div class="flex gap-3">
+
+            <select
+                name="group_id"
+                class="border rounded-lg px-4 py-2 w-72"
+            >
+
+                <option value="">
+                    選択してください
+                </option>
+
+                {% for group in groups %}
+
+                    <option
+                        value="{{ group.id }}"
+                        {% if selected_group and selected_group.id == group.id %}
+                            selected
+                        {% endif %}
+                    >
+                        {{ group.name }}
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+            <button
+                class="bg-black text-white px-5 py-2 rounded-lg"
+            >
+                読み込み
+            </button>
+
+        </div>
+
+    </form>
+
+
+    {% if selected_group %}
+
+    <!-- ADD PHOTO -->
+
+    <div class="border rounded-2xl p-6 bg-gray-50 mb-8">
+
+        <h2 class="text-2xl font-bold mb-6">
+            生写真追加
+        </h2>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- MEMBERS -->
+
+            <div>
+
+                <label class="block font-medium mb-3">
+                    Member
+                </label>
+
+                <div class="border rounded-xl p-3 bg-white checkbox-area">
+
+                    {% for member in members %}
+
+                    <label class="flex items-center gap-2 mb-2">
+
+                        <input
+                            type="checkbox"
+                            class="member-checkbox"
+                            value="{{ member.id }}"
+                        >
+
+                        <span>
+                            {{ member.name }}
+                        </span>
+
+                    </label>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+
+            <!-- COSTUME -->
+
+            <div>
+
+                <label class="block font-medium mb-3">
+                    Costume
+                </label>
+
+                <div class="flex gap-2 mb-3">
+
+                    <input
+                        id="costume-name"
+                        type="text"
+                        placeholder="2026 浴衣"
+                        class="border rounded-lg px-3 py-2 w-full"
+                    >
+
+                    <button
+                        type="button"
+                        id="create-costume-btn"
+                        class="bg-blue-600 text-white px-4 rounded-lg"
+                    >
+                        作成
+                    </button>
+
+                </div>
+
+                <select
+                    id="costume-id"
+                    class="border rounded-lg px-3 py-2 w-full bg-white"
+                >
+
+                    <option value="">
+                        Costume選択
+                    </option>
+
+                    {% for costume in costumes %}
+
+                        <option value="{{ costume.id }}">
+                            {{ costume.name }}
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <!-- TYPES -->
+
+            <div>
+
+                <label class="block font-medium mb-3">
+                    Type
+                </label>
+
+                <div class="border rounded-xl p-3 bg-white checkbox-area">
+
+                    {% for type in photo_types %}
+
+                    <label class="flex items-center gap-2 mb-2">
+
+                        <input
+                            type="checkbox"
+                            class="type-checkbox"
+                            value="{{ type.id }}"
+                        >
+
+                        <span>
+                            {{ type.name }}
+                        </span>
+
+                    </label>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="mt-6">
+
+            <button
+                type="button"
+                id="add-photo-btn"
+                class="bg-green-600 text-white px-8 py-3 rounded-xl font-bold"
+            >
+                一括追加
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- ACCORDION -->
+
+    <div class="border rounded-2xl overflow-hidden">
+
+        <button
+            id="toggle-table-btn"
+            type="button"
+            class="w-full bg-gray-800 text-white px-6 py-4 text-left font-bold flex items-center justify-between"
+        >
+
+            <span>
+                登録済み一覧
+            </span>
+
+            <span id="accordion-icon">
+                ▼
+            </span>
+
+        </button>
+
+
+        <div
+            id="table-wrapper"
+            class="hidden p-6 bg-white"
+        >
+
+            <!-- FILTER -->
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
+                <div>
+
+                    <label class="block text-sm mb-2">
+                        Member検索
+                    </label>
+
+                    <input
+                        id="member-filter"
+                        type="text"
+                        placeholder="山下"
+                        class="border rounded-lg px-3 py-2 w-full"
+                    >
+
+                </div>
+
+                <div>
+
+                    <label class="block text-sm mb-2">
+                        Costume検索
+                    </label>
+
+                    <input
+                        id="costume-filter"
+                        type="text"
+                        placeholder="浴衣"
+                        class="border rounded-lg px-3 py-2 w-full"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- LOADING -->
+
+            <div
+                id="loading-area"
+                class="text-gray-500"
+            >
+                読み込み中...
+            </div>
+
+
+            <!-- TABLE -->
+
+            <div
+                id="table-area"
+                class="hidden overflow-x-auto"
+            >
+
+                <table class="w-full border-collapse">
+
+                    <thead>
+
+                        <tr class="bg-gray-200">
+
+                            <th class="border p-3 text-left">
+                                Member
+                            </th>
+
+                            <th class="border p-3 text-left">
+                                Costume
+                            </th>
+
+                            <th class="border p-3 text-left">
+                                Type
+                            </th>
+
+                            <th class="border p-3 text-center w-24">
+                                操作
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="photo-table-body">
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {% endif %}
+
+</div>
+
+
+<script>
+
+//
+// CREATE COSTUME
+//
+
+const createCostumeBtn =
+    document.getElementById('create-costume-btn')
+
+if (createCostumeBtn) {
+
+    createCostumeBtn.addEventListener('click', async () => {
+
+        const name =
+            document.getElementById('costume-name').value
+
+        if (!name) {
+            alert('Costume名を入力してください')
+            return
+        }
+
+        const formData = new FormData()
+
+        formData.append('name', name)
+
+        formData.append(
+            'group_id',
+            '{{ selected_group.id if selected_group else "" }}'
+        )
+
+        const response = await fetch(
+            '/admin/photos/create_costume',
+            {
+                method: 'POST',
+                body: formData
+            }
+        )
+
+        const data = await response.json()
+
+        if (data.success) {
+
+            const select =
+                document.getElementById('costume-id')
+
+            const option =
+                document.createElement('option')
+
+            option.value = data.costume_id
+            option.textContent = name
+            option.selected = true
+
+            select.appendChild(option)
+
+            document.getElementById('costume-name').value = ''
+
+        }
+
+    })
+
+}
+
+
+
+//
+// BULK ADD
+//
+
+const addPhotoBtn =
+    document.getElementById('add-photo-btn')
+
+if (addPhotoBtn) {
+
+    addPhotoBtn.addEventListener('click', async () => {
+
+        const memberIds =
+            [...document.querySelectorAll('.member-checkbox:checked')]
+            .map(el => parseInt(el.value))
+
+        const typeIds =
+            [...document.querySelectorAll('.type-checkbox:checked')]
+            .map(el => parseInt(el.value))
+
+        const costumeId =
+            document.getElementById('costume-id').value
+
+        if (
+            memberIds.length === 0
+            ||
+            typeIds.length === 0
+            ||
+            !costumeId
+        ) {
+            alert('全て選択してください')
+            return
+        }
+
+        const payload = {
+            member_ids: memberIds,
+            type_ids: typeIds,
+            costume_id: parseInt(costumeId)
+        }
+
+        const response = await fetch(
+            '/admin/photos/bulk_create',
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            }
+        )
+
+        const data = await response.json()
+
+        if (data.success) {
+
+            alert(
+                `追加: ${data.created}件\n`
+                +
+                `重複スキップ: ${data.skipped}件`
+            )
+
+        }
+
+    })
+
+}
+
+
+
+//
+// ACCORDION
+//
+
+const toggleBtn =
+    document.getElementById('toggle-table-btn')
+
+const tableWrapper =
+    document.getElementById('table-wrapper')
+
+const tableBody =
+    document.getElementById('photo-table-body')
+
+const loadingArea =
+    document.getElementById('loading-area')
+
+const tableArea =
+    document.getElementById('table-area')
+
+const accordionIcon =
+    document.getElementById('accordion-icon')
+
+let loaded = false
+
+
+if (toggleBtn) {
+
+    toggleBtn.addEventListener('click', async () => {
+
+        tableWrapper.classList.toggle('hidden')
+
+        accordionIcon.textContent =
+            tableWrapper.classList.contains('hidden')
+            ? '▼'
+            : '▲'
+
+        if (loaded) {
+            return
+        }
+
+        const response = await fetch(
+            '/admin/photos/list?group_id={{ selected_group.id }}'
+        )
+
+        const photos = await response.json()
+
+        loadingArea.classList.add('hidden')
+
+        tableArea.classList.remove('hidden')
+
+        if (photos.length === 0) {
+
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="border p-6 text-center text-gray-500">
+                        データがありません
+                    </td>
+                </tr>
+            `
+
+            loaded = true
+            return
+
+        }
+
+        photos.forEach(photo => {
+
+            const tr =
+                document.createElement('tr')
+
+            tr.className =
+                'photo-row'
+
+            tr.dataset.member =
+                photo.member_name.toLowerCase()
+
+            tr.dataset.costume =
+                photo.costume_name.toLowerCase()
+
+            tr.id =
+                `photo-row-${photo.id}`
+
+            tr.innerHTML = `
+                <td class="border p-3">
+                    ${photo.member_name}
+                </td>
+
+                <td class="border p-3">
+                    ${photo.costume_name}
+                </td>
+
+                <td class="border p-3">
+                    ${photo.type_name}
+                </td>
+
+                <td class="border p-3 text-center">
+
+                    <button
+                        class="delete-btn text-red-600 font-bold"
+                        data-photo-id="${photo.id}"
+                    >
+                        削除
+                    </button>
+
+                </td>
+            `
+
+            tableBody.appendChild(tr)
+
+        })
+
+        loaded = true
+
+    })
+
+}
+
+
+
+//
+// DELETE
+//
+
+document.addEventListener('click', async (e) => {
+
+    if (!e.target.classList.contains('delete-btn')) {
+        return
+    }
+
+    const photoId =
+        e.target.dataset.photoId
+
+    if (!confirm('削除しますか？')) {
+        return
+    }
+
+    const response = await fetch(
+        `/admin/photos/${photoId}`,
+        {
+            method: 'DELETE'
+        }
+    )
+
+    const data = await response.json()
+
+    if (data.success) {
+
+        const row =
+            document.getElementById(`photo-row-${photoId}`)
+
+        if (row) {
+            row.remove()
+        }
+
+    }
+
+})
+
+
+
+//
+// FILTER
+//
+
+document.addEventListener('input', (e) => {
+
+    if (
+        e.target.id !== 'member-filter'
+        &&
+        e.target.id !== 'costume-filter'
+    ) {
+        return
+    }
+
+    const memberKeyword =
+        document
+        .getElementById('member-filter')
+        .value
+        .toLowerCase()
+
+    const costumeKeyword =
+        document
+        .getElementById('costume-filter')
+        .value
+        .toLowerCase()
+
+    document
+        .querySelectorAll('.photo-row')
+        .forEach(row => {
+
+            const member =
+                row.dataset.member
+
+            const costume =
+                row.dataset.costume
+
+            const visible =
+                member.includes(memberKeyword)
+                &&
+                costume.includes(costumeKeyword)
+
+            row.style.display =
+                visible
+                ? ''
+                : 'none'
+
+        })
+
+})
+
+</script>
+
+</body>
+</html>
