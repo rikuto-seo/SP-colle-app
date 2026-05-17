@@ -147,22 +147,14 @@
       <div class="d-flex justify-content-center gap-3 flex-wrap">
 
         {% if owner.show_twitter and owner.twitter_id %}
-        <a
-          href="https://x.com/{{ owner.twitter_id }}"
-          target="_blank"
-          class="btn btn-dark"
-        >
+        <a href="https://x.com/{{ owner.twitter_id }}" target="_blank" class="btn btn-dark">
           <i class="fa-brands fa-x-twitter me-1"></i>
           Xで連絡
         </a>
         {% endif %}
 
         {% if owner.show_instagram and owner.instagram_id %}
-        <a
-          href="https://instagram.com/{{ owner.instagram_id }}"
-          target="_blank"
-          class="btn btn-danger"
-        >
+        <a href="https://instagram.com/{{ owner.instagram_id }}" target="_blank" class="btn btn-danger">
           <i class="fa-brands fa-instagram me-1"></i>
           Instagramで連絡
         </a>
@@ -184,21 +176,13 @@
           DMテンプレート
         </h5>
 
-        <button
-          class="btn btn-sm btn-outline-primary"
-          onclick="copyDMTemplate()"
-        >
+        <button class="btn btn-sm btn-outline-primary" onclick="copyDMTemplate()">
           コピー
         </button>
       </div>
 
-      <textarea
-        id="dmTemplate"
-        class="form-control"
-        rows="10"
-        readonly
-      >交換希望ありがとうございます。
-SPcolle経由でご連絡しました。
+      <textarea id="dmTemplate" class="form-control" rows="10" readonly>交換希望ありがとうございます。
+SPcolleのトレードページを拝見してご連絡しました。
 
 よろしくお願いいたします。</textarea>
 
@@ -211,7 +195,7 @@ SPcolle経由でご連絡しました。
 
 </div>
 
- {% endif %}
+{% endif %}
 
 <footer class="text-center text-muted mt-5 mb-3 small">
   このページは公開用URLです。編集や登録はできません。
@@ -332,7 +316,7 @@ SPcolle経由でご連絡しました。
     let text = "";
 
     text += "交換希望ありがとうございます。\n";
-    text += "SPcolle経由でご連絡しました。\n\n";
+    text += "SPcolleのトレードページを拝見してご連絡しました。\n\n";
 
     if (data.mutual.length > 0) {
 
