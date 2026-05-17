@@ -20,21 +20,12 @@
 
         <div class="mb-3">
           <label for="username" class="form-label">ユーザー名</label>
-          <input type="text"
-                 class="form-control"
-                 id="username"
-                 name="username"
-                 value="{{ user.username }}"
-                 required>
+          <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}" required>
         </div>
 
         <div class="mb-3">
           <label class="form-label">メールアドレス</label>
-          <input type="email"
-                 class="form-control"
-                 value="{{ user.email }}"
-                 readonly
-                 style="background-color: #e9ecef;">
+          <input type="email" class="form-control" value="{{ user.email }}" readonly style="background-color: #e9ecef;">
           <small class="text-muted">※メールアドレスは変更できません</small>
         </div>
 
@@ -46,23 +37,47 @@
           <label for="twitter_id" class="form-label">X (Twitter)</label>
           <div class="input-group">
             <span class="input-group-text">@</span>
-            <input type="text"
-                   class="form-control"
-                   id="twitter_id"
-                   name="twitter_id"
-                   value="{{ user.twitter_id or '' }}"
-                   placeholder="username">
+            <input type="text" class="form-control" id="twitter_id" name="twitter_id"
+              value="{{ user.twitter_id or '' }}" placeholder="username">
           </div>
         </div>
 
         <div class="mb-4">
           <label for="instagram_id" class="form-label">Instagram</label>
-          <input type="text"
-                 class="form-control"
-                 id="instagram_id"
-                 name="instagram_id"
-                 value="{{ user.instagram_id or '' }}"
-                 placeholder="username">
+          <input type="text" class="form-control" id="instagram_id" name="instagram_id"
+            value="{{ user.instagram_id or '' }}" placeholder="username">
+        </div>
+
+        <div class="card bg-light border-0 mb-4">
+          <div class="card-body">
+
+            <div class="fw-bold mb-3">
+              SNS公開設定
+            </div>
+
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="show_twitter" name="show_twitter" {% if
+                user.show_twitter %}checked{% endif %}>
+
+              <label class="form-check-label" for="show_twitter">
+                Xアカウントを公開する
+              </label>
+            </div>
+
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="show_instagram" name="show_instagram" {% if
+                user.show_instagram %}checked{% endif %}>
+
+              <label class="form-check-label" for="show_instagram">
+                Instagramアカウントを公開する
+              </label>
+            </div>
+
+            <div class="small text-muted mt-3">
+              公開したSNSは交換候補画面から他ユーザーが確認できます
+            </div>
+
+          </div>
         </div>
 
         <div class="d-grid">
@@ -85,8 +100,7 @@
   </div>
 
   <div class="text-center mt-4">
-    <a href="{{ url_for('user.mypage') }}"
-       class="btn btn-link text-decoration-none">
+    <a href="{{ url_for('user.mypage') }}" class="btn btn-link text-decoration-none">
       ← マイページに戻る
     </a>
   </div>

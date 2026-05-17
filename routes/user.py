@@ -231,6 +231,9 @@ def edit_profile():
         twitter_id = request.form.get('twitter_id', '').strip()
         instagram_id = request.form.get('instagram_id', '').strip()
 
+        show_twitter = bool(request.form.get('show_twitter'))
+        show_instagram = bool(request.form.get('show_instagram'))
+
         try:
             if new_name:
                 firebase_auth.update_user(
@@ -245,7 +248,11 @@ def edit_profile():
             if instagram_id != '':
                 current_user.instagram_id = instagram_id
 
+            current_user.show_twitter = show_twitter
+            current_user.show_instagram = show_instagram
+
             db.session.commit()
+
             flash('プロフィールを更新しました！', 'success')
             return redirect(url_for('user.mypage'))
 

@@ -24,14 +24,6 @@
     </div>
   </div>
 
-  <!--
-    {% if not current_user.is_authenticated or current_user.plan_type == "free" %}
-    <div class="text-center my-3">
-      <script src="https://adm.shinobi.jp/s/d2d9624476345d4e42507216938d6dd5"></script>
-    </div>
-    {% endif %}
-  -->
-
   <!-- =========================
        無限回収
   ========================== -->
@@ -133,16 +125,91 @@
 
   </div>
 
-  <!--
-    {% if not current_user.is_authenticated or current_user.plan_type == "free" %}
-    <div class="text-center my-3">
-      <script src="https://adm.shinobi.jp/s/d2d9624476345d4e42507216938d6dd5"></script>
-    </div>
-    {% endif %}
-  -->
-
   <!-- 結果 -->
   <div id="tradeResult" class="mt-4"></div>
+
+  <!-- =========================
+       SNS連絡
+  ========================== -->
+  {% if owner.show_twitter or owner.show_instagram %}
+
+  <div class="card shadow-sm mt-4">
+    <div class="card-body text-center">
+
+      <h5 class="fw-bold mb-3">
+        SPcolle経由で連絡
+      </h5>
+
+      <p class="text-muted small mb-3">
+        交換希望があればSNSからご連絡ください
+      </p>
+
+      <div class="d-flex justify-content-center gap-3 flex-wrap">
+
+        {% if owner.show_twitter and owner.twitter_id %}
+        <a
+          href="https://x.com/{{ owner.twitter_id }}"
+          target="_blank"
+          class="btn btn-dark"
+        >
+          <i class="fa-brands fa-x-twitter me-1"></i>
+          Xで連絡
+        </a>
+        {% endif %}
+
+        {% if owner.show_instagram and owner.instagram_id %}
+        <a
+          href="https://instagram.com/{{ owner.instagram_id }}"
+          target="_blank"
+          class="btn btn-danger"
+        >
+          <i class="fa-brands fa-instagram me-1"></i>
+          Instagramで連絡
+        </a>
+        {% endif %}
+
+      </div>
+
+    </div>
+  </div>
+
+  {% endif %}
+
+  <!-- =========================
+       DMテンプレート
+  ========================== -->
+  <div class="card shadow-sm mt-4">
+    <div class="card-body">
+
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="fw-bold mb-0">
+          DMテンプレート
+        </h5>
+
+        <button
+          class="btn btn-sm btn-outline-primary"
+          onclick="copyDMTemplate()"
+        >
+          コピー
+        </button>
+      </div>
+
+      <textarea
+        id="dmTemplate"
+        class="form-control"
+        rows="10"
+        readonly
+      >交換希望ありがとうございます。
+SPcolle経由でご連絡しました。
+
+よろしくお願いいたします。</textarea>
+
+      <div class="text-muted small mt-2">
+        交換チェック後、自動で内容が生成されます
+      </div>
+
+    </div>
+  </div>
 
 </div>
 
@@ -165,6 +232,10 @@
 
   .section-title {
     background-color: var(--bs-secondary-bg);
+  }
+
+  #dmTemplate {
+    resize: none;
   }
 </style>
 
@@ -249,6 +320,56 @@
 
     </div>
   `;
+  }
+
+  function photoLine(p) {
+
+    return `${p.costume} ${p.member} ${p.type}`;
+  }
+
+  function generateDMTemplate(data) {
+
+    let text = "";
+
+    text += "交換希望ありがとうございます。\n";
+    text += "SPcolle経由でご連絡しました。\n\n";
+
+    if (data.mutual.length > 0) {
+
+      text += "【交換候補】\n";
+
+      data.mutual.forEach(m => {
+
+        text += "\n";
+        text += `提供：${photoLine(m.give)}\n`;
+        text += `希望：${photoLine(m.receive)}\n`;
+      });
+
+    } else {
+
+      text += "交換可能なお写真についてご相談させてください。\n";
+    }
+
+    text += "\nよろしくお願いいたします。";
+
+    document.getElementById("dmTemplate").value = text;
+  }
+
+  function copyDMTemplate() {
+
+    const textarea = document.getElementById("dmTemplate");
+
+    navigator.clipboard.writeText(textarea.value)
+      .then(() => {
+
+        alert("DMテンプレートをコピーしました");
+
+      })
+      .catch(() => {
+
+        alert("コピーに失敗しました");
+
+      });
   }
 
   function runTradeCheck() {
@@ -368,6 +489,8 @@
         html += `</div>`;
 
         container.innerHTML = html;
+
+        generateDMTemplate(data);
 
         btn.disabled = false;
         btn.innerText = "交換チェック";
