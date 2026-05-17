@@ -4,7 +4,13 @@ from flask import (
     Blueprint,
     render_template,
     request,
-    jsonify
+    jsonify,
+    abort
+)
+
+from flask_login import (
+    login_required,
+    current_user
 )
 
 from sqlalchemy.orm import joinedload
@@ -27,11 +33,28 @@ admin_photos_bp = Blueprint(
 
 
 #
+# 管理者チェック
+#
+
+def admin_required():
+
+    if not current_user.is_authenticated:
+        abort(403)
+
+    # あなただけ許可
+    if current_user.id != 1:
+        abort(403)
+
+
+#
 # INDEX
 #
 
 @admin_photos_bp.route("", methods=["GET"])
+@login_required
 def index():
+
+    admin_required()
 
     groups = (
         Group.query
@@ -88,7 +111,10 @@ def index():
 #
 
 @admin_photos_bp.route("/list", methods=["GET"])
+@login_required
 def photo_list():
+
+    admin_required()
 
     group_id = request.args.get("group_id", type=int)
 
@@ -128,12 +154,16 @@ def photo_list():
 
     return jsonify(result)
 
+
 #
 # CREATE COSTUME
 #
 
 @admin_photos_bp.route("/create_costume", methods=["POST"])
+@login_required
 def create_costume():
+
+    admin_required()
 
     name = request.form.get("name", "").strip()
 
@@ -190,7 +220,10 @@ def create_costume():
 #
 
 @admin_photos_bp.route("/bulk_create", methods=["POST"])
+@login_required
 def bulk_create():
+
+    admin_required()
 
     data = request.get_json()
 
@@ -255,7 +288,10 @@ def bulk_create():
 #
 
 @admin_photos_bp.route("/<int:photo_id>", methods=["DELETE"])
+@login_required
 def delete_photo(photo_id):
+
+    admin_required()
 
     photo = Photo.query.get_or_404(photo_id)
 

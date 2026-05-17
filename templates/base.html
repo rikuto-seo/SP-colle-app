@@ -90,6 +90,13 @@
             <a href="{{ url_for('want.index', group_key=group_key) }}">
                 <i class="fas fa-heart"></i> 欲しい生写真
             </a>
+            {% if current_user.is_authenticated and current_user.id == 1 %}
+            <hr>
+
+            <a href="{{ url_for('admin_photos.index') }}">
+                <i class="fas fa-shield-halved"></i> 管理画面
+            </a>
+            {% endif %}
             {% endif %}
 
             <hr>
