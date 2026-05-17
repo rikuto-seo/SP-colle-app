@@ -235,34 +235,52 @@ def edit_profile():
         show_instagram = bool(request.form.get('show_instagram'))
 
         try:
+
             if new_name:
                 firebase_auth.update_user(
                     current_user.firebase_uid,
                     display_name=new_name
                 )
+
                 current_user.username = new_name
 
-            if twitter_id != '':
-                current_user.twitter_id = twitter_id.replace('@', '')
+            # SNS更新
+            current_user.twitter_id = (
+                twitter_id.replace('@', '')
+                if twitter_id else None
+            )
 
-            if instagram_id != '':
-                current_user.instagram_id = instagram_id
+            current_user.instagram_id = (
+                instagram_id
+                if instagram_id else None
+            )
 
+            # 公開設定
             current_user.show_twitter = show_twitter
             current_user.show_instagram = show_instagram
 
             db.session.commit()
 
             flash('プロフィールを更新しました！', 'success')
+
             return redirect(url_for('user.mypage'))
 
         except Exception as e:
             db.session.rollback()
-            current_app.logger.error(f"Profile update error: {e}")
+
+            current_app.logger.error(
+                f"Profile update error: {e}"
+            )
+
             flash('更新に失敗しました。', 'danger')
+
             return redirect(url_for('user.edit_profile'))
 
-    return render_template('edit_profile.html', user=current_user, form=form)
+    return render_template(
+        'edit_profile.html',
+        user=current_user,
+        form=form
+    )
 
 @user_bp.route('/confirm_delete_account', methods=['GET', 'POST'])
 @login_required
