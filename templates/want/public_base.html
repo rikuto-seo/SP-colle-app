@@ -308,17 +308,25 @@ SPcolleのトレードページを拝見してご連絡しました。
 
   function photoLine(p) {
 
-    return `${p.costume} ${p.member} ${p.type}`;
+    const costume = p.costume || "不明衣装";
+    const member = p.member || "不明メンバー";
+    const type = p.type || "不明種";
+
+    return `${costume} ${member} ${type}`;
   }
 
   function generateDMTemplate(data) {
+
+    const textarea = document.getElementById("dmTemplate");
+
+    if (!textarea) return;
 
     let text = "";
 
     text += "交換希望ありがとうございます。\n";
     text += "SPcolleのトレードページを拝見してご連絡しました。\n\n";
 
-    if (data.mutual.length > 0) {
+    if (data.mutual && data.mutual.length > 0) {
 
       text += "【交換候補】\n";
 
@@ -336,7 +344,7 @@ SPcolleのトレードページを拝見してご連絡しました。
 
     text += "\nよろしくお願いいたします。";
 
-    document.getElementById("dmTemplate").value = text;
+    textarea.value = text;
   }
 
   function copyDMTemplate() {
