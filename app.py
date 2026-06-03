@@ -22,6 +22,7 @@ from routes.user import user_bp
 from trade.routes import trade_bp
 from routes.billing import billing_bp
 from routes.admin_photos import admin_photos_bp
+from flask import render_template
 
 app = Flask(__name__)
 app.permanent_session_lifetime = timedelta(minutes=60)
@@ -191,6 +192,10 @@ from services.type_normalizer import normalize_type
 @app.template_filter('normalize_type')
 def normalize_type_filter(photo_type, member, costume):
     return normalize_type(member, costume, photo_type)
+
+@app.route("/lp")
+def lp():
+    return render_template("lp.html")
 
 app.register_blueprint(photo_bp)
 app.register_blueprint(stats_bp)
