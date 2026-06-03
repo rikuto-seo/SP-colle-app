@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        SP Colle | 坂道グループ生写真管理・交換支援サービス
+    </title>
+
+    <meta name="description" content="乃木坂46・櫻坂46・日向坂46対応。所持管理、欲しい写真共有、QR共有、自動トレード照合で生写真交換をもっと便利に。">
+
+    <meta property="og:title" content="SP Colle">
+
+    <meta property="og:description" content="坂道グループ生写真の所持管理・交換支援サービス">
+
+    <meta property="og:image" content="https://spcolle.com/static/images/ogp.png">
+
+    <meta property="og:url" content="https://spcolle.com/">
+
+    <meta property="og:type" content="website">
+
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="manifest" href="/static/manifest.json">
+
+    <link rel="icon" href="/static/images/icon-192.png">
+
+    <link rel="apple-touch-icon" href="/static/images/apple-touch-icon.png">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <style>
+        :root {
+            --primary: #6d28d9;
+            --primary-dark: #5b21b6;
+            --blue: #2563eb;
+            --bg: #fafafa;
+            --text: #111827;
+            --sub: #6b7280;
+            --white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            color: var(--text);
+            background: white;
+            line-height: 1.8;
+        }
+
+        .container {
+            width: min(1100px, 90%);
+            margin: auto;
+        }
+
+        section {
+            padding: 100px 0;
+        }
+
+        h1,
+        h2,
+        h3 {
+            line-height: 1.3;
+        }
+
+        p {
+            color: var(--sub);
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .section-sub {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 60px;
+        }
+
+        .hero {
+            background:
+                linear-gradient(135deg,
+                    #6d28d9,
+                    #2563eb);
+
+            color: white;
+            text-align: center;
+            padding: 140px 0;
+        }
+
+        .badge {
+            display: inline-block;
+
+            background: rgba(255, 255, 255, .15);
+
+            padding: 10px 18px;
+
+            border-radius: 999px;
+
+            margin-bottom: 24px;
+
+            font-size: .9rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            margin-bottom: 24px;
+        }
+
+        .hero p {
+            color: white;
+            opacity: .9;
+
+            max-width: 700px;
+            margin: auto auto 40px;
+
+            font-size: 1.15rem;
+        }
+
+        .hero-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 16px 32px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            transition: .2s;
+        }
+
+        .btn-primary {
+            background: white;
+            color: var(--primary);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, .4);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, .1);
+        }
+
+        .problem {
+            background: var(--bg);
+        }
+
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .problem-card {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, .05);
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .feature {
+            background: white;
+            border-radius: 18px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .07);
+        }
+
+        .feature h3 {
+            margin-bottom: 12px;
+        }
+
+        .highlight {
+            background:
+                linear-gradient(135deg,
+                    #f5f3ff,
+                    #eff6ff);
+        }
+
+        .flow {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 40px;
+        }
+
+        .flow-item {
+            background: white;
+            padding: 18px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .screenshot {
+            margin-top: 50px;
+        }
+
+        .screenshot img {
+            width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, .12);
+        }
+
+        .faq {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .faq-item {
+            margin-bottom: 24px;
+            padding: 24px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, .05);
+        }
+
+        .cta {
+            text-align: center;
+
+            background:
+                linear-gradient(135deg,
+                    #6d28d9,
+                    #2563eb);
+
+            color: white;
+        }
+
+        .cta p {
+            color: white;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .app-preview {
+            background: #fff;
+            padding: 80px 0;
+        }
+
+        .swiper {
+            width: 100%;
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        .swiper-slide {
+            text-align: center;
+        }
+
+        .swiper-slide img {
+            width: 100%;
+            border-radius: 20px;
+
+            box-shadow:
+                0 20px 40px rgba(0, 0, 0, .12);
+        }
+
+        .swiper-pagination {
+            margin-top: 20px;
+        }
+
+        @media(max-width:768px) {
+
+            section {
+                padding: 70px 0;
+            }
+
+            .hero {
+                padding: 100px 0;
+            }
+
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <section class="hero">
+
+
+        <div class="container">
+
+            <div class="badge">
+                坂道生写真トレード支援サービス
+            </div>
+
+            <h1>
+                生写真の交換相手を<br>
+                もっと見つけやすく
+            </h1>
+
+            <p>
+                所持管理、欲しい写真共有、QRコード共有、
+                自動トレード照合をひとつに。
+                Excelやスプレッドシート管理から卒業しませんか？
+            </p>
+
+            <div class="hero-buttons">
+
+                <a href="{{ url_for('user.login') }}" class="btn btn-primary"></a>
+                無料で始める
+                </a>
+
+                <a href="#features" class="btn btn-secondary">
+                    機能を見る
+                </a>
+
+            </div>
+
+        </div>
+
+
+    </section>
+
+    <section class="app-preview">
+
+        <div class="container">
+
+            <h2 class="section-title">
+                実際の画面
+            </h2>
+
+            <p class="section-sub">
+                スマートフォンでも快適に利用できます
+            </p>
+
+            <div class="swiper">
+
+                <div class="swiper-wrapper">
+
+                    <div class="swiper-slide">
+                        <img src="/static/lp/trade.png" alt="トレード照合">
+                    </div>
+
+                    <div class="swiper-slide">
+                        <img src="/static/lp/want.png" alt="欲しい写真共有">
+                    </div>
+
+                    <div class="swiper-slide">
+                        <img src="/static/lp/collection.png" alt="所持管理">
+                    </div>
+
+                </div>
+
+                <div class="swiper-pagination"></div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="problem">
+
+
+        <div class="container">
+
+            <h2 class="section-title">
+                トレードのたびに<br>
+                こんな作業をしていませんか？
+            </h2>
+
+            <p class="section-sub">
+                生写真が増えるほど管理や照合に時間がかかります。
+            </p>
+
+            <div class="problem-grid">
+
+                <div class="problem-card">
+                    この写真持ってたっけ？
+                </div>
+
+                <div class="problem-card">
+                    Excel管理が大変
+                </div>
+
+                <div class="problem-card">
+                    欲しい写真を毎回作り直している
+                </div>
+
+                <div class="problem-card">
+                    相手との照合に時間がかかる
+                </div>
+
+                <div class="problem-card">
+                    現場で確認しづらい
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </section>
+
+    <section id="features">
+
+
+        <div class="container">
+
+            <h2 class="section-title">
+                SPcolleでできること
+            </h2>
+
+            <p class="section-sub">
+                単なるコレクション管理ではなく、
+                生写真交換までサポートします。
+            </p>
+
+            <div class="features">
+
+                <div class="feature">
+                    <h3>自動トレード照合</h3>
+                    <p>
+                        自分の提供可能写真と相手の希望写真を自動照合。
+                        交換候補をすぐ確認できます。
+                    </p>
+                </div>
+
+                <div class="feature">
+                    <h3>欲しい写真共有</h3>
+                    <p>
+                        欲しい写真リストを公開。
+                        URLやQRコードで簡単に共有できます。
+                    </p>
+                </div>
+
+                <div class="feature">
+                    <h3>所持・提供管理</h3>
+                    <p>
+                        所持数や提供可能数を記録。
+                        トレード時の確認が簡単になります。
+                    </p>
+                </div>
+
+                <div class="feature">
+                    <h3>無限回収対応</h3>
+                    <p>
+                        無限回収中の写真もまとめて管理できます。
+                    </p>
+                </div>
+
+                <div class="feature">
+                    <h3>統一データベース</h3>
+                    <p>
+                        表記ゆれを気にせず、
+                        統一された写真データで管理できます。
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </section>
+
+    <section class="highlight">
+
+
+        <div class="container">
+
+            <h2 class="section-title">
+                Excel管理の限界を解決
+            </h2>
+
+            <p class="section-sub">
+                表記ゆれや複雑な管理に悩まされません。
+            </p>
+
+            <div class="flow">
+
+                <div class="flow-item">
+                    11thBD
+                </div>
+
+                <div class="flow-item">
+                    11th Birthday Live
+                </div>
+
+                <div class="flow-item">
+                    11thBDライブ
+                </div>
+
+                <div class="flow-item">
+                    11thバスラ
+                </div>
+
+            </div>
+
+            <div style="text-align:center;margin-top:30px;font-size:1.5rem;font-weight:bold;">
+                ↓
+            </div>
+
+            <div class="flow">
+
+                <div class="flow-item">
+                    SPcolleで統一管理
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </section>
+
+    <section>
+
+
+        <div class="container">
+
+            <h2 class="section-title">
+                トレードまでの流れ
+            </h2>
+
+            <div class="flow">
+
+                <div class="flow-item">
+                    所持写真登録
+                </div>
+
+                <div class="flow-item">
+                    提供可能設定
+                </div>
+
+                <div class="flow-item">
+                    欲しい写真登録
+                </div>
+
+                <div class="flow-item">
+                    QR共有
+                </div>
+
+                <div class="flow-item">
+                    自動照合
+                </div>
+
+            </div>
+        </div>
+
+
+    </section>
+
+    <section>
+
+
+        <div class="container faq">
+
+            <h2 class="section-title">
+                よくある質問
+            </h2>
+
+            <div class="faq-item">
+                <h3>
+                    過去の写真を全部登録する必要がありますか？
+                </h3>
+
+                <p>
+                    必要ありません。
+                    新しく入手した写真から管理を始めることも可能です。
+                </p>
+            </div>
+
+            <div class="faq-item">
+                <h3>
+                    対応グループは？
+                </h3>
+
+                <p>
+                    乃木坂46・櫻坂46・日向坂46に対応しています。
+                </p>
+            </div>
+
+            <div class="faq-item">
+                <h3>
+                    無料で利用できますか？
+                </h3>
+
+                <p>
+                    はい。無料プランから利用できます。
+                </p>
+            </div>
+
+        </div>
+
+
+    </section>
+
+    <section class="cta">
+
+
+        <div class="container">
+
+            <h2 class="section-title">
+                今日のトレードから使えます
+            </h2>
+
+            <p>
+                欲しい写真リストを作成して、
+                QRコードで共有してみましょう。
+            </p>
+
+            <br>
+
+            <a href="{{ url_for('user.login') }}" class="btn btn-primary"></a>
+            無料で登録する
+            </a>
+
+        </div>
+
+
+    </section>
+
+    <footer class="footer">
+        © SPcolle
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+    <script>
+
+        new Swiper('.swiper', {
+
+            slidesPerView: 1,
+
+            spaceBetween: 20,
+
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+            },
+
+            breakpoints: {
+
+                768: {
+                    slidesPerView: 2
+                }
+
+            }
+
+        });
+
+    </script>
+</body>
+
+</html>
