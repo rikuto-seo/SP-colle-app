@@ -287,6 +287,9 @@
 
         .swiper-slide img {
             width: 100%;
+            max-height: 650px;
+            object-fit: contain;
+
             border-radius: 20px;
 
             box-shadow:
@@ -336,8 +339,8 @@
 
             <div class="hero-buttons">
 
-                <a href="{{ url_for('auth.login') }}" class="btn btn-primary"></a>
-                無料で始める
+                <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
+                    無料で始める
                 </a>
 
                 <a href="#features" class="btn btn-secondary">
@@ -642,8 +645,8 @@
 
             <br>
 
-            <a href="{{ url_for('auth.login') }}" class="btn btn-primary"></a>
-            無料で登録する
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
+                無料で登録する
             </a>
 
         </div>
