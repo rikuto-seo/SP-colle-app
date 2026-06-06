@@ -116,12 +116,32 @@ def photo_list():
 
     admin_required()
 
-    group_id = request.args.get("group_id", type=int)
+    group_id = request.args.get(
+        "group_id",
+        type=int
+    )
+
+    page = request.args.get(
+        "page",
+        default=1,
+        type=int
+    )
+
+    per_page = request.args.get(
+        "per_page",
+        default=200,
+        type=int
+    )
 
     if not group_id:
-        return jsonify([])
 
-    photos = (
+        return jsonify({
+            "items": [],
+            "has_next": False,
+            "total": 0
+        })
+
+    query = (
         Photo.query
         .options(
             joinedload(Photo.member),
@@ -132,28 +152,39 @@ def photo_list():
         .join(Costume, Costume.id == Photo.costume_id)
         .filter(Member.group_id == group_id)
         .filter(Costume.group_id == group_id)
+    )
+
+    pagination = (
+        query
         .order_by(
             Costume.id.desc(),
             Member.display_order.asc(),
             Photo.type_id.asc(),
             Photo.id.asc()
         )
-        .all()
+        .paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False
+        )
     )
 
     result = []
 
-    for photo in photos:
+    for photo in pagination.items:
 
         result.append({
             "id": photo.id,
-            "member": photo.member.name,
-            "costume": photo.costume.name,
-            "type": photo.photo_type.name
+            "member_name": photo.member.name,
+            "costume_name": photo.costume.name,
+            "type_name": photo.photo_type.name
         })
 
-    return jsonify(result)
-
+    return jsonify({
+        "items": result,
+        "has_next": pagination.has_next,
+        "total": pagination.total
+    })
 
 #
 # CREATE COSTUME
@@ -165,7 +196,12 @@ def create_costume():
 
     admin_required()
 
-    name = request.form.get("name", "").strip()
+    print("FORM =", request.form)
+
+    name = request.form.get(
+        "name",
+        ""
+    ).strip()
 
     group_id = request.form.get(
         "group_id",
@@ -173,12 +209,14 @@ def create_costume():
     )
 
     if not name:
+
         return jsonify({
             "success": False,
             "error": "costume name required"
         }), 400
 
     if not group_id:
+
         return jsonify({
             "success": False,
             "error": "group_id required"
@@ -214,7 +252,6 @@ def create_costume():
         "costume_id": costume.id
     })
 
-
 #
 # BULK CREATE
 #
@@ -225,7 +262,16 @@ def bulk_create():
 
     admin_required()
 
-    data = request.get_json()
+    data = request.get_json(silent=True)
+
+    print("JSON =", data)
+
+    if not data:
+
+        return jsonify({
+            "success": False,
+            "error": "json required"
+        }), 400
 
     member_ids = data.get("member_ids", [])
     type_ids = data.get("type_ids", [])
@@ -246,42 +292,59 @@ def bulk_create():
     created = 0
     skipped = 0
 
+    existing = {
+        (
+            p.member_id,
+            p.costume_id,
+            p.type_id
+        )
+        for p in Photo.query.filter(
+            Photo.costume_id == costume_id,
+            Photo.member_id.in_(member_ids),
+            Photo.type_id.in_(type_ids)
+        ).all()
+    }
+
+    new_rows = []
+
     for member_id in member_ids:
 
         for type_id in type_ids:
 
-            exists = (
-                Photo.query
-                .filter_by(
+            key = (
+                member_id,
+                costume_id,
+                type_id
+            )
+
+            if key in existing:
+
+                skipped += 1
+                continue
+
+            new_rows.append(
+                Photo(
                     member_id=member_id,
                     costume_id=costume_id,
                     type_id=type_id
                 )
-                .first()
             )
-
-            if exists:
-                skipped += 1
-                continue
-
-            photo = Photo(
-                member_id=member_id,
-                costume_id=costume_id,
-                type_id=type_id
-            )
-
-            db.session.add(photo)
 
             created += 1
 
-    db.session.commit()
+    if new_rows:
+
+        db.session.bulk_save_objects(
+            new_rows
+        )
+
+        db.session.commit()
 
     return jsonify({
         "success": True,
         "created": created,
         "skipped": skipped
     })
-
 
 #
 # DELETE
