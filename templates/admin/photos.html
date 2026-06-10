@@ -616,26 +616,26 @@
                     'photo-row'
 
                 tr.dataset.member =
-                    photo.member.toLowerCase()
+                    photo.member_name.toLowerCase()
 
                 tr.dataset.costume =
-                    photo.costume.toLowerCase()
+                    photo.costume_name.toLowerCase()
 
                 tr.id =
                     `photo-row-${photo.id}`
 
                 tr.innerHTML = `
-            <td class="border p-3">
-                ${photo.member}
-            </td>
+                <td class="border p-3">
+                    ${photo.member_name}
+                </td>
 
-            <td class="border p-3">
-                ${photo.costume}
-            </td>
+                <td class="border p-3">
+                    ${photo.costume_name}
+                </td>
 
-            <td class="border p-3">
-                ${photo.type}
-            </td>
+                <td class="border p-3">
+                    ${photo.type_name}
+                </td>
 
             <td class="border p-3 text-center">
 
