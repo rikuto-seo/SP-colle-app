@@ -328,6 +328,10 @@
         const createCostumeBtn =
             document.getElementById('create-costume-btn')
 
+        print("FORM =", request.form)
+        print("NAME =", request.form.get("name"))
+        print("GROUP_ID =", request.form.get("group_id"))
+
         if (createCostumeBtn) {
 
             createCostumeBtn.addEventListener('click', async () => {
