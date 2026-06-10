@@ -16,6 +16,7 @@ from flask_login import (
 from sqlalchemy.orm import joinedload
 
 from extensions import db
+from flask_wtf.csrf import csrf_exempt
 
 from models import (
     Group,
@@ -190,27 +191,76 @@ def photo_list():
 # CREATE COSTUME
 #
 
-
+@csrf_exempt
 @admin_photos_bp.route("/create_costume", methods=["POST"])
 @login_required
 def create_costume():
 
-    print("CREATE COSTUME START")
-
     admin_required()
 
-    print("AFTER ADMIN")
-
     print("FORM =", request.form)
+    print("NAME =", request.form.get("name"))
+    print("GROUP_ID =", request.form.get("group_id"))
+
+    name = request.form.get(
+        "name",
+        ""
+    ).strip()
+
+    group_id = request.form.get(
+        "group_id",
+        type=int
+    )
+
+    if not name:
+
+        return jsonify({
+            "success": False,
+            "error": "costume name required"
+        }), 400
+
+    if not group_id:
+
+        return jsonify({
+            "success": False,
+            "error": "group_id required"
+        }), 400
+
+    exists = (
+        Costume.query
+        .filter_by(
+            name=name,
+            group_id=group_id
+        )
+        .first()
+    )
+
+    if exists:
+
+        return jsonify({
+            "success": True,
+            "costume_id": exists.id,
+            "already_exists": True
+        })
+
+    costume = Costume(
+        name=name,
+        group_id=group_id
+    )
+
+    db.session.add(costume)
+    db.session.commit()
 
     return jsonify({
-        "test": True
+        "success": True,
+        "costume_id": costume.id
     })
+
 #
 # BULK CREATE
 #
 
-
+@csrf_exempt
 @admin_photos_bp.route("/bulk_create", methods=["POST"])
 @login_required
 def bulk_create():
@@ -305,7 +355,7 @@ def bulk_create():
 # DELETE
 #
 
-
+@csrf_exempt
 @admin_photos_bp.route("/<int:photo_id>", methods=["DELETE"])
 @login_required
 def delete_photo(photo_id):
