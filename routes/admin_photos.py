@@ -190,6 +190,7 @@ def photo_list():
 # CREATE COSTUME
 #
 
+
 @admin_photos_bp.route("/create_costume", methods=["POST"])
 @login_required
 def create_costume():
@@ -197,6 +198,8 @@ def create_costume():
     admin_required()
 
     print("FORM =", request.form)
+    print("NAME =", request.form.get("name"))
+    print("GROUP_ID =", request.form.get("group_id"))
 
     name = request.form.get(
         "name",
@@ -255,6 +258,7 @@ def create_costume():
 #
 # BULK CREATE
 #
+
 
 @admin_photos_bp.route("/bulk_create", methods=["POST"])
 @login_required
@@ -349,6 +353,7 @@ def bulk_create():
 #
 # DELETE
 #
+
 
 @admin_photos_bp.route("/<int:photo_id>", methods=["DELETE"])
 @login_required
