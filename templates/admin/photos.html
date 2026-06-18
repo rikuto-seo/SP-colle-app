@@ -22,6 +22,14 @@ Photo Admin
 
         <div class="d-flex gap-3">
 
+            {% for group in groups %}
+            <div>
+                ID={{ group.id }} /
+                NAME={{ group.name }} /
+                KEY={{ group.key }}
+            </div>
+            {% endfor %}
+
             <select name="group_id"
                 class="form-select"
                 style="max-width: 300px;">
