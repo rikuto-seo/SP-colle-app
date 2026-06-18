@@ -62,18 +62,6 @@ def index():
         .all()
     )
 
-    print("==== GROUP DEBUG ====")
-
-    for g in groups:
-        print(
-            g,
-            g.id,
-            g.key,
-            g.name
-        )
-
-    print("=====================")
-
     group_id = request.args.get("group_id", type=int)
 
     selected_group = None
@@ -109,7 +97,7 @@ def index():
 
     return render_template(
         "admin/photos.html",
-        groups=groups,
+        group_list=groups,
         selected_group=selected_group,
         costumes=costumes,
         members=members,
