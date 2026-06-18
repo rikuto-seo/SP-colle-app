@@ -244,7 +244,20 @@
 
         window.fetch = function (url, options = {}) {
 
-            const method = (options.method || "GET").toUpperCase();
+            const urlString =
+                typeof url === "string" ? url : url.url;
+
+            // 自サイト以外には何もしない
+            const isExternal =
+                urlString.startsWith("http") &&
+                !urlString.startsWith(window.location.origin);
+
+            if (isExternal) {
+                return originalFetch(url, options);
+            }
+
+            const method =
+                (options.method || "GET").toUpperCase();
 
             if (method !== "GET") {
 

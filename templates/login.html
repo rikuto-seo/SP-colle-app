@@ -137,7 +137,13 @@
       }
 
     } catch (err) {
-      errorDiv.textContent = getJapaneseMessage(err.code || "");
+      console.error("Firebase Login Error:", err);
+      console.error("code:", err.code);
+      console.error("message:", err.message);
+
+      errorDiv.textContent =
+        `${err.code || "no-code"} : ${err.message}`;
+
       errorDiv.classList.remove("d-none");
 
       btn.disabled = false;
@@ -172,7 +178,8 @@
       closeResetModal();
       showToast("リセットメールを送信しました");
     } catch (err) {
-      alert(getJapaneseMessage(err.code));
+      console.error("Reset Error:", err);
+      alert(`${err.code} : ${err.message}`);
     }
   };
 
