@@ -26,9 +26,9 @@ Photo Admin
                 <option value="">選択してください</option>
 
                 {% for g in group_list %}
-                    <option value="{{ g.id }}">
-                        {{ g.name }}
-                    </option>
+                <option value="{{ g.id }}">
+                    {{ g.name }}
+                </option>
                 {% endfor %}
             </select>
 
@@ -285,10 +285,33 @@ Photo Admin
 </div>
 {% endblock %}
 
-
 {% block scripts %}
 
+<link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js">
+</script>
+
 <script>
+
+    let costumeTS = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+
+        const costumeSelect =
+            document.getElementById("costume-id");
+
+        if (costumeSelect) {
+
+            costumeTS = new TomSelect(costumeSelect, {
+                create: false,
+                maxItems: 1,
+                placeholder: "Costume検索"
+            });
+
+        }
+
+    });
 
     //
     // CREATE COSTUME
@@ -330,21 +353,16 @@ Photo Admin
 
             if (data.success) {
 
-                const select =
-                    document.getElementById('costume-id')
+    costumeTS.addOption({
+        value: data.costume_id,
+        text: name
+    });
 
-                const option =
-                    document.createElement('option')
+    costumeTS.setValue(data.costume_id);
 
-                option.value = data.costume_id
-                option.textContent = name
-                option.selected = true
+    document.getElementById('costume-name').value = '';
 
-                select.appendChild(option)
-
-                document.getElementById('costume-name').value = ''
-
-            }
+}
 
         })
 
@@ -371,8 +389,8 @@ Photo Admin
                 [...document.querySelectorAll('.type-checkbox:checked')]
                     .map(el => parseInt(el.value))
 
-            const costumeId =
-                document.getElementById('costume-id').value
+            const costumeId = costumeTS.getValue();
+
 
             if (
                 memberIds.length === 0

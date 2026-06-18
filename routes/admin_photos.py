@@ -199,6 +199,7 @@ def create_costume():
     print("FORM =", request.form)
     print("NAME =", request.form.get("name"))
     print("GROUP_ID =", request.form.get("group_id"))
+    print(request.form)
 
     name = request.form.get(
         "name",
