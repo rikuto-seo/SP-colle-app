@@ -22,35 +22,14 @@ Photo Admin
 
         <div class="d-flex gap-3">
 
-            {% for group in group_list %}
-            <div>
-                ID={{ group.id }} /
-                NAME={{ group.name }} /
-                KEY={{ group.key }}
-            </div>
-            {% endfor %}
+            <select name="group_id" class="form-select" style="width:300px;">
+                <option value="">選択してください</option>
 
-            <select name="group_id"
-                class="form-select"
-                style="max-width: 300px;">
-
-                <option value="">
-                    選択してください
-                </option>
-
-                {% for group in groups %}
-
-                    <option 
-                        value="{{ group.id }}"
-                        {% if selected_group and selected_group.id == group.id %}
-                            selected
-                        {% endif %}
-                    >
-                        {{ group.name }}
+                {% for g in groups %}
+                    <option value="{{ g.id }}">
+                        {{ g.name }}
                     </option>
-
                 {% endfor %}
-
             </select>
 
             <button class="btn btn-dark">
