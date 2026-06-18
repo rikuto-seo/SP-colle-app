@@ -25,7 +25,7 @@ Photo Admin
             <select name="group_id" class="form-select" style="width:300px;">
                 <option value="">選択してください</option>
 
-                {% for g in groups %}
+                {% for g in group_list %}
                     <option value="{{ g.id }}">
                         {{ g.name }}
                     </option>
