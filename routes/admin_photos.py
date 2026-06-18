@@ -16,7 +16,6 @@ from flask_login import (
 from sqlalchemy.orm import joinedload
 
 from extensions import db
-from flask_wtf.csrf import csrf_exempt
 
 from models import (
     Group,
@@ -191,7 +190,6 @@ def photo_list():
 # CREATE COSTUME
 #
 
-@csrf_exempt
 @admin_photos_bp.route("/create_costume", methods=["POST"])
 @login_required
 def create_costume():
@@ -260,7 +258,6 @@ def create_costume():
 # BULK CREATE
 #
 
-@csrf_exempt
 @admin_photos_bp.route("/bulk_create", methods=["POST"])
 @login_required
 def bulk_create():
@@ -355,7 +352,6 @@ def bulk_create():
 # DELETE
 #
 
-@csrf_exempt
 @admin_photos_bp.route("/<int:photo_id>", methods=["DELETE"])
 @login_required
 def delete_photo(photo_id):

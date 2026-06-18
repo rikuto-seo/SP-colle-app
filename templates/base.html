@@ -45,6 +45,7 @@
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body class="{{ group_color }}{% if current_user.is_authenticated and current_user.dark_mode %} dark-mode{% endif %}">

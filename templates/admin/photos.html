@@ -1,600 +1,576 @@
-<!DOCTYPE html>
-<html lang="ja">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <title>Photo Admin</title>
+{% block title %}
+Photo Admin
+{% endblock %}
 
-    <script src="https://cdn.tailwindcss.com"></script>
+{% block content %}
 
-    <style>
-        body {
-            font-family: sans-serif;
-        }
+<div class="max-w-7xl mx-auto bg-white rounded-2xl shadow p-6">
 
-        .photo-row:hover {
-            background: #f9fafb;
-        }
+    <h1 class="text-3xl font-bold mb-8">
+        生写真管理
+    </h1>
 
-        .delete-btn:hover {
-            opacity: 0.7;
-        }
+    <!-- GROUP -->
 
-        .checkbox-area {
-            max-height: 260px;
-            overflow-y: auto;
-        }
-    </style>
+    <form method="GET" class="mb-8">
 
-</head>
+        <label class="block text-sm font-medium mb-2">
+            Group
+        </label>
 
-<body class="bg-gray-100 p-8">
+        <div class="flex gap-3">
 
-    <div class="max-w-7xl mx-auto bg-white rounded-2xl shadow p-6">
+            <select name="group_id" class="border rounded-lg px-4 py-2 w-72">
 
-        <h1 class="text-3xl font-bold mb-8">
-            生写真管理
-        </h1>
+                <option value="">
+                    選択してください
+                </option>
 
-        <!-- GROUP -->
+                {% for group in groups %}
 
-        <form method="GET" class="mb-8">
+                <option value="{{ group.id }}" {% if selected_group and selected_group.id==group.id %} selected {% endif
+                    %}>
+                    {{ group.name }}
+                </option>
 
-            <label class="block text-sm font-medium mb-2">
-                Group
-            </label>
+                {% endfor %}
 
-            <div class="flex gap-3">
+            </select>
 
-                <select name="group_id" class="border rounded-lg px-4 py-2 w-72">
+            <button class="bg-black text-white px-5 py-2 rounded-lg">
+                読み込み
+            </button>
+
+        </div>
+
+    </form>
+
+
+    {% if selected_group %}
+
+    <!-- ADD PHOTO -->
+
+    <div class="border rounded-2xl p-6 bg-gray-50 mb-8">
+
+        <h2 class="text-2xl font-bold mb-6">
+            生写真追加
+        </h2>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- MEMBERS -->
+
+            <div>
+
+                <label class="block font-medium mb-3">
+                    Member
+                </label>
+
+                <label class="flex items-center gap-2 mb-3">
+
+                    <input type="checkbox" id="member-select-all">
+
+                    <span>
+                        全選択
+                    </span>
+
+                </label>
+
+                <div class="border rounded-xl p-3 bg-white checkbox-area">
+
+                    {% for member in members %}
+
+                    <label class="flex items-center gap-2 mb-2">
+
+                        <input type="checkbox" class="member-checkbox" value="{{ member.id }}">
+
+                        <span>
+                            {{ member.name }}
+                        </span>
+
+                    </label>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+
+            <!-- COSTUME -->
+
+            <div>
+
+                <label class="block font-medium mb-3">
+                    Costume
+                </label>
+
+                <div class="flex gap-2 mb-3">
+
+                    <input id="costume-name" type="text" placeholder="2026 浴衣"
+                        class="border rounded-lg px-3 py-2 w-full">
+
+                    <button type="button" id="create-costume-btn" class="bg-blue-600 text-white px-4 rounded-lg">
+                        作成
+                    </button>
+
+                </div>
+
+                <select id="costume-id" class="border rounded-lg px-3 py-2 w-full bg-white">
 
                     <option value="">
-                        選択してください
+                        Costume選択
                     </option>
 
-                    {% for group in groups %}
+                    {% for costume in costumes %}
 
-                    <option value="{{ group.id }}" {% if selected_group and selected_group.id==group.id %} selected {%
-                        endif %}>
-                        {{ group.name }}
+                    <option value="{{ costume.id }}">
+                        {{ costume.name }}
                     </option>
 
                     {% endfor %}
 
                 </select>
 
-                <button class="bg-black text-white px-5 py-2 rounded-lg">
-                    読み込み
-                </button>
-
             </div>
 
-        </form>
 
+            <!-- TYPES -->
 
-        {% if selected_group %}
+            <div>
 
-        <!-- ADD PHOTO -->
+                <label class="block font-medium mb-3">
+                    Type
+                </label>
 
-        <div class="border rounded-2xl p-6 bg-gray-50 mb-8">
+                <div class="border rounded-xl p-3 bg-white checkbox-area">
 
-            <h2 class="text-2xl font-bold mb-6">
-                生写真追加
-            </h2>
+                    {% for type in photo_types %}
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <label class="flex items-center gap-2 mb-2">
 
-                <!-- MEMBERS -->
-
-                <div>
-
-                    <label class="block font-medium mb-3">
-                        Member
-                    </label>
-
-                    <label class="flex items-center gap-2 mb-3">
-
-                        <input type="checkbox" id="member-select-all">
+                        <input type="checkbox" class="type-checkbox" value="{{ type.id }}">
 
                         <span>
-                            全選択
+                            {{ type.name }}
                         </span>
 
                     </label>
 
-                    <div class="border rounded-xl p-3 bg-white checkbox-area">
-
-                        {% for member in members %}
-
-                        <label class="flex items-center gap-2 mb-2">
-
-                            <input type="checkbox" class="member-checkbox" value="{{ member.id }}">
-
-                            <span>
-                                {{ member.name }}
-                            </span>
-
-                        </label>
-
-                        {% endfor %}
-
-                    </div>
+                    {% endfor %}
 
                 </div>
-
-
-                <!-- COSTUME -->
-
-                <div>
-
-                    <label class="block font-medium mb-3">
-                        Costume
-                    </label>
-
-                    <div class="flex gap-2 mb-3">
-
-                        <input id="costume-name" type="text" placeholder="2026 浴衣"
-                            class="border rounded-lg px-3 py-2 w-full">
-
-                        <button type="button" id="create-costume-btn" class="bg-blue-600 text-white px-4 rounded-lg">
-                            作成
-                        </button>
-
-                    </div>
-
-                    <select id="costume-id" class="border rounded-lg px-3 py-2 w-full bg-white">
-
-                        <option value="">
-                            Costume選択
-                        </option>
-
-                        {% for costume in costumes %}
-
-                        <option value="{{ costume.id }}">
-                            {{ costume.name }}
-                        </option>
-
-                        {% endfor %}
-
-                    </select>
-
-                </div>
-
-
-                <!-- TYPES -->
-
-                <div>
-
-                    <label class="block font-medium mb-3">
-                        Type
-                    </label>
-
-                    <div class="border rounded-xl p-3 bg-white checkbox-area">
-
-                        {% for type in photo_types %}
-
-                        <label class="flex items-center gap-2 mb-2">
-
-                            <input type="checkbox" class="type-checkbox" value="{{ type.id }}">
-
-                            <span>
-                                {{ type.name }}
-                            </span>
-
-                        </label>
-
-                        {% endfor %}
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <div class="mt-6">
-                <div id="selection-summary" class="mb-4 text-sm font-medium text-gray-700">
-                    メンバー: 0人 /
-                    種類: 0種 /
-                    追加予定: 0件
-                </div>
-
-                <button type="button" id="add-photo-btn" class="bg-green-600 text-white px-8 py-3 rounded-xl font-bold">
-                    一括追加
-                </button>
 
             </div>
 
         </div>
 
 
-        <!-- ACCORDION -->
+        <div class="mt-6">
+            <div id="selection-summary" class="mb-4 text-sm font-medium text-gray-700">
+                メンバー: 0人 /
+                種類: 0種 /
+                追加予定: 0件
+            </div>
 
-        <div class="border rounded-2xl overflow-hidden">
-
-            <button id="toggle-table-btn" type="button"
-                class="w-full bg-gray-800 text-white px-6 py-4 text-left font-bold flex items-center justify-between">
-
-                <span>
-                    登録済み一覧
-                </span>
-
-                <span id="accordion-icon">
-                    ▼
-                </span>
-
+            <button type="button" id="add-photo-btn" class="bg-green-600 text-white px-8 py-3 rounded-xl font-bold">
+                一括追加
             </button>
 
-
-            <div id="table-wrapper" class="hidden p-6 bg-white">
-
-                <!-- FILTER -->
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-
-                    <div>
-
-                        <label class="block text-sm mb-2">
-                            Member検索
-                        </label>
-
-                        <input id="member-filter" type="text" placeholder="山下"
-                            class="border rounded-lg px-3 py-2 w-full">
-
-                    </div>
-
-                    <div>
-
-                        <label class="block text-sm mb-2">
-                            Costume検索
-                        </label>
-
-                        <input id="costume-filter" type="text" placeholder="浴衣"
-                            class="border rounded-lg px-3 py-2 w-full">
-
-                    </div>
-
-                </div>
-
-
-                <!-- LOADING -->
-
-                <div id="loading-area" class="text-gray-500">
-                    読み込み中...
-                </div>
-
-
-                <!-- TABLE -->
-
-                <div id="table-area" class="hidden overflow-x-auto">
-
-                    <table class="w-full border-collapse">
-
-                        <thead>
-
-                            <tr class="bg-gray-200">
-
-                                <th class="border p-3 text-left">
-                                    Member
-                                </th>
-
-                                <th class="border p-3 text-left">
-                                    Costume
-                                </th>
-
-                                <th class="border p-3 text-left">
-                                    Type
-                                </th>
-
-                                <th class="border p-3 text-center w-24">
-                                    操作
-                                </th>
-
-                            </tr>
-
-                        </thead>
-
-                        <tbody id="photo-table-body">
-
-                        </tbody>
-
-                    </table>
-
-                    <div class="mt-4 text-center">
-
-                        <button id="load-more-btn" type="button"
-                            class="hidden bg-gray-700 text-white px-5 py-2 rounded-lg">
-                            さらに読み込む
-                        </button>
-
-                    </div>
-                </div>
-
-            </div>
-
         </div>
-
-        {% endif %}
 
     </div>
 
 
-    <script>
+    <!-- ACCORDION -->
 
-        //
-        // CREATE COSTUME
-        //
+    <div class="border rounded-2xl overflow-hidden">
 
-        const createCostumeBtn =
-            document.getElementById('create-costume-btn')
+        <button id="toggle-table-btn" type="button"
+            class="w-full bg-gray-800 text-white px-6 py-4 text-left font-bold flex items-center justify-between">
 
-        if (createCostumeBtn) {
+            <span>
+                登録済み一覧
+            </span>
 
-            createCostumeBtn.addEventListener('click', async () => {
+            <span id="accordion-icon">
+                ▼
+            </span>
 
-                const name =
-                    document.getElementById('costume-name').value
-
-                if (!name) {
-                    alert('Costume名を入力してください')
-                    return
-                }
-
-                const formData = new FormData()
-
-                formData.append('name', name)
-
-                formData.append(
-                    'group_id',
-                    '{{ selected_group.id if selected_group else "" }}'
-                )
-
-                const response = await fetch(
-                    '/admin/photos/create_costume',
-                    {
-                        method: 'POST',
-                        body: formData
-                    }
-                )
-
-                const data = await response.json()
-
-                if (data.success) {
-
-                    const select =
-                        document.getElementById('costume-id')
-
-                    const option =
-                        document.createElement('option')
-
-                    option.value = data.costume_id
-                    option.textContent = name
-                    option.selected = true
-
-                    select.appendChild(option)
-
-                    document.getElementById('costume-name').value = ''
-
-                }
-
-            })
-
-        }
+        </button>
 
 
+        <div id="table-wrapper" class="hidden p-6 bg-white">
 
-        //
-        // BULK ADD
-        //
+            <!-- FILTER -->
 
-        const addPhotoBtn =
-            document.getElementById('add-photo-btn')
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
 
-        if (addPhotoBtn) {
+                <div>
 
-            addPhotoBtn.addEventListener('click', async () => {
+                    <label class="block text-sm mb-2">
+                        Member検索
+                    </label>
 
-                const memberIds =
-                    [...document.querySelectorAll('.member-checkbox:checked')]
-                        .map(el => parseInt(el.value))
+                    <input id="member-filter" type="text" placeholder="山下" class="border rounded-lg px-3 py-2 w-full">
 
-                const typeIds =
-                    [...document.querySelectorAll('.type-checkbox:checked')]
-                        .map(el => parseInt(el.value))
+                </div>
 
-                const costumeId =
-                    document.getElementById('costume-id').value
+                <div>
 
-                if (
-                    memberIds.length === 0
-                    ||
-                    typeIds.length === 0
-                    ||
-                    !costumeId
-                ) {
-                    alert('全て選択してください')
-                    return
-                }
+                    <label class="block text-sm mb-2">
+                        Costume検索
+                    </label>
 
-                const payload = {
-                    member_ids: memberIds,
-                    type_ids: typeIds,
-                    costume_id: parseInt(costumeId)
-                }
+                    <input id="costume-filter" type="text" placeholder="浴衣" class="border rounded-lg px-3 py-2 w-full">
 
-                const response = await fetch(
-                    '/admin/photos/bulk_create',
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(payload)
-                    }
-                )
+                </div>
 
-                const data = await response.json()
-
-                if (data.success) {
-
-                    alert(
-                        `追加: ${data.created}件\n`
-                        +
-                        `重複スキップ: ${data.skipped}件`
-                    )
-
-                }
-
-            })
-
-        }
+            </div>
 
 
-        function updateSelectionSummary() {
+            <!-- LOADING -->
 
-            const memberCount =
-                document.querySelectorAll(
-                    '.member-checkbox:checked'
-                ).length
+            <div id="loading-area" class="text-gray-500">
+                読み込み中...
+            </div>
 
-            const typeCount =
-                document.querySelectorAll(
-                    '.type-checkbox:checked'
-                ).length
 
-            const total =
-                memberCount * typeCount
+            <!-- TABLE -->
 
-            const summary =
-                document.getElementById(
-                    'selection-summary'
-                )
+            <div id="table-area" class="hidden overflow-x-auto">
 
-            if (!summary) {
+                <table class="w-full border-collapse">
+
+                    <thead>
+
+                        <tr class="bg-gray-200">
+
+                            <th class="border p-3 text-left">
+                                Member
+                            </th>
+
+                            <th class="border p-3 text-left">
+                                Costume
+                            </th>
+
+                            <th class="border p-3 text-left">
+                                Type
+                            </th>
+
+                            <th class="border p-3 text-center w-24">
+                                操作
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="photo-table-body">
+
+                    </tbody>
+
+                </table>
+
+                <div class="mt-4 text-center">
+
+                    <button id="load-more-btn" type="button" class="hidden bg-gray-700 text-white px-5 py-2 rounded-lg">
+                        さらに読み込む
+                    </button>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    {% endif %}
+
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+
+<script>
+
+    //
+    // CREATE COSTUME
+    //
+
+    const createCostumeBtn =
+        document.getElementById('create-costume-btn')
+
+    if (createCostumeBtn) {
+
+        createCostumeBtn.addEventListener('click', async () => {
+
+            const name =
+                document.getElementById('costume-name').value
+
+            if (!name) {
+                alert('Costume名を入力してください')
                 return
             }
 
-            summary.textContent =
-                `メンバー: ${memberCount}人 / `
-                +
-                `種類: ${typeCount}種 / `
-                +
-                `追加予定: ${total}件`
-        }
+            const formData = new FormData()
 
-        const memberSelectAll =
-            document.getElementById(
-                'member-select-all'
+            formData.append('name', name)
+
+            formData.append(
+                'group_id',
+                '{{ selected_group.id if selected_group else "" }}'
             )
 
-        const typeSelectAll =
-            document.getElementById(
-                'type-select-all'
-            )
-
-        if (memberSelectAll) {
-
-            memberSelectAll.addEventListener(
-                'change',
-                () => {
-
-                    document
-                        .querySelectorAll(
-                            '.member-checkbox'
-                        )
-                        .forEach(cb => {
-                            cb.checked =
-                                memberSelectAll.checked
-                        })
-
-                    updateSelectionSummary()
+            const response = await fetch(
+                '/admin/photos/create_costume',
+                {
+                    method: 'POST',
+                    body: formData
                 }
             )
 
-        }
+            const data = await response.json()
 
-        if (typeSelectAll) {
+            if (data.success) {
 
-            typeSelectAll.addEventListener(
-                'change',
-                () => {
+                const select =
+                    document.getElementById('costume-id')
 
-                    document
-                        .querySelectorAll(
-                            '.type-checkbox'
-                        )
-                        .forEach(cb => {
-                            cb.checked =
-                                typeSelectAll.checked
-                        })
+                const option =
+                    document.createElement('option')
 
-                    updateSelectionSummary()
+                option.value = data.costume_id
+                option.textContent = name
+                option.selected = true
+
+                select.appendChild(option)
+
+                document.getElementById('costume-name').value = ''
+
+            }
+
+        })
+
+    }
+
+
+
+    //
+    // BULK ADD
+    //
+
+    const addPhotoBtn =
+        document.getElementById('add-photo-btn')
+
+    if (addPhotoBtn) {
+
+        addPhotoBtn.addEventListener('click', async () => {
+
+            const memberIds =
+                [...document.querySelectorAll('.member-checkbox:checked')]
+                    .map(el => parseInt(el.value))
+
+            const typeIds =
+                [...document.querySelectorAll('.type-checkbox:checked')]
+                    .map(el => parseInt(el.value))
+
+            const costumeId =
+                document.getElementById('costume-id').value
+
+            if (
+                memberIds.length === 0
+                ||
+                typeIds.length === 0
+                ||
+                !costumeId
+            ) {
+                alert('全て選択してください')
+                return
+            }
+
+            const payload = {
+                member_ids: memberIds,
+                type_ids: typeIds,
+                costume_id: parseInt(costumeId)
+            }
+
+            const response = await fetch(
+                '/admin/photos/bulk_create',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
                 }
             )
 
+            const data = await response.json()
+
+            if (data.success) {
+
+                alert(
+                    `追加: ${data.created}件\n`
+                    +
+                    `重複スキップ: ${data.skipped}件`
+                )
+
+            }
+
+        })
+
+    }
+
+
+    function updateSelectionSummary() {
+
+        const memberCount =
+            document.querySelectorAll(
+                '.member-checkbox:checked'
+            ).length
+
+        const typeCount =
+            document.querySelectorAll(
+                '.type-checkbox:checked'
+            ).length
+
+        const total =
+            memberCount * typeCount
+
+        const summary =
+            document.getElementById(
+                'selection-summary'
+            )
+
+        if (!summary) {
+            return
         }
 
-        document.addEventListener(
+        summary.textContent =
+            `メンバー: ${memberCount}人 / `
+            +
+            `種類: ${typeCount}種 / `
+            +
+            `追加予定: ${total}件`
+    }
+
+    const memberSelectAll =
+        document.getElementById(
+            'member-select-all'
+        )
+
+    const typeSelectAll =
+        document.getElementById(
+            'type-select-all'
+        )
+
+    if (memberSelectAll) {
+
+        memberSelectAll.addEventListener(
             'change',
-            (e) => {
+            () => {
 
-                if (
-                    e.target.classList.contains(
-                        'member-checkbox'
+                document
+                    .querySelectorAll(
+                        '.member-checkbox'
                     )
-                    ||
-                    e.target.classList.contains(
-                        'type-checkbox'
-                    )
-                ) {
+                    .forEach(cb => {
+                        cb.checked =
+                            memberSelectAll.checked
+                    })
 
-                    updateSelectionSummary()
-
-                }
-
+                updateSelectionSummary()
             }
         )
 
-        const loadMoreBtn =
-            document.getElementById(
-                'load-more-btn'
-            )
+    }
 
-        async function loadPhotos() {
+    if (typeSelectAll) {
 
-            if (loading || !hasNext) {
-                return
+        typeSelectAll.addEventListener(
+            'change',
+            () => {
+
+                document
+                    .querySelectorAll(
+                        '.type-checkbox'
+                    )
+                    .forEach(cb => {
+                        cb.checked =
+                            typeSelectAll.checked
+                    })
+
+                updateSelectionSummary()
             }
+        )
 
-            loading = true
+    }
 
-            const response =
-                await fetch(
-                    `/admin/photos/list`
-                    +
-                    `?group_id={{ selected_group.id }}`
-                    +
-                    `&page=${currentPage}`
-                )
-
-            const data =
-                await response.json()
-
-            loadingArea.classList.add(
-                'hidden'
-            )
-
-            tableArea.classList.remove(
-                'hidden'
-            )
+    document.addEventListener(
+        'change',
+        (e) => {
 
             if (
-                currentPage === 1
-                &&
-                data.items.length === 0
+                e.target.classList.contains(
+                    'member-checkbox'
+                )
+                ||
+                e.target.classList.contains(
+                    'type-checkbox'
+                )
             ) {
 
-                tableBody.innerHTML = `
+                updateSelectionSummary()
+
+            }
+
+        }
+    )
+
+    const loadMoreBtn =
+        document.getElementById(
+            'load-more-btn'
+        )
+
+    async function loadPhotos() {
+
+        if (loading || !hasNext) {
+            return
+        }
+
+        loading = true
+
+        const response =
+            await fetch(
+                `/admin/photos/list`
+                +
+                `?group_id={{ selected_group.id }}`
+                +
+                `&page=${currentPage}`
+            )
+
+        const data =
+            await response.json()
+
+        loadingArea.classList.add(
+            'hidden'
+        )
+
+        tableArea.classList.remove(
+            'hidden'
+        )
+
+        if (
+            currentPage === 1
+            &&
+            data.items.length === 0
+        ) {
+
+            tableBody.innerHTML = `
             <tr>
                 <td colspan="4"
                     class="border p-6 text-center text-gray-500">
@@ -603,28 +579,28 @@
             </tr>
         `
 
-                hasNext = false
-                return
-            }
+            hasNext = false
+            return
+        }
 
-            data.items.forEach(photo => {
+        data.items.forEach(photo => {
 
-                const tr =
-                    document.createElement('tr')
+            const tr =
+                document.createElement('tr')
 
-                tr.className =
-                    'photo-row'
+            tr.className =
+                'photo-row'
 
-                tr.dataset.member =
-                    photo.member_name.toLowerCase()
+            tr.dataset.member =
+                photo.member_name.toLowerCase()
 
-                tr.dataset.costume =
-                    photo.costume_name.toLowerCase()
+            tr.dataset.costume =
+                photo.costume_name.toLowerCase()
 
-                tr.id =
-                    `photo-row-${photo.id}`
+            tr.id =
+                `photo-row-${photo.id}`
 
-                tr.innerHTML = `
+            tr.innerHTML = `
                 <td class="border p-3">
                     ${photo.member_name}
                 </td>
@@ -649,193 +625,190 @@
             </td>
         `
 
-                tableBody.appendChild(tr)
+            tableBody.appendChild(tr)
+
+        })
+
+        hasNext =
+            data.has_next
+
+        currentPage++
+
+        if (hasNext) {
+
+            loadMoreBtn.classList.remove(
+                'hidden'
+            )
+
+        } else {
+
+            loadMoreBtn.classList.add(
+                'hidden'
+            )
+
+        }
+
+        loading = false
+    }
+
+    //
+    // ACCORDION
+    //
+
+    const toggleBtn =
+        document.getElementById('toggle-table-btn')
+
+    const tableWrapper =
+        document.getElementById('table-wrapper')
+
+    const tableBody =
+        document.getElementById('photo-table-body')
+
+    const loadingArea =
+        document.getElementById('loading-area')
+
+    const tableArea =
+        document.getElementById('table-area')
+
+    const accordionIcon =
+        document.getElementById('accordion-icon')
+
+    let currentPage = 1
+    let hasNext = true
+    let loading = false
+
+
+    if (toggleBtn) {
+
+        toggleBtn.addEventListener(
+            'click',
+            async () => {
+
+                tableWrapper.classList.toggle(
+                    'hidden'
+                )
+
+                accordionIcon.textContent =
+                    tableWrapper.classList.contains(
+                        'hidden'
+                    )
+                        ? '▼'
+                        : '▲'
+
+                if (
+                    currentPage === 1
+                    &&
+                    tableBody.children.length === 0
+                ) {
+
+                    await loadPhotos()
+
+                }
+
+            }
+        )
+
+    }
+
+    if (loadMoreBtn) {
+
+        loadMoreBtn.addEventListener(
+            'click',
+            loadPhotos
+        )
+
+    }
+
+    //
+    // DELETE
+    //
+
+    document.addEventListener('click', async (e) => {
+
+        if (!e.target.classList.contains('delete-btn')) {
+            return
+        }
+
+        const photoId =
+            e.target.dataset.photoId
+
+        if (!confirm('削除しますか？')) {
+            return
+        }
+
+        const response = await fetch(
+            `/admin/photos/${photoId}`,
+            {
+                method: 'DELETE'
+            }
+        )
+
+        const data = await response.json()
+
+        if (data.success) {
+
+            const row =
+                document.getElementById(`photo-row-${photoId}`)
+
+            if (row) {
+                row.remove()
+            }
+
+        }
+
+    })
+
+
+
+    //
+    // FILTER
+    //
+
+    document.addEventListener('input', (e) => {
+
+        if (
+            e.target.id !== 'member-filter'
+            &&
+            e.target.id !== 'costume-filter'
+        ) {
+            return
+        }
+
+        const memberKeyword =
+            document
+                .getElementById('member-filter')
+                .value
+                .toLowerCase()
+
+        const costumeKeyword =
+            document
+                .getElementById('costume-filter')
+                .value
+                .toLowerCase()
+
+        document
+            .querySelectorAll('.photo-row')
+            .forEach(row => {
+
+                const member =
+                    row.dataset.member
+
+                const costume =
+                    row.dataset.costume
+
+                const visible =
+                    member.includes(memberKeyword)
+                    &&
+                    costume.includes(costumeKeyword)
+
+                row.style.display =
+                    visible
+                        ? ''
+                        : 'none'
 
             })
 
-            hasNext =
-                data.has_next
+    })
 
-            currentPage++
-
-            if (hasNext) {
-
-                loadMoreBtn.classList.remove(
-                    'hidden'
-                )
-
-            } else {
-
-                loadMoreBtn.classList.add(
-                    'hidden'
-                )
-
-            }
-
-            loading = false
-        }
-
-        //
-        // ACCORDION
-        //
-
-        const toggleBtn =
-            document.getElementById('toggle-table-btn')
-
-        const tableWrapper =
-            document.getElementById('table-wrapper')
-
-        const tableBody =
-            document.getElementById('photo-table-body')
-
-        const loadingArea =
-            document.getElementById('loading-area')
-
-        const tableArea =
-            document.getElementById('table-area')
-
-        const accordionIcon =
-            document.getElementById('accordion-icon')
-
-        let currentPage = 1
-        let hasNext = true
-        let loading = false
-
-
-        if (toggleBtn) {
-
-            toggleBtn.addEventListener(
-                'click',
-                async () => {
-
-                    tableWrapper.classList.toggle(
-                        'hidden'
-                    )
-
-                    accordionIcon.textContent =
-                        tableWrapper.classList.contains(
-                            'hidden'
-                        )
-                            ? '▼'
-                            : '▲'
-
-                    if (
-                        currentPage === 1
-                        &&
-                        tableBody.children.length === 0
-                    ) {
-
-                        await loadPhotos()
-
-                    }
-
-                }
-            )
-
-        }
-
-        if (loadMoreBtn) {
-
-            loadMoreBtn.addEventListener(
-                'click',
-                loadPhotos
-            )
-
-        }
-
-        //
-        // DELETE
-        //
-
-        document.addEventListener('click', async (e) => {
-
-            if (!e.target.classList.contains('delete-btn')) {
-                return
-            }
-
-            const photoId =
-                e.target.dataset.photoId
-
-            if (!confirm('削除しますか？')) {
-                return
-            }
-
-            const response = await fetch(
-                `/admin/photos/${photoId}`,
-                {
-                    method: 'DELETE'
-                }
-            )
-
-            const data = await response.json()
-
-            if (data.success) {
-
-                const row =
-                    document.getElementById(`photo-row-${photoId}`)
-
-                if (row) {
-                    row.remove()
-                }
-
-            }
-
-        })
-
-
-
-        //
-        // FILTER
-        //
-
-        document.addEventListener('input', (e) => {
-
-            if (
-                e.target.id !== 'member-filter'
-                &&
-                e.target.id !== 'costume-filter'
-            ) {
-                return
-            }
-
-            const memberKeyword =
-                document
-                    .getElementById('member-filter')
-                    .value
-                    .toLowerCase()
-
-            const costumeKeyword =
-                document
-                    .getElementById('costume-filter')
-                    .value
-                    .toLowerCase()
-
-            document
-                .querySelectorAll('.photo-row')
-                .forEach(row => {
-
-                    const member =
-                        row.dataset.member
-
-                    const costume =
-                        row.dataset.costume
-
-                    const visible =
-                        member.includes(memberKeyword)
-                        &&
-                        costume.includes(costumeKeyword)
-
-                    row.style.display =
-                        visible
-                            ? ''
-                            : 'none'
-
-                })
-
-        })
-
-    </script>
-
-</body>
-
-</html>
+</script>
+{% endblock %}
