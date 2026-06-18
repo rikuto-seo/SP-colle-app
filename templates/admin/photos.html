@@ -20,9 +20,11 @@ Photo Admin
             Group
         </label>
 
-        <div class="flex gap-3">
+        <div class="d-flex gap-3">
 
-            <select name="group_id" class="border rounded-lg px-4 py-2 w-72">
+            <select name="group_id"
+                class="form-select"
+                style="max-width: 300px;">
 
                 <option value="">
                     選択してください
@@ -30,16 +32,20 @@ Photo Admin
 
                 {% for group in groups %}
 
-                <option value="{{ group.id }}" {% if selected_group and selected_group.id==group.id %} selected {% endif
-                    %}>
-                    {{ group.name }}
-                </option>
+                    <option 
+                        value="{{ group.id }}"
+                        {% if selected_group and selected_group.id == group.id %}
+                            selected
+                        {% endif %}
+                    >
+                        {{ group.name }}
+                    </option>
 
                 {% endfor %}
 
             </select>
 
-            <button class="bg-black text-white px-5 py-2 rounded-lg">
+            <button class="btn btn-dark">
                 読み込み
             </button>
 
