@@ -7,8 +7,7 @@
   <!--
   {% set has_paid_plan = current_user.is_lite() or current_user.is_standard() or current_user.is_premium() %}
   {% set is_premium = current_user.is_premium() %}
-  {% set is_locked = (not current_user.can_access_group(group_key)) or (not has_paid_plan) %}
--->
+  {% set is_locked = (not current_user.can_access_group(group_key)) or (not has_paid_plan) %}-->
 
   <div class="text-center mb-4">
     <h1 class="display-5 fw-bold text-black p-3 rounded section-title">
@@ -53,163 +52,161 @@
 
   <div style="{% if is_locked %}filter: blur(8px); pointer-events:none; user-select:none;{% endif %}">
   -->
-    
-    <div class="accordion" id="statsAccordion">
 
-      <!-- コンプランキング -->
-      <div class="accordion-item">
-        <h2 class="accordion-header">
-          <button class="accordion-button" data-bs-toggle="collapse" data-bs-target="#compRanking">
-            <i class="fa-solid fa-trophy text-danger me-2"></i> コンプランキング
-          </button>
-        </h2>
-        <div id="compRanking" class="accordion-collapse collapse show">
-          <div class="accordion-body">
-            {% if comp_ranking %}
-            <ol class="list-group list-group-numbered">
-              {% for entry in comp_ranking %}
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ entry.member }}
-                <span class="badge bg-danger rounded-pill">{{ entry.complete_count }}</span>
-              </li>
-              {% endfor %}
-            </ol>
-            {% else %}
-            <p class="text-muted">ランキングデータがありません。</p>
-            {% endif %}
-          </div>
+  <div class="accordion" id="statsAccordion">
+
+    <!-- コンプランキング -->
+    <div class="accordion-item">
+      <h2 class="accordion-header">
+        <button class="accordion-button" data-bs-toggle="collapse" data-bs-target="#compRanking">
+          <i class="fa-solid fa-trophy text-danger me-2"></i> コンプランキング
+        </button>
+      </h2>
+      <div id="compRanking" class="accordion-collapse collapse show">
+        <div class="accordion-body">
+          {% if comp_ranking %}
+          <ol class="list-group list-group-numbered">
+            {% for entry in comp_ranking %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              {{ entry.member }}
+              <span class="badge bg-danger rounded-pill">{{ entry.complete_count }}</span>
+            </li>
+            {% endfor %}
+          </ol>
+          {% else %}
+          <p class="text-muted">ランキングデータがありません。</p>
+          {% endif %}
         </div>
       </div>
+    </div>
 
-      <!-- メンバー別所持数 -->
-      <div class="accordion-item">
-        <h2 class="accordion-header">
-          <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#memberStats">
-            <i class="fa-solid fa-user text-primary me-2"></i> メンバー別所持数
-          </button>
-        </h2>
-        <div id="memberStats" class="accordion-collapse collapse">
-          <div class="accordion-body">
+    <!-- メンバー別所持数 -->
+    <div class="accordion-item">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#memberStats">
+          <i class="fa-solid fa-user text-primary me-2"></i> メンバー別所持数
+        </button>
+      </h2>
+      <div id="memberStats" class="accordion-collapse collapse">
+        <div class="accordion-body">
 
-            {% if member_stats %}
-            <ul class="list-group list-group-flush">
-              {% for member, count in member_stats %}
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ member }}
-                <span class="badge bg-primary rounded-pill">{{ count }}枚</span>
-              </li>
-              {% endfor %}
-            </ul>
-            {% else %}
-            <p class="text-muted">データがありません。</p>
-            {% endif %}
+          {% if member_stats %}
+          <ul class="list-group list-group-flush">
+            {% for member, count in member_stats %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              {{ member }}
+              <span class="badge bg-primary rounded-pill">{{ count }}枚</span>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-muted">データがありません。</p>
+          {% endif %}
 
-          </div>
         </div>
       </div>
+    </div>
 
-      <!-- ★ グラフ専用（新規）
-      <div class="accordion-item">
-        <h2 class="accordion-header">
-          <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#memberGraph">
-            <i class="fa-solid fa-chart-bar text-info me-2"></i> メンバー別グラフ
-          </button>
-        </h2>
-        <div id="memberGraph" class="accordion-collapse collapse">
-          <div class="accordion-body">
+    <!-- ★ グラフ専用（新規）
+    <div class="accordion-item">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#memberGraph">
+          <i class="fa-solid fa-chart-bar text-info me-2"></i> メンバー別グラフ
+        </button>
+      </h2>
+      <div id="memberGraph" class="accordion-collapse collapse">
+        <div class="accordion-body">
 
-            {% if is_premium and member_stats_sorted %}
-            <div style="height: {{ member_stats_sorted|length * 20 }}px;">
-              <canvas id="memberChart"></canvas>
-            </div>
-            {% else %}
-            <p class="text-muted">プレミアムプラン限定機能です。</p>
-            {% endif %}
-
+          {% if is_premium and member_stats_sorted %}
+          <div style="height: {{ member_stats_sorted|length * 20 }}px;">
+            <canvas id="memberChart"></canvas>
           </div>
+          {% else %}
+          <p class="text-muted">プレミアムプラン限定機能です。</p>
+          {% endif %}
+
         </div>
       </div>
-    -->
+    </div>
+  -->
 
-      <!-- 種類別 -->
-      <div class="accordion-item">
-        <h2 class="accordion-header">
-          <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#typeStats">
-            <i class="fa-solid fa-layer-group text-success me-2"></i> 種類別所持数
-          </button>
-        </h2>
-        <div id="typeStats" class="accordion-collapse collapse">
-          <div class="accordion-body">
-            {% if type_stats %}
-            <ul class="list-group list-group-flush">
-              {% for type, count in type_stats %}
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ type }}
-                <span class="badge bg-success rounded-pill">{{ count }}枚</span>
-              </li>
-              {% endfor %}
-            </ul>
-            {% else %}
-            <p class="text-muted">データがありません。</p>
-            {% endif %}
-          </div>
+    <!-- 種類別 -->
+    <div class="accordion-item">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#typeStats">
+          <i class="fa-solid fa-layer-group text-success me-2"></i> 種類別所持数
+        </button>
+      </h2>
+      <div id="typeStats" class="accordion-collapse collapse">
+        <div class="accordion-body">
+          {% if type_stats %}
+          <ul class="list-group list-group-flush">
+            {% for type, count in type_stats %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              {{ type }}
+              <span class="badge bg-success rounded-pill">{{ count }}枚</span>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-muted">データがありません。</p>
+          {% endif %}
         </div>
       </div>
+    </div>
 
-      <!-- コンプ詳細 -->
-      <div class="accordion-item">
-        <h2 class="accordion-header">
-          <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#compStats">
-            <i class="fa-solid fa-list-check text-warning me-2"></i> メンバー別コンプ状況
-          </button>
-        </h2>
-        <div id="compStats" class="accordion-collapse collapse">
-          <div class="accordion-body">
+    <!-- コンプ詳細 -->
+    <div class="accordion-item">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#compStats">
+          <i class="fa-solid fa-list-check text-warning me-2"></i> メンバー別コンプ状況
+        </button>
+      </h2>
+      <div id="compStats" class="accordion-collapse collapse">
+        <div class="accordion-body">
 
-            {% if comp_stats %}
-            <div class="accordion" id="innerAccordion">
-              {% for member, costumes in comp_stats.items() %}
-              <div class="accordion-item">
-                <h2 class="accordion-header">
-                  <button class="accordion-button collapsed" data-bs-toggle="collapse"
-                    data-bs-target="#member-{{ loop.index }}">
-                    {{ member }}
-                  </button>
-                </h2>
-                <div id="member-{{ loop.index }}" class="accordion-collapse collapse">
-                  <div class="accordion-body">
+          {% if comp_stats %}
+          <div class="accordion" id="innerAccordion">
+            {% for member, costumes in comp_stats.items() %}
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" data-bs-toggle="collapse"
+                  data-bs-target="#member-{{ loop.index }}">
+                  {{ member }}
+                </button>
+              </h2>
+              <div id="member-{{ loop.index }}" class="accordion-collapse collapse">
+                <div class="accordion-body">
 
-                    {% if costumes %}
-                    <ul class="list-group">
-                      {% for item in costumes %}
-                      <li class="list-group-item d-flex justify-content-between align-items-center">
-                        {{ item.costume }}
-                        <span>
-                          {{ item.owned }}/{{ item.total }}
-                          <span class="badge {% if item.is_complete %}bg-success{% else %}bg-secondary{% endif %}">
-                            {{ 'コンプ' if item.is_complete else '未コンプ' }}
-                          </span>
+                  {% if costumes %}
+                  <ul class="list-group">
+                    {% for item in costumes %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      {{ item.costume }}
+                      <span>
+                        {{ item.owned }}/{{ item.total }}
+                        <span class="badge {% if item.is_complete %}bg-success{% else %}bg-secondary{% endif %}">
+                          {{ 'コンプ' if item.is_complete else '未コンプ' }}
                         </span>
-                      </li>
-                      {% endfor %}
-                    </ul>
-                    {% else %}
-                    <p class="text-muted">データがありません。</p>
-                    {% endif %}
+                      </span>
+                    </li>
+                    {% endfor %}
+                  </ul>
+                  {% else %}
+                  <p class="text-muted">データがありません。</p>
+                  {% endif %}
 
-                  </div>
                 </div>
               </div>
-              {% endfor %}
             </div>
-            {% else %}
-            <p class="text-muted">コンプ詳細データがありません。</p>
-            {% endif %}
-
+            {% endfor %}
           </div>
+          {% else %}
+          <p class="text-muted">コンプ詳細データがありません。</p>
+          {% endif %}
+
         </div>
       </div>
-
     </div>
   </div>
 </div>
