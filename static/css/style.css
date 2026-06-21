@@ -751,3 +751,10 @@ body.dark-mode .bg-hinata {
   border-radius: 12px;
   width: 300px;
 }
+
+/* Bootstrap accordion 強制修正 */
+.accordion-collapse.collapse.show {
+    display: block !important;
+    visibility: visible !important;
+    height: auto !important;
+}

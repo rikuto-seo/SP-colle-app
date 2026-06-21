@@ -1,8 +1,8 @@
-from flask import Blueprint, render_template, abort
+from flask import Blueprint, render_template, abort, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy import exists
 from models import db, Member, Costume, PhotoType, Photo, UserPhoto
-from services.stats_service import build_stats_data
+from services.stats_service import build_stats_data, build_member_comp_data
 
 stats_bp = Blueprint('stats', __name__)
 
@@ -62,15 +62,30 @@ def stats(group_key):
         member_stats_sorted=member_stats_sorted,
         type_stats=sorted(data["type_stats"].items()),
         progress_list=data["progress_list"],
-        comp_stats=data["comp_stats"],
         comp_ranking=data["comp_ranking"],
+        ordered_members=data["ordered_members"],
         is_shared=is_shared,
         total_complete=total_complete
     )
 
+
+@stats_bp.route("/stats/member/<group_key>/<member>")
+@login_required
+def member_detail(group_key, member):
+
+    data = build_member_comp_data(
+        current_user.id,
+        group_key,
+        member
+    )
+
+    return jsonify(data)
+
 # =========================
 # missing（完全修正版）
 # =========================
+
+
 @stats_bp.route('/missing/<group_key>')
 @login_required
 def missing(group_key):

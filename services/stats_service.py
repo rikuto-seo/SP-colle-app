@@ -4,6 +4,98 @@ from models import db, Group, Member, Costume, PhotoType, Photo, UserPhoto
 from services.type_normalizer import normalize_type
 
 
+def build_member_comp_data(user_id, group_key, member_name):
+
+    group = Group.query.filter_by(key=group_key).first_or_404()
+
+    # =========================
+    # 所持済み
+    # =========================
+    owned_rows = (
+        db.session.query(
+            Costume.name,
+            PhotoType.name
+        )
+        .join(Photo, Photo.id == UserPhoto.photo_id)
+        .join(Member, Member.id == Photo.member_id)
+        .join(Costume, Costume.id == Photo.costume_id)
+        .join(PhotoType, PhotoType.id == Photo.type_id)
+        .filter(
+            UserPhoto.user_id == user_id,
+            Member.group_id == group.id,
+            Member.name == member_name
+        )
+        .all()
+    )
+
+    owned_dict = defaultdict(set)
+
+    for costume, photo_type in owned_rows:
+        normalized = normalize_type(
+            member_name,
+            costume,
+            photo_type
+        )
+        owned_dict[costume].add(normalized)
+
+    # =========================
+    # 必要種類
+    # =========================
+    required_rows = (
+        db.session.query(
+            Costume.name,
+            PhotoType.name
+        )
+        .select_from(Photo)
+        .join(Member, Member.id == Photo.member_id)
+        .join(Costume, Costume.id == Photo.costume_id)
+        .join(PhotoType, PhotoType.id == Photo.type_id)
+        .filter(
+            Member.group_id == group.id,
+            Member.name == member_name
+        )
+        .all()
+    )
+
+    required_dict = defaultdict(set)
+
+    for costume, photo_type in required_rows:
+        normalized = normalize_type(
+            member_name,
+            costume,
+            photo_type
+        )
+        required_dict[costume].add(normalized)
+
+    # =========================
+    # コンプ計算
+    # =========================
+    result = []
+
+    for costume, required_types in required_dict.items():
+
+        owned_types = owned_dict[costume]
+
+        owned_count = len(
+            required_types & owned_types
+        )
+
+        total = len(required_types)
+
+        result.append({
+            "costume": costume,
+            "owned": owned_count,
+            "total": total,
+            "is_complete": (
+                total > 0 and owned_count == total
+            )
+        })
+
+    return sorted(
+        result,
+        key=lambda x: x["costume"]
+    )
+
 def build_stats_data(user_id, group_key):
     group = Group.query.filter_by(key=group_key).first_or_404()
 
