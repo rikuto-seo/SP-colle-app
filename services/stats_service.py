@@ -16,6 +16,7 @@ def build_member_comp_data(user_id, group_key, member_name):
             Costume.name,
             PhotoType.name
         )
+        .select_from(UserPhoto)
         .join(Photo, Photo.id == UserPhoto.photo_id)
         .join(Member, Member.id == Photo.member_id)
         .join(Costume, Costume.id == Photo.costume_id)
