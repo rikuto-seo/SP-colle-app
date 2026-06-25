@@ -5,10 +5,11 @@ from datetime import date
 from collections import defaultdict
 from routes.core import group_required
 
-from sqlalchemy import func,case
+from sqlalchemy import func, case
 
 from models import Group, Member, Costume, PhotoType, Photo, UserPhoto
 from collections import defaultdict
+from sqlalchemy.orm import joinedload
 
 photo_bp = Blueprint('photo', __name__)
 
@@ -18,20 +19,25 @@ GROUP_KEY_MAP = {
     'hinatazaka': '日向坂46'
 }
 
-from sqlalchemy.orm import joinedload
 
 @photo_bp.route('/index/<group_key>')
 @login_required
 @group_required
 def index(group_key):
+
     group = Group.query.filter_by(key=group_key).first_or_404()
 
-    # 1. まずは「どの Member x Costume」を表示するか、DB側で集計して絞り込む
-    # Pythonでの sort/pagination をやめて、SQLレベルで実行します
-    page = request.args.get('page', 1, type=int)
+    page = request.args.get("page", 1, type=int)
     per_page = 30
 
-    # 基礎クエリ（Member x Costume 単位の集計）
+    selected_member = request.args.get("member", "").strip()
+    selected_costume = request.args.get("costume", "").strip()
+    query = request.args.get("query", "").strip()
+
+    # =========================
+    # Member × Costume 集計
+    # =========================
+
     summary_query = (
         db.session.query(
             Member.id.label("member_id"),
@@ -39,28 +45,44 @@ def index(group_key):
             Costume.id.label("costume_id"),
             Costume.name.label("costume_name"),
             func.count(Photo.id).label("total_types"),
-            func.count(func.distinct(case((UserPhoto.quantity > 0, Photo.type_id)))).label("owned_types")
+            func.count(
+                func.distinct(
+                    case(
+                        (UserPhoto.quantity > 0, Photo.type_id)
+                    )
+                )
+            ).label("owned_types")
         )
         .select_from(Photo)
         .join(Member, Member.id == Photo.member_id)
         .join(Costume, Costume.id == Photo.costume_id)
-        .outerjoin(UserPhoto, (UserPhoto.photo_id == Photo.id) & (UserPhoto.user_id == current_user.id))
+        .outerjoin(
+            UserPhoto,
+            (UserPhoto.photo_id == Photo.id)
+            & (UserPhoto.user_id == current_user.id)
+        )
         .filter(Member.group_id == group.id)
-        .group_by(Member.id, Member.name, Costume.id, Costume.name)
-        # 所持しているものがある、または検索条件がある場合のみ
-        .having(func.count(UserPhoto.id) > 0) 
+        .group_by(
+            Member.id,
+            Member.name,
+            Costume.id,
+            Costume.name
+        )
     )
 
-    # 検索フィルタの適用
-    selected_member = request.args.get('member', '').strip()
-    selected_costume = request.args.get('costume', '').strip()
-    query = request.args.get('query', '').strip()
+    # =========================
+    # フィルタ
+    # =========================
 
     if selected_member:
-        summary_query = summary_query.filter(Member.name.ilike(f"%{selected_member}%"))
+        summary_query = summary_query.filter(
+            Member.name.ilike(f"%{selected_member}%")
+        )
 
     if selected_costume:
-        summary_query = summary_query.filter(Costume.name.ilike(f"%{selected_costume}%"))
+        summary_query = summary_query.filter(
+            Costume.name.ilike(f"%{selected_costume}%")
+        )
 
     if query:
         summary_query = summary_query.filter(
@@ -69,72 +91,169 @@ def index(group_key):
                 Costume.name.ilike(f"%{query}%")
             )
         )
-        
-    # ページネーション実行（ここでSQLが1回走る）
-    pagination_obj = summary_query.paginate(page=page, per_page=per_page, error_out=False)
+
+    # =========================
+    # 通常時のみ所持データ有りを表示
+    # =========================
+
+    summary_query = summary_query.having(
+        func.count(UserPhoto.id) > 0
+    )
+
+    summary_query = summary_query.order_by(
+        Member.name,
+        Costume.name
+    )
+
+    pagination_obj = summary_query.paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
+
     display_rows = pagination_obj.items
 
-    # 2. 表示する30件分だけの「詳細データ」を一括取得（ここが大臣の腕の見せ所）
-    # display_rows に含まれる (member_id, costume_id) の組み合わせだけを狙い撃ち
-    target_costume_ids = [r.costume_id for r in display_rows]
-    
+    # =========================
+    # 詳細取得
+    # =========================
+
+    target_pairs = [
+        (r.member_id, r.costume_id)
+        for r in display_rows
+    ]
+
+    member_ids = list({
+        r.member_id for r in display_rows
+    })
+
+    costume_ids = list({
+        r.costume_id for r in display_rows
+    })
+
     details_rows = (
         db.session.query(UserPhoto)
         .join(Photo)
         .options(
-            joinedload(UserPhoto.photo).joinedload(Photo.photo_type)
+            joinedload(UserPhoto.photo)
+            .joinedload(Photo.photo_type)
         )
         .filter(
             UserPhoto.user_id == current_user.id,
-            Photo.costume_id.in_(target_costume_ids)
+            Photo.member_id.in_(member_ids),
+            Photo.costume_id.in_(costume_ids)
         )
         .all()
     )
 
-    # マッピング
     details_map = defaultdict(list)
+
     for up in details_rows:
-        details_map[(up.photo.member_id, up.photo.costume_id)].append({
+
+        key = (
+            up.photo.member_id,
+            up.photo.costume_id
+        )
+
+        details_map[key].append({
             "id": up.id,
             "type": up.photo.photo_type.name,
             "quantity": up.quantity,
             "available": up.available_quantity,
-            "memo": up.memo,
-            "date": up.date.strftime('%Y-%m-%d') if up.date else "",
-            "is_favorite": 1 if up.is_favorite else 0
+            "memo": up.memo or "",
+            "date": (
+                up.date.strftime("%Y-%m-%d")
+                if up.date else ""
+            ),
+            "is_favorite": bool(up.is_favorite)
         })
 
-    # 3. 最終的なカード構築（ループは最大でも per_page の30回だけ！）
+    # =========================
+    # カード生成
+    # =========================
+
     cards = []
-    for r in display_rows:
-        details = details_map.get((r.member_id, r.costume_id), [])
+
+    for row in display_rows:
+
+        details = details_map.get(
+            (row.member_id, row.costume_id),
+            []
+        )
+
         cards.append({
-            "member": r.member_name,
-            "costume": r.costume_name,
-            "owned": r.owned_types,
-            "total": r.total_types,
-            "rate": (r.owned_types / r.total_types * 100) if r.total_types else 0,
-            "is_complete": (r.owned_types == r.total_types),
+            "member": row.member_name,
+            "costume": row.costume_name,
+            "owned": row.owned_types,
+            "total": row.total_types,
+            "rate": round(
+                (
+                    row.owned_types
+                    / row.total_types
+                    * 100
+                ),
+                1
+            ) if row.total_types else 0,
+            "is_complete":
+                row.owned_types == row.total_types,
             "details": details,
-            "has_favorite": any(d["is_favorite"] for d in details)
+            "has_favorite":
+                any(
+                    d["is_favorite"]
+                    for d in details
+            )
         })
 
-    # フィルタ用のリストを取得（これがないとセレクトボックスが空になります）
-    members_list = [m.name for m in Member.query.filter_by(group_id=group.id).order_by(Member.name).all()]
-    costumes_list = [c.name for c in Costume.query.filter_by(group_id=group.id).order_by(Costume.name).all()]
+    # =========================
+    # TomSelect用
+    # =========================
+
+    members = (
+        db.session.query(Member.name)
+        .filter_by(group_id=group.id)
+        .distinct()
+        .order_by(Member.name)
+        .all()
+    )
+
+    costumes = (
+        db.session.query(Costume.name)
+        .filter_by(group_id=group.id)
+        .distinct()
+        .order_by(Costume.name)
+        .all()
+    )
+
+    members_list = [m[0] for m in members]
+    costumes_list = [c[0] for c in costumes]
+
+    # =========================
+    # ページネーション用引数
+    # =========================
 
     args = request.args.to_dict()
     args.pop("page", None)
 
+    current_filters = {
+        "query": query,
+        "member": selected_member,
+        "costume": selected_costume
+    }
+
     return render_template(
-        'index.html',
+        "index.html",
         group_key=group_key,
         cards=cards,
-        pagination=pagination_obj,  # 辞書ではなくオブジェクトをそのまま渡す
-        members=members_list, 
+        pagination=pagination_obj,
+        members=members_list,
         costumes=costumes_list,
-        args=args
+        args=args,
+        current_filters=current_filters,
+        selected_member=selected_member,
+        selected_costume=selected_costume,
+        query=query,
+        current_url=request.full_path
     )
+
 
 @photo_bp.route('/delete_user_photo/<group_key>/<int:photo_id>', methods=['POST'])
 @login_required
@@ -176,6 +295,7 @@ def delete_user_photo(group_key, photo_id):
     )
 
     return redirect(url_for('photo.index', group_key=group_key))
+
 
 @photo_bp.route('/add/<group_key>', methods=['GET', 'POST'])
 @login_required
@@ -264,6 +384,7 @@ def add(group_key):
         group_key=group_key
     )
 
+
 @photo_bp.route('/get_members')
 @login_required
 def get_members():
@@ -274,6 +395,7 @@ def get_members():
 
     from services.photo_service import get_members
     return jsonify({"members": get_members(g.id)})
+
 
 @photo_bp.route('/get_costumes')
 @login_required
@@ -288,6 +410,7 @@ def get_costumes():
     from services.photo_service import get_costumes
     return jsonify({"costumes": get_costumes(g.id, member)})
 
+
 @photo_bp.route('/get_types')
 @login_required
 def get_types():
@@ -301,6 +424,7 @@ def get_types():
 
     from services.photo_service import get_types
     return jsonify({"types": get_types(g.id, member, costume)})
+
 
 @photo_bp.route('/update_user_photo/<group_key>/<int:photo_id>', methods=['POST'])
 @login_required
