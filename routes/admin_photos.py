@@ -89,8 +89,8 @@ def index():
             Member.query
             .filter_by(group_id=group_id)
             .order_by(
-                Member.display_order.asc(),
-                Member.id.asc()
+                Member.generation.asc(),
+                Member.display_order.asc()
             )
             .all()
         )
@@ -190,6 +190,7 @@ def photo_list():
 # CREATE COSTUME
 #
 
+
 @admin_photos_bp.route("/create_costume", methods=["POST"])
 @login_required
 def create_costume():
@@ -258,6 +259,7 @@ def create_costume():
 #
 # BULK CREATE
 #
+
 
 @admin_photos_bp.route("/bulk_create", methods=["POST"])
 @login_required
@@ -352,6 +354,7 @@ def bulk_create():
 #
 # DELETE
 #
+
 
 @admin_photos_bp.route("/<int:photo_id>", methods=["DELETE"])
 @login_required

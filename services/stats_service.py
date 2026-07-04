@@ -97,6 +97,7 @@ def build_member_comp_data(user_id, group_key, member_name):
         key=lambda x: x["costume"]
     )
 
+
 def build_stats_data(user_id, group_key):
     group = Group.query.filter_by(key=group_key).first_or_404()
 
@@ -111,6 +112,16 @@ def build_stats_data(user_id, group_key):
             key=lambda x: (x.generation or 0, x.display_order or 0)
         )
     ]
+
+    members = (
+        Member.query
+        .filter_by(group_id=group.id)
+        .order_by(
+            Member.generation,
+            Member.display_order
+        )
+        .all()
+    )
 
     # =========================
     # ユーザー所持

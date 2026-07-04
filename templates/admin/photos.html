@@ -140,19 +140,35 @@ Photo Admin
 
                 <div class="border rounded-xl p-3 bg-white checkbox-area">
 
-                    {% for type in photo_types %}
+                    {% for type in photo_types[:4] %}
 
                     <label class="flex items-center gap-2 mb-2">
-
                         <input type="checkbox" class="type-checkbox" value="{{ type.id }}">
-
-                        <span>
-                            {{ type.name }}
-                        </span>
-
+                        <span>{{ type.name }}</span>
                     </label>
 
                     {% endfor %}
+
+                    {% if photo_types|length > 4 %}
+
+                    <button type="button" id="toggle-type-btn" class="text-blue-600 text-sm mt-2">
+                        ▼ その他
+                    </button>
+
+                    <div id="other-types" class="hidden mt-3">
+
+                        {% for type in photo_types[4:] %}
+
+                        <label class="flex items-center gap-2 mb-2">
+                            <input type="checkbox" class="type-checkbox" value="{{ type.id }}">
+                            <span>{{ type.name }}</span>
+                        </label>
+
+                        {% endfor %}
+
+                    </div>
+
+                    {% endif %}
 
                 </div>
 
@@ -353,16 +369,16 @@ Photo Admin
 
             if (data.success) {
 
-    costumeTS.addOption({
-        value: data.costume_id,
-        text: name
-    });
+                costumeTS.addOption({
+                    value: data.costume_id,
+                    text: name
+                });
 
-    costumeTS.setValue(data.costume_id);
+                costumeTS.setValue(data.costume_id);
 
-    document.getElementById('costume-name').value = '';
+                document.getElementById('costume-name').value = '';
 
-}
+            }
 
         })
 
@@ -660,6 +676,29 @@ Photo Admin
         }
 
         loading = false
+    }
+
+
+    //TYPE
+    const toggleTypeBtn =
+        document.getElementById("toggle-type-btn");
+
+    const otherTypes =
+        document.getElementById("other-types");
+
+    if (toggleTypeBtn) {
+
+        toggleTypeBtn.addEventListener("click", () => {
+
+            otherTypes.classList.toggle("hidden");
+
+            toggleTypeBtn.textContent =
+                otherTypes.classList.contains("hidden")
+                    ? "▼ その他"
+                    : "▲ その他";
+
+        });
+
     }
 
     //

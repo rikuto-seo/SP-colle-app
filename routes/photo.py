@@ -33,6 +33,7 @@ def index(group_key):
     selected_member = request.args.get("member", "").strip()
     selected_costume = request.args.get("costume", "").strip()
     query = request.args.get("query", "").strip()
+    favorite_only = request.args.get("favorite") == "1"
 
     # =========================
     # Member × Costume 集計
@@ -90,6 +91,24 @@ def index(group_key):
                 Member.name.ilike(f"%{query}%"),
                 Costume.name.ilike(f"%{query}%")
             )
+        )
+
+    if favorite_only:
+
+        favorite_exists = (
+            db.session.query(UserPhoto.id)
+            .join(Photo, Photo.id == UserPhoto.photo_id)
+            .filter(
+                UserPhoto.user_id == current_user.id,
+                UserPhoto.is_favorite.is_(True),
+                Photo.member_id == Member.id,
+                Photo.costume_id == Costume.id
+            )
+            .exists()
+        )
+
+        summary_query = summary_query.filter(
+            favorite_exists
         )
 
     # =========================
@@ -251,6 +270,7 @@ def index(group_key):
         selected_member=selected_member,
         selected_costume=selected_costume,
         query=query,
+        favorite_only=favorite_only,
         current_url=request.full_path
     )
 

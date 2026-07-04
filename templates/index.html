@@ -49,6 +49,8 @@
 
           <input type="hidden" name="costume" id="costume-hidden" value="{{ selected_costume }}">
 
+          <input type="hidden" name="favorite" id="favorite-hidden" value="{{ favorite }}">
+
           <div class="row g-3">
 
             <div class="col-12 col-md-4">
@@ -64,6 +66,11 @@
             </div>
 
             <div class="col-12 d-flex gap-2">
+
+              <button type="button" id="favorite-btn"
+                class="btn {% if favorite %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                <i class="fa-solid fa-star"></i>
+              </button>
 
               <button type="submit" class="btn btn-outline-primary flex-fill">
                 <i class="fa-solid fa-magnifying-glass me-1"></i>
@@ -252,6 +259,23 @@
 
     const memberHidden = document.getElementById("member-hidden");
     const costumeHidden = document.getElementById("costume-hidden");
+
+    const favoriteHidden =
+      document.getElementById("favorite-hidden");
+
+    const favoriteBtn =
+      document.getElementById("favorite-btn");
+
+    favoriteBtn.addEventListener("click", () => {
+
+      favoriteHidden.value =
+        favoriteHidden.value === "1"
+          ? ""
+          : "1";
+
+      searchForm.submit();
+
+    });
 
     const selectedMember = "{{ selected_member }}";
     const selectedCostume = "{{ selected_costume }}";
