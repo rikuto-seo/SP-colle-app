@@ -17,16 +17,16 @@ user_bp = Blueprint('user', __name__)
 ALLOWED_GROUPS = ['nogizaka', 'sakurazaka', 'hinatazaka']
 
 def is_free():
-    return current_user.plan_type == "free"
+    return current_user.is_free()
 
 def is_lite():
-    return current_user.plan_type == "lite"
+    return current_user.is_lite()
 
 def is_standard():
-    return current_user.plan_type == "standard"
+    return current_user.is_standard()
 
 def is_premium():
-    return current_user.plan_type == "premium"
+    return current_user.is_premium()
 
 @user_bp.route("/mypage")
 @login_required
@@ -35,12 +35,15 @@ def mypage():
     current_user.normalize_groups()
     db.session.commit()
 
-    selected_groups = current_user.get_selected_groups()
+    selected_groups = current_user.get_accessible_group_keys()
 
     if not selected_groups:
         return redirect(url_for('user.select_group'))
 
-    if len(selected_groups) > current_user.get_allowed_group_count():
+    if (
+        not current_user.is_owner_account()
+        and len(current_user.get_selected_groups()) > current_user.get_allowed_group_count()
+    ):
         return redirect(url_for('user.force_group_select'))
 
     selected_group = request.args.get('group')
@@ -373,7 +376,7 @@ def upgrade():
         
     return render_template(
         'upgrade.html',
-        current_plan=current_user.plan_type,
+        current_plan=current_user.effective_plan_type,
         next_billing=next_billing,
         cancel_at_period_end=current_user.cancel_at_period_end
     )

@@ -48,14 +48,14 @@
               <div>
                 <span class="text-muted small">プラン：</span>
                 <span class="fw-bold">
-                  {% if current_user.plan_type == "free" %}
-                  無料
-                  {% elif current_user.plan_type == "lite" %}
-                  ライト
-                  {% elif current_user.plan_type == "standard" %}
-                  スタンダード
-                  {% else %}
+                  {% if current_user.is_premium() %}
                   SUPPORTER
+                  {% elif current_user.is_standard() %}
+                  スタンダード
+                  {% elif current_user.is_lite() %}
+                  ライト
+                  {% else %}
+                  無料
                   {% endif %}
                 </span>
               </div>
@@ -107,7 +107,7 @@
 
         <div class="d-flex flex-md-column gap-2 me-md-4 mb-3 mb-md-0">
           {% for key, name in group_names.items() %}
-          {% if key in selected_groups %}
+          {% if current_user.can_access_group(key) %}
           <button type="button" class="btn btn-outline-primary group-btn" data-group="{{ key }}">
             {{ name }}
           </button>

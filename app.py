@@ -176,11 +176,12 @@ def enforce_group_and_plan():
         return
 
     # ↓ 以下そのまま
-    selected = user.get_selected_groups() or []
-    allowed = user.get_allowed_group_count()
+    if not user.is_owner_account():
+        selected = user.get_selected_groups() or []
+        allowed = user.get_allowed_group_count()
 
-    if len(selected) != allowed:
-        return redirect(url_for("user.force_group_select"))
+        if len(selected) != allowed:
+            return redirect(url_for("user.force_group_select"))
 
     group_key = request.view_args.get("group_key") if request.view_args else None
 

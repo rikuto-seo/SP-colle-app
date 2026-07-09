@@ -137,17 +137,17 @@
                 <small class="text-muted">現在のプラン</small><br>
 
                 {% if current_user.is_authenticated %}
-                {% if current_user.plan_type == "free" %}
-                <span class="badge bg-secondary">無料</span>
+                {% if current_user.is_premium() %}
+                <span class="badge bg-danger">SUPPORTER</span>
 
-                {% elif current_user.plan_type == "lite" %}
-                <span class="badge bg-primary">ライト</span>
-
-                {% elif current_user.plan_type == "standard" %}
+                {% elif current_user.is_standard() %}
                 <span class="badge bg-warning text-dark">スタンダード</span>
 
-                {% elif current_user.plan_type == "premium" %}
-                <span class="badge bg-danger">SUPPORTER</span>
+                {% elif current_user.is_lite() %}
+                <span class="badge bg-primary">ライト</span>
+
+                {% else %}
+                <span class="badge bg-secondary">無料</span>
                 {% endif %}
 
                 <div class="mt-2">

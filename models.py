@@ -4,6 +4,9 @@ from datetime import datetime
 from flask_login import UserMixin
 from sqlalchemy import CheckConstraint, Index, event
 from extensions import db
+from config import OWNER_USER_ID
+
+GROUP_KEYS = ['nogizaka', 'sakurazaka', 'hinatazaka']
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
@@ -71,38 +74,62 @@ class User(UserMixin, db.Model):
     primary_group = db.Column(db.String(50), nullable=True)
     selected_groups = db.Column(db.String, default="")
 
+    def is_owner_account(self):
+        return self.id == OWNER_USER_ID
+
+    @property
+    def effective_plan_type(self):
+        if self.is_owner_account():
+            return "premium"
+        return self.plan_type
+
     def is_free(self):
+        if self.is_owner_account():
+            return False
         return self.plan_type == "free"
 
     def is_lite(self):
+        if self.is_owner_account():
+            return False
         return self.plan_type == "lite"
 
     def is_standard(self):
+        if self.is_owner_account():
+            return False
         return self.plan_type == "standard"
 
     def is_premium(self):
+        if self.is_owner_account():
+            return True
         return self.plan_type == "premium"
 
     def is_active_paid(self):
+        if self.is_owner_account():
+            return True
         return (
             self.plan_type != "free"
             and self.subscription_status == "active"
         )
 
     def can_use_unlimited_photos(self):
-        return self.plan_type != "free"
+        return self.is_owner_account() or self.plan_type != "free"
 
     def can_use_stats_detail(self):
-        return self.plan_type != "free"
+        return self.is_owner_account() or self.plan_type != "free"
 
     def can_upload_image(self):
-        return self.plan_type == "premium"
+        return self.is_owner_account() or self.plan_type == "premium"
 
     def can_use_multiple_groups(self):
-        return self.plan_type in ["standard", "premium"]
+        return self.is_owner_account() or self.plan_type in ["standard", "premium"]
 
     def can_use_all_groups(self):
-        return self.plan_type == "premium"
+        return self.is_owner_account() or self.plan_type == "premium"
+
+    def get_accessible_group_keys(self):
+        if self.can_use_all_groups():
+            return GROUP_KEYS
+        return self.get_selected_groups()
 
     def get_selected_groups(self):
         if not self.selected_groups:
@@ -114,6 +141,8 @@ class User(UserMixin, db.Model):
         self.selected_groups = ",".join(unique)
 
     def get_allowed_group_count(self):
+        if self.is_owner_account():
+            return len(GROUP_KEYS)
         if self.plan_type == "free":
             return 1
         elif self.plan_type == "lite":
@@ -128,7 +157,7 @@ class User(UserMixin, db.Model):
         if not group_key:
             return False
 
-        if self.is_premium():
+        if self.is_owner_account() or self.is_premium():
             return True
 
         return group_key in self.get_selected_groups()
