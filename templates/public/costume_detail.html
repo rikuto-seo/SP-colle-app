@@ -1,0 +1,102 @@
+{% extends "base_public.html" %}
+
+{% block title %}{{ costume.name }} | {{ group.name }} | SP Colle DB{% endblock %}
+{% block og_title %}{{ costume.name }} | {{ group.name }}{% endblock %}
+
+{% block content %}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('public_catalog.index') }}">グループ一覧</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('public_catalog.costume_list', group_key=group.key) }}">{{ group.name }}</a>
+        </li>
+        <li class="breadcrumb-item active">{{ costume.name }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
+    <h1 class="fw-bold mb-0">{{ costume.name }}</h1>
+
+    <span class="badge bg-primary fs-6">
+        {{ member_rows|length }}人 × {{ all_types|length }}種
+        (計{{ total_photos }}枚)
+    </span>
+</div>
+
+{% if member_rows|length == 0 %}
+
+<div class="text-center text-muted py-5">
+    この衣装はまだ写真が登録されていません。
+</div>
+
+{% else %}
+
+<div class="mb-3">
+    <input
+        type="text"
+        id="member-filter"
+        class="form-control"
+        placeholder="メンバー名で絞り込み"
+    >
+</div>
+
+<div class="table-responsive">
+    <table class="table table-bordered align-middle bg-white">
+        <thead class="table-light">
+            <tr>
+                <th style="min-width:140px;">メンバー</th>
+                {% for type_name in all_types %}
+                <th class="text-center">{{ type_name }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in member_rows %}
+            <tr class="member-row" data-member="{{ row.member.name|lower }}">
+                <td class="fw-medium">{{ row.member.name }}</td>
+
+                {% for type_name in all_types %}
+                <td class="text-center">
+                    {% if type_name in row.types %}
+                    <i class="fas fa-circle-check text-success"></i>
+                    {% else %}
+                    <span class="text-muted">―</span>
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endif %}
+
+<div class="alert alert-light border mt-4" style="font-size:.85rem;">
+    <i class="fas fa-flag text-danger"></i>
+    この衣装の参加メンバーや種類に誤り・抜けがある場合は
+    <a href="https://forms.gle/VVFdPDf6RpY6LEnu9" target="_blank">こちらから報告</a>
+    してください(「{{ costume.name }}」の名前を書いていただけると確認が早くなります)。
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const filterInput = document.getElementById('member-filter');
+
+    if (filterInput) {
+        filterInput.addEventListener('input', (e) => {
+            const keyword = e.target.value.toLowerCase();
+
+            document.querySelectorAll('.member-row').forEach(row => {
+                const visible = row.dataset.member.includes(keyword);
+                row.style.display = visible ? '' : 'none';
+            });
+        });
+    }
+</script>
+{% endblock %}

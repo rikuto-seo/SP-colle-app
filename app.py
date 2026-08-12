@@ -23,6 +23,7 @@ from trade.routes import trade_bp
 from routes.billing import billing_bp
 from routes.admin_photos import admin_photos_bp
 from flask import render_template
+from routes.public_catalog import public_catalog_bp
 
 app = Flask(__name__)
 app.permanent_session_lifetime = timedelta(minutes=60)
@@ -208,6 +209,7 @@ app.register_blueprint(user_bp)
 app.register_blueprint(trade_bp)
 app.register_blueprint(billing_bp)
 app.register_blueprint(admin_photos_bp)
+app.register_blueprint(public_catalog_bp)
 
 if __name__ == "__main__":
     app.run(debug=os.environ.get("FLASK_DEBUG") == "1")

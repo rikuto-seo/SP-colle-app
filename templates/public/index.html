@@ -1,0 +1,52 @@
+{% extends "base_public.html" %}
+
+{% block title %}生写真データベース | SP Colle{% endblock %}
+
+{% block content %}
+
+<div class="text-center py-5">
+    <h1 class="fw-bold mb-3">生写真データベース</h1>
+    <p class="text-muted">
+        衣装ごとの参加メンバー・種類(ヨリ/チュウ/ヒキ など)を、登録なしで検索できます。
+    </p>
+</div>
+
+<div class="alert alert-light border" style="font-size:.9rem;">
+    <i class="fas fa-circle-info text-primary"></i>
+    このデータベースは有志で構築中のため、まだ登録されていない衣装・メンバーがあります。
+    見つからない場合は
+    <a href="https://forms.gle/VVFdPDf6RpY6LEnu9" target="_blank"><span class="text-decoration-underline">こちらから</span>抜け報告</a>
+    いただけると助かります。
+</div>
+
+<div class="row g-4 mt-2">
+
+    {% for g in group_list %}
+    {% set card_class =
+        'bg-hinata' if g.key == 'hinatazaka'
+        else 'bg-sakura' if g.key == 'sakurazaka'
+        else 'bg-nogi' if g.key == 'nogizaka'
+        else 'bg-default' %}
+    {% set icon_color =
+        '#00bcd4' if g.key == 'hinatazaka'
+        else '#880e4f' if g.key == 'sakurazaka'
+        else '#6f42c1' if g.key == 'nogizaka'
+        else '#333' %}
+
+    <div class="col-md-4">
+        <a href="{{ url_for('public_catalog.costume_list', group_key=g.key) }}"
+           class="text-decoration-none">
+            <div class="card h-100 shadow-sm text-center py-5 border-0 {{ card_class }}">
+                <div class="card-body">
+                    <i class="fas fa-people-group fa-2x mb-3" style="color:{{ icon_color }};"></i>
+                    <h3 class="fw-bold text-dark">{{ g.name }}</h3>
+                    <p class="text-muted mb-0">衣装一覧を見る</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+
+</div>
+
+{% endblock %}

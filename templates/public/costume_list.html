@@ -1,0 +1,107 @@
+{% extends "base_public.html" %}
+
+{% block title %}{{ group.name }} 衣装一覧 | SP Colle DB{% endblock %}
+
+{% block content %}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('public_catalog.index') }}">グループ一覧</a>
+        </li>
+        <li class="breadcrumb-item active">{{ group.name }}</li>
+    </ol>
+</nav>
+
+<h1 class="fw-bold mb-4">{{ group.name }} 衣装一覧</h1>
+
+<form method="GET" class="mb-4">
+    <div class="input-group">
+        <input
+            type="text"
+            name="q"
+            value="{{ keyword }}"
+            class="form-control"
+            placeholder="衣装名で検索(例: 浴衣)"
+        >
+        <button class="btn btn-primary" type="submit">
+            <i class="fas fa-search"></i> 検索
+        </button>
+        {% if keyword %}
+        <a href="{{ url_for('public_catalog.costume_list', group_key=group.key) }}"
+           class="btn btn-outline-secondary">クリア</a>
+        {% endif %}
+    </div>
+</form>
+
+{% if costumes|length == 0 %}
+<div class="text-center text-muted py-5">
+    {% if keyword %}
+    「{{ keyword }}」に一致する衣装が見つかりませんでした。
+    <br>
+    まだ登録されていない可能性があります。
+    <a href="https://forms.gle/VVFdPDf6RpY6LEnu9" target="_blank">抜け報告</a>
+    から教えていただけると助かります。
+    {% else %}
+    衣装が登録されていません。
+    {% endif %}
+</div>
+{% else %}
+
+<div class="list-group mb-4">
+
+    {% for costume in costumes %}
+    {% set stats = stats_map.get(costume.id) %}
+
+    <a href="{{ url_for('public_catalog.costume_detail', group_key=group.key, costume_id=costume.id) }}"
+       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
+
+        <span class="fw-medium">{{ costume.name }}</span>
+
+        {% if stats %}
+        <span class="badge bg-light text-dark border">
+            {{ stats.member_count }}人 × {{ stats.type_count }}種
+        </span>
+        {% else %}
+        <span class="badge bg-warning text-dark">
+            未登録
+        </span>
+        {% endif %}
+
+    </a>
+    {% endfor %}
+
+</div>
+
+<!-- PAGINATION -->
+{% if pagination.pages > 1 %}
+<nav>
+    <ul class="pagination justify-content-center">
+
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+            <a class="page-link"
+               href="{{ url_for('public_catalog.costume_list', group_key=group.key, q=keyword, page=pagination.prev_num) }}">
+                前へ
+            </a>
+        </li>
+
+        <li class="page-item disabled">
+            <span class="page-link">
+                {{ pagination.page }} / {{ pagination.pages }}
+            </span>
+        </li>
+
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+            <a class="page-link"
+               href="{{ url_for('public_catalog.costume_list', group_key=group.key, q=keyword, page=pagination.next_num) }}">
+                次へ
+            </a>
+        </li>
+
+    </ul>
+</nav>
+{% endif %}
+
+{% endif %}
+
+{% endblock %}
