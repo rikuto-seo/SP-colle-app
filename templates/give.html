@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}へらす{% endblock %}
+{% block content %}
+<div class="container mt-5">
+  <div class="text-center mb-4">
+    <h1 class="display-5 fw-bold text-body p-3 rounded section-title">生写真をへらす</h1>
+    <p class="text-muted mb-0">所持している生写真から、へらす生写真を選択してください。</p>
+  </div>
+  <div class="card shadow-sm bg-body text-body"><div class="card-body">
+    <form method="post" id="give-form" action="{{ url_for('photo.give', group_key=group_key) }}">
+      {{ form.hidden_tag() }}
+      <input type="hidden" id="group_key" value="{{ group_key }}">
+      <div class="row g-4">
+        <div class="col-md-4">{{ form.member.label(class="form-label") }}{{ form.member(id="member") }}</div>
+        <div class="col-md-4">{{ form.costume.label(class="form-label") }}{{ form.costume(id="costume") }}</div>
+        <div class="col-md-4">{{ form.photo_type.label(class="form-label") }}{{ form.photo_type(id="photo_type") }}</div>
+        <div class="col-md-4">{{ form.quantity.label(class="form-label") }}{{ form.quantity(class="form-control", min="1") }}</div>
+        <div class="col-12 text-center mt-3">{{ form.submit(class="btn btn-danger px-5 py-2") }}</div>
+      </div>
+    </form>
+  </div></div>
+</div>
+<div class="modal fade" id="giveConfirmModal" tabindex="-1" aria-labelledby="giveConfirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="giveConfirmModalLabel">生写真をへらしますか？</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-2">次の生写真を所持リストからへらします。</p>
+        <div id="give-confirmation-details" class="alert alert-warning mb-0"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+        <button type="button" class="btn btn-danger" id="confirm-give-button">へらす</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const groupKey = document.getElementById('group_key').value;
+  const member = new TomSelect('#member', { create: false, maxItems: 1, placeholder: 'メンバーを選択' });
+  const costume = new TomSelect('#costume', { create: false, maxItems: 1, placeholder: '衣装を選択' });
+  const photoType = new TomSelect('#photo_type', { create: false, maxItems: 1, placeholder: '種類を選択' });
+  const form = document.getElementById('give-form');
+  const quantity = document.getElementById('quantity');
+  const details = document.getElementById('give-confirmation-details');
+  const confirmModal = new bootstrap.Modal(document.getElementById('giveConfirmModal'));
+  const reset = (select, placeholder) => {
+    select.clear();
+    select.clearOptions();
+    select.settings.placeholder = placeholder;
+    select.disable();
+  };
+  const populate = (select, values, placeholder) => {
+    select.clear();
+    select.clearOptions();
+    select.settings.placeholder = placeholder;
+    values.forEach(value => select.addOption({ value, text: value }));
+    if (values.length) select.enable(); else select.disable();
+    select.refreshOptions(false);
+  };
+  const load = url => fetch(url).then(response => response.ok ? response.json() : Promise.reject());
+  reset(member, 'メンバーを選択'); reset(costume, '衣装を選択'); reset(photoType, '種類を選択');
+  load(`/get_owned_members?group=${encodeURIComponent(groupKey)}`)
+    .then(data => populate(member, data.members, 'メンバーを選択'))
+    .catch(() => reset(member, '読み込みに失敗しました'));
+  member.on('change', () => {
+    reset(costume, '衣装を選択'); reset(photoType, '種類を選択');
+    if (!member.getValue()) return;
+    load(`/get_owned_costumes?group=${encodeURIComponent(groupKey)}&member=${encodeURIComponent(member.getValue())}`)
+      .then(data => populate(costume, data.costumes, '衣装を選択'))
+      .catch(() => reset(costume, '読み込みに失敗しました'));
+  });
+  costume.on('change', () => {
+    reset(photoType, '種類を選択');
+    if (!member.getValue() || !costume.getValue()) return;
+    load(`/get_owned_types?group=${encodeURIComponent(groupKey)}&member=${encodeURIComponent(member.getValue())}&costume=${encodeURIComponent(costume.getValue())}`)
+      .then(data => populate(photoType, data.types, '種類を選択'))
+      .catch(() => reset(photoType, '読み込みに失敗しました'));
+  });
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+    details.textContent = `${member.getValue()} / ${costume.getValue()} / ${photoType.getValue()} ： ${quantity.value}枚`;
+    confirmModal.show();
+  });
+  document.getElementById('confirm-give-button').addEventListener('click', () => {
+    HTMLFormElement.prototype.submit.call(form);
+  });
+});
+</script>
+{% endblock %}

@@ -66,6 +66,64 @@ def get_types(group_id, member_name, costume_name):
     return sorted({t for (t,) in rows})
 
 
+def get_owned_members(user_id, group_id):
+    rows = (
+        db.session.query(Member)
+        .select_from(UserPhoto)
+        .join(Photo, Photo.id == UserPhoto.photo_id)
+        .join(Member, Member.id == Photo.member_id)
+        .filter(
+            UserPhoto.user_id == user_id,
+            UserPhoto.quantity > 0,
+            Member.group_id == group_id
+        )
+        .distinct()
+        .order_by(Member.generation, Member.display_order)
+        .all()
+    )
+    return [member.name for member in rows]
+
+
+def get_owned_costumes(user_id, group_id, member_name):
+    rows = (
+        db.session.query(Costume.name)
+        .select_from(UserPhoto)
+        .join(Photo, Photo.id == UserPhoto.photo_id)
+        .join(Member, Member.id == Photo.member_id)
+        .join(Costume, Costume.id == Photo.costume_id)
+        .filter(
+            UserPhoto.user_id == user_id,
+            UserPhoto.quantity > 0,
+            Member.group_id == group_id,
+            Member.name == member_name
+        )
+        .distinct()
+        .all()
+    )
+    return sorted({costume for (costume,) in rows})
+
+
+def get_owned_types(user_id, group_id, member_name, costume_name):
+    rows = (
+        db.session.query(PhotoType.name)
+        .select_from(UserPhoto)
+        .join(Photo, Photo.id == UserPhoto.photo_id)
+        .join(Member, Member.id == Photo.member_id)
+        .join(Costume, Costume.id == Photo.costume_id)
+        .join(PhotoType, PhotoType.id == Photo.type_id)
+        .filter(
+            UserPhoto.user_id == user_id,
+            UserPhoto.quantity > 0,
+            Member.group_id == group_id,
+            Member.name == member_name,
+            Costume.name == costume_name
+        )
+        .distinct()
+        .all()
+    )
+    return sorted({photo_type for (photo_type,) in rows})
+
+
 def get_missing_photos(user_id, group_id):
     rows = (
         db.session.query(

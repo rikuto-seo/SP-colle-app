@@ -4,6 +4,20 @@ from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms import SubmitField, TextAreaField, StringField, PasswordField, SelectField, IntegerField, DateField
 from wtforms.validators import DataRequired, NumberRange, Optional, Email, Length
 
+
+class GiveawayPhotoForm(FlaskForm):
+    member = SelectField('メンバー', choices=[], validate_choice=False,
+                         validators=[DataRequired(message='メンバーを選択してください。')])
+    costume = SelectField('衣装', choices=[], validate_choice=False,
+                          validators=[DataRequired(message='衣装を選択してください。')])
+    photo_type = SelectField('種類', choices=[], validate_choice=False,
+                             validators=[DataRequired(message='種類を選択してください。')])
+    quantity = IntegerField('枚数', default=1, validators=[
+        DataRequired(message='枚数を入力してください。'),
+        NumberRange(min=1, message='枚数は1枚以上で入力してください。')
+    ])
+    submit = SubmitField('へらす')
+
 class IconUploadForm(FlaskForm):
     icon = FileField('アイコン画像', validators=[
         FileRequired(),

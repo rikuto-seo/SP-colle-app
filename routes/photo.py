@@ -405,6 +405,64 @@ def add(group_key):
     )
 
 
+@photo_bp.route('/give/<group_key>', methods=['GET', 'POST'])
+@login_required
+@group_required
+def give(group_key):
+    group = Group.query.filter_by(key=group_key).first_or_404()
+
+    from forms import GiveawayPhotoForm
+    form = GiveawayPhotoForm()
+
+    if form.validate_on_submit():
+        user_photo = (
+            db.session.query(UserPhoto)
+            .join(Photo, Photo.id == UserPhoto.photo_id)
+            .join(Member, Member.id == Photo.member_id)
+            .join(Costume, Costume.id == Photo.costume_id)
+            .join(PhotoType, PhotoType.id == Photo.type_id)
+            .filter(
+                UserPhoto.user_id == current_user.id,
+                Member.group_id == group.id,
+                Member.name == form.member.data,
+                Costume.name == form.costume.data,
+                PhotoType.name == form.photo_type.data
+            )
+            .first()
+        )
+
+        if not user_photo or user_photo.quantity < form.quantity.data:
+            flash('所持していない写真、または所持枚数を超える枚数はあげられません。', 'error')
+            return redirect(url_for('photo.give', group_key=group_key))
+
+        user_photo.quantity -= form.quantity.data
+        user_photo.available_quantity = min(
+            user_photo.available_quantity,
+            user_photo.quantity
+        )
+
+        if user_photo.quantity == 0:
+            db.session.delete(user_photo)
+
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            current_app.logger.exception('Failed to give away photo')
+            flash('生写真をあげる処理に失敗しました。', 'error')
+            return redirect(url_for('photo.give', group_key=group_key))
+
+        flash('生写真をあげました。', 'success')
+        return redirect(url_for('photo.index', group_key=group_key))
+
+    if request.method == 'POST':
+        for errors in form.errors.values():
+            for error in errors:
+                flash(error, 'error')
+
+    return render_template('give.html', form=form, group_key=group_key)
+
+
 @photo_bp.route('/get_members')
 @login_required
 def get_members():
@@ -444,6 +502,51 @@ def get_types():
 
     from services.photo_service import get_types
     return jsonify({"types": get_types(g.id, member, costume)})
+
+
+def _owned_group_from_request():
+    group_key = request.args.get('group')
+    group = Group.query.filter_by(key=group_key).first()
+    if not group:
+        abort(404)
+    if not current_user.can_access_group(group_key):
+        abort(403)
+    return group
+
+
+@photo_bp.route('/get_owned_members')
+@login_required
+def get_owned_members():
+    group = _owned_group_from_request()
+    from services.photo_service import get_owned_members as find_owned_members
+    return jsonify({'members': find_owned_members(current_user.id, group.id)})
+
+
+@photo_bp.route('/get_owned_costumes')
+@login_required
+def get_owned_costumes():
+    group = _owned_group_from_request()
+    member = request.args.get('member', '').strip()
+    if not member:
+        return jsonify({'costumes': []})
+    from services.photo_service import get_owned_costumes as find_owned_costumes
+    return jsonify({
+        'costumes': find_owned_costumes(current_user.id, group.id, member)
+    })
+
+
+@photo_bp.route('/get_owned_types')
+@login_required
+def get_owned_types():
+    group = _owned_group_from_request()
+    member = request.args.get('member', '').strip()
+    costume = request.args.get('costume', '').strip()
+    if not member or not costume:
+        return jsonify({'types': []})
+    from services.photo_service import get_owned_types as find_owned_types
+    return jsonify({
+        'types': find_owned_types(current_user.id, group.id, member, costume)
+    })
 
 
 @photo_bp.route('/update_user_photo/<group_key>/<int:photo_id>', methods=['POST'])

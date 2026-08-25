@@ -82,6 +82,9 @@
             <a href="{{ url_for('photo.add', group_key=group_key) }}">
                 <i class="fas fa-plus-circle"></i> 新規追加
             </a>
+            <a href="{{ url_for('photo.give', group_key=group_key) }}">
+                <i class="fas fa-minus-circle"></i> へらす
+            </a>
             <a href="{{ url_for('stats.stats', group_key=group_key) }}">
                 <i class="fas fa-chart-bar"></i> 統計を見る
             </a>
