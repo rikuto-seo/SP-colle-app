@@ -12,6 +12,9 @@ photo_type 正規化ユーティリティ
 from typing import Dict
 
 
+NORMALIZED_TYPES = ("ヨリ", "チュウ", "ヒキ", "座り")
+
+
 # -----------------------------
 # 衣装別 type 変換マップ
 # -----------------------------
@@ -430,8 +433,17 @@ def normalize_type(member: str, costume: str, photo_type: str) -> str:
     # 衣装単位でマッピング取得
     mapping = TYPE_NORMALIZATION_MAP.get(costume)
 
-    if mapping:
-        return mapping.get(photo_type, photo_type)
+    if mapping and photo_type in mapping:
+        return mapping[photo_type]
 
-    # マッピング未定義ならそのまま返す
+    # すでに正規化済みの値はそのまま返す
+    if photo_type in NORMALIZED_TYPES:
+        return photo_type
+
+    # 今後追加される「ヨリ（衣装名）」のような表記を自動で正規化する
+    for normalized_type in NORMALIZED_TYPES:
+        if normalized_type in photo_type:
+            return normalized_type
+
+    # 判定できない値はそのまま返す
     return photo_type
