@@ -1,12 +1,8 @@
 {% extends "base.html" %}
+
 {% block title %}{{ group_name }} 統計情報{% endblock %}
 
 {% block content %}
-
-<!--
-  {% set has_paid_plan = current_user.is_lite() or current_user.is_standard() or current_user.is_premium() %}
-  {% set is_premium = current_user.is_premium() %}
-  {% set is_locked = (not current_user.can_access_group(group_key)) or (not has_paid_plan) %}-->
 
 <div class="text-center mb-4">
   <h1 class="display-5 fw-bold text-black p-3 rounded section-title">
@@ -18,197 +14,382 @@
   ※本ページの統計データはユーザー投稿および管理者の収集状況に基づいており、完全性・正確性を保証するものではありません。
 </div>
 
+<!-- ============================================================
+     基本統計
+     ============================================================ -->
+
 <div class="row mb-4">
   <div class="col-12">
     <div class="card shadow-sm text-center">
       <div class="card-body">
-        <h5 class="card-title text-muted">総所持枚数</h5>
-        <h2 class="fw-bold text-primary mb-1">
-          {{ stats_owned }} 枚
-        </h2>
-        <div class="text-muted small">
-          総コンプ数：
-          <span class="fw-semibold text-success">
-            {{ total_complete }}
-          </span>
-        </div>
-      </div>
+
+    <h5 class="card-title text-muted">
+      総所持枚数
+    </h5>
+
+    <h2 class="fw-bold text-primary mb-1">
+      {{ stats_owned }} 枚
+    </h2>
+
+    <div class="text-muted small">
+      総コンプ数：
+      <span class="fw-semibold text-success">
+        {{ total_complete }}
+      </span>
     </div>
+
   </div>
 </div>
 
-<!--
-  {% if is_locked %}
-  <div class="alert alert-warning mt-3">
-    <i class="fa-solid fa-lock"></i> 詳細な統計情報の閲覧にはプランのアップグレードが必要です
-    <br>
-    <a href="{{ url_for('user.upgrade') }}" class="btn btn-warning btn-sm mt-2">
-      プランをアップグレード
-    </a>
   </div>
-  {% endif %}
+</div>
 
-
-  <div style="{% if is_locked %}filter: blur(8px); pointer-events:none; user-select:none;{% endif %}">
-  -->
+<!-- ============================================================
+     統計アコーディオン
+     ============================================================ -->
 
 <div class="accordion" id="statsAccordion">
 
-  <!-- コンプランキング -->
+  <!-- ==========================================================
+       コンプランキング
+       ========================================================== -->
+
   <div class="accordion-item">
-    <h2 class="accordion-header">
-      <button class="accordion-button" data-bs-toggle="collapse" data-bs-target="#compRanking">
-        <i class="fa-solid fa-trophy text-danger me-2"></i> コンプランキング
-      </button>
-    </h2>
-    <div id="compRanking" class="accordion-collapse collapse show">
-      <div class="accordion-body">
-        {% if comp_ranking %}
-        <ol class="list-group list-group-numbered">
-          {% for entry in comp_ranking %}
-          <li class="list-group-item d-flex justify-content-between align-items-center">
-            {{ entry.member }}
-            <span class="badge bg-danger rounded-pill">{{ entry.complete_count }}</span>
-          </li>
-          {% endfor %}
-        </ol>
-        {% else %}
-        <p class="text-muted">ランキングデータがありません。</p>
-        {% endif %}
-      </div>
-    </div>
+
+
+<h2 class="accordion-header">
+
+  <button
+    class="accordion-button"
+    type="button"
+    data-bs-toggle="collapse"
+    data-bs-target="#compRanking"
+  >
+    <i class="fa-solid fa-trophy text-danger me-2"></i>
+    コンプランキング
+  </button>
+
+</h2>
+
+<div
+  id="compRanking"
+  class="accordion-collapse collapse show"
+>
+
+  <div class="accordion-body">
+
+    {% if comp_ranking %}
+
+    <ol class="list-group list-group-numbered">
+
+      {% for entry in comp_ranking %}
+
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+
+        {{ entry.member }}
+
+        <span class="badge bg-danger rounded-pill">
+          {{ entry.complete_count }}
+        </span>
+
+      </li>
+
+      {% endfor %}
+
+    </ol>
+
+    {% else %}
+
+    <p class="text-muted">
+      ランキングデータがありません。
+    </p>
+
+    {% endif %}
+
   </div>
 
-  <!-- メンバー別所持数 -->
-  <div class="accordion-item">
-    <h2 class="accordion-header">
-      <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#memberStats">
-        <i class="fa-solid fa-user text-primary me-2"></i> メンバー別所持数
-      </button>
-    </h2>
-    <div id="memberStats" class="accordion-collapse collapse">
-      <div class="accordion-body">
+</div>
 
-        {% if member_stats %}
-        <ul class="list-group list-group-flush">
-          {% for member, count in member_stats %}
-          <li class="list-group-item d-flex justify-content-between align-items-center">
+
+  </div>
+
+  <!-- ==========================================================
+       メンバー別所持数
+       ========================================================== -->
+
+  <div class="accordion-item">
+
+
+<h2 class="accordion-header">
+
+  <button
+    class="accordion-button collapsed"
+    type="button"
+    data-bs-toggle="collapse"
+    data-bs-target="#memberStats"
+  >
+    <i class="fa-solid fa-user text-primary me-2"></i>
+    メンバー別所持数
+  </button>
+
+</h2>
+
+<div
+  id="memberStats"
+  class="accordion-collapse collapse"
+>
+
+  <div class="accordion-body">
+
+    {% if member_stats %}
+
+    <ul class="list-group list-group-flush">
+
+      {% for member, count in member_stats %}
+
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+
+        {{ member }}
+
+        <span class="badge bg-primary rounded-pill">
+          {{ count }}枚
+        </span>
+
+      </li>
+
+      {% endfor %}
+
+    </ul>
+
+    {% else %}
+
+    <p class="text-muted">
+      データがありません。
+    </p>
+
+    {% endif %}
+
+  </div>
+
+</div>
+
+
+  </div>
+
+  <!-- ==========================================================
+       メンバー別グラフ
+       ※プラン制限なし
+       ========================================================== -->
+
+  <div class="accordion-item">
+
+
+<h2 class="accordion-header">
+
+  <button
+    class="accordion-button collapsed"
+    type="button"
+    data-bs-toggle="collapse"
+    data-bs-target="#memberGraph"
+  >
+    <i class="fa-solid fa-chart-bar text-info me-2"></i>
+    メンバー別グラフ
+  </button>
+
+</h2>
+
+<div
+  id="memberGraph"
+  class="accordion-collapse collapse"
+>
+
+  <div class="accordion-body">
+
+    {% if member_stats_sorted %}
+
+    <div
+      style="height: {{ member_stats_sorted|length * 20 }}px;"
+    >
+      <canvas id="memberChart"></canvas>
+    </div>
+
+    {% else %}
+
+    <p class="text-muted">
+      データがありません。
+    </p>
+
+    {% endif %}
+
+  </div>
+
+</div>
+
+
+  </div>
+
+  <!-- ==========================================================
+       種類別所持数
+       ========================================================== -->
+
+  <div class="accordion-item">
+
+
+<h2 class="accordion-header">
+
+  <button
+    class="accordion-button collapsed"
+    type="button"
+    data-bs-toggle="collapse"
+    data-bs-target="#typeStats"
+  >
+    <i class="fa-solid fa-layer-group text-success me-2"></i>
+    種類別所持数
+  </button>
+
+</h2>
+
+<div
+  id="typeStats"
+  class="accordion-collapse collapse"
+>
+
+  <div class="accordion-body">
+
+    {% if type_stats %}
+
+    <ul class="list-group list-group-flush">
+
+      {% for type, count in type_stats %}
+
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+
+        {{ type }}
+
+        <span class="badge bg-success rounded-pill">
+          {{ count }}枚
+        </span>
+
+      </li>
+
+      {% endfor %}
+
+    </ul>
+
+    {% else %}
+
+    <p class="text-muted">
+      データがありません。
+    </p>
+
+    {% endif %}
+
+  </div>
+
+</div>
+
+
+  </div>
+
+  <!-- ==========================================================
+       メンバー別コンプ状況
+       ========================================================== -->
+
+  <div class="accordion-item">
+
+
+<h2 class="accordion-header">
+
+  <button
+    class="accordion-button collapsed"
+    type="button"
+    data-bs-toggle="collapse"
+    data-bs-target="#compStats"
+  >
+    <i class="fa-solid fa-list-check text-warning me-2"></i>
+    メンバー別コンプ状況
+  </button>
+
+</h2>
+
+<div
+  id="compStats"
+  class="accordion-collapse collapse"
+>
+
+  <div class="accordion-body">
+
+    <div
+      class="accordion"
+      id="innerAccordion"
+    >
+
+      {% for member in ordered_members %}
+
+      <div class="accordion-item">
+
+        <h2 class="accordion-header">
+
+          <button
+            class="accordion-button collapsed member-button"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#member-{{ loop.index }}"
+            data-member="{{ member }}"
+          >
             {{ member }}
-            <span class="badge bg-primary rounded-pill">{{ count }}枚</span>
-          </li>
-          {% endfor %}
-        </ul>
-        {% else %}
-        <p class="text-muted">データがありません。</p>
-        {% endif %}
+          </button>
 
-      </div>
-    </div>
-  </div>
+        </h2>
 
-  <!-- ★ グラフ専用（新規）
-    <div class="accordion-item">
-      <h2 class="accordion-header">
-        <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#memberGraph">
-          <i class="fa-solid fa-chart-bar text-info me-2"></i> メンバー別グラフ
-        </button>
-      </h2>
-      <div id="memberGraph" class="accordion-collapse collapse">
-        <div class="accordion-body">
+        <div
+          id="member-{{ loop.index }}"
+          class="accordion-collapse collapse"
+        >
 
-          {% if is_premium and member_stats_sorted %}
-          <div style="height: {{ member_stats_sorted|length * 20 }}px;">
-            <canvas id="memberChart"></canvas>
-          </div>
-          {% else %}
-          <p class="text-muted">プレミアムプラン限定機能です。</p>
-          {% endif %}
+          <div class="accordion-body">
 
-        </div>
-      </div>
-    </div>
-  -->
-
-  <!-- 種類別 -->
-  <div class="accordion-item">
-    <h2 class="accordion-header">
-      <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#typeStats">
-        <i class="fa-solid fa-layer-group text-success me-2"></i> 種類別所持数
-      </button>
-    </h2>
-    <div id="typeStats" class="accordion-collapse collapse">
-      <div class="accordion-body">
-        {% if type_stats %}
-        <ul class="list-group list-group-flush">
-          {% for type, count in type_stats %}
-          <li class="list-group-item d-flex justify-content-between align-items-center">
-            {{ type }}
-            <span class="badge bg-success rounded-pill">{{ count }}枚</span>
-          </li>
-          {% endfor %}
-        </ul>
-        {% else %}
-        <p class="text-muted">データがありません。</p>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-
-  <!-- コンプ詳細 -->
-  <div class="accordion-item">
-    <h2 class="accordion-header">
-      <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#compStats">
-        <i class="fa-solid fa-list-check text-warning me-2"></i> メンバー別コンプ状況
-      </button>
-    </h2>
-    <div id="compStats" class="accordion-collapse collapse">
-      <div class="accordion-body">
-
-        <div class="accordion" id="innerAccordion">
-
-          {% for member in ordered_members %}
-          <div class="accordion-item">
-
-            <h2 class="accordion-header">
-              <button class="accordion-button collapsed member-button" data-bs-toggle="collapse"
-                data-bs-target="#member-{{ loop.index }}" data-member="{{ member }}">
-
-                {{ member }}
-              </button>
-            </h2>
-
-            <div id="member-{{ loop.index }}" class="accordion-collapse collapse">
-
-              <div class="accordion-body">
-
-                <div class="loading text-muted d-none">
-                  読み込み中...
-                </div>
-
-                <div class="member-content"></div>
-
-              </div>
-
+            <div class="loading text-muted d-none">
+              読み込み中...
             </div>
 
+            <div class="member-content"></div>
+
           </div>
-          {% endfor %}
 
         </div>
+
       </div>
+
+      {% endfor %}
+
     </div>
+
   </div>
+
 </div>
+
+
+  </div>
+
+</div>
+
+<!-- ============================================================
+     Chart.js
+     ============================================================ -->
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!--{% if is_premium and member_stats_sorted %}
+{% if member_stats_sorted %}
+
 <script>
+
   const labels = [
     {% for member, count in member_stats_sorted %}
       "{{ member }}",
     {% endfor %}
   ];
+
 
   const data = [
     {% for member, count in member_stats_sorted %}
@@ -216,147 +397,248 @@
     {% endfor %}
   ];
 
-  // ★ 色を自動生成
-  const colors = labels.map((_, i) => {
-    const hue = i * 360 / labels.length;
+
+  // メンバーごとに色を自動生成
+  const colors = labels.map((_, index) => {
+
+    const hue = index * 360 / labels.length;
+
     return `hsl(${hue}, 70%, 60%)`;
+
   });
 
-  const ctx = document.getElementById('memberChart').getContext('2d');
 
-  new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [{
-        data: data,
-        backgroundColor: colors,  // ←ここ追加
-        barThickness: 6
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: false
-        }
-      },
-      scales: {
-        x: {
-          beginAtZero: true
-        },
-        y: {
-          ticks: {
-            font: {
-              size: 10
-            }
+  const canvas = document.getElementById("memberChart");
+
+
+  if (canvas) {
+
+    const ctx = canvas.getContext("2d");
+
+
+    new Chart(ctx, {
+
+      type: "bar",
+
+      data: {
+
+        labels: labels,
+
+        datasets: [
+
+          {
+
+            data: data,
+
+            backgroundColor: colors,
+
+            barThickness: 6
+
           }
+
+        ]
+
+      },
+
+
+      options: {
+
+        indexAxis: "y",
+
+        responsive: true,
+
+        maintainAspectRatio: false,
+
+
+        plugins: {
+
+          legend: {
+
+            display: false
+
+          }
+
+        },
+
+
+        scales: {
+
+          x: {
+
+            beginAtZero: true
+
+          },
+
+
+          y: {
+
+            ticks: {
+
+              font: {
+
+                size: 10
+
+              }
+
+            }
+
+          }
+
         }
-      }
-    }
-  });
-</script>
-{% endif %}-->
-
-<script>
-  document.querySelectorAll(".member-button").forEach(button => {
-
-    let loaded = false;
-
-    button.addEventListener("click", async function () {
-
-      if (loaded) return;
-
-      const member = this.dataset.member;
-
-      const body = this
-        .closest(".accordion-item")
-        .querySelector(".accordion-body");
-
-      const content = body.querySelector(".member-content");
-      const loading = body.querySelector(".loading");
-
-      // 読み込み表示
-      loading.classList.remove("d-none");
-
-      try {
-
-        const res = await fetch(
-          `/stats/member/{{ group_key }}/${encodeURIComponent(member)}`
-        );
-
-        if (!res.ok) {
-          throw new Error("API Error");
-        }
-
-        const data = await res.json();
-
-        let html = "";
-
-        if (data.length === 0) {
-
-          html = `
-            <p class="text-muted">
-              データがありません。
-            </p>
-          `;
-
-        } else {
-
-          html = '<ul class="list-group">';
-
-          data.forEach(item => {
-
-            const badge = item.is_complete
-              ? "bg-success"
-              : "bg-secondary";
-
-            const text = item.is_complete
-              ? "コンプ"
-              : "未コンプ";
-
-            html += `
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                ${item.costume}
-                <span>
-                  ${item.owned}/${item.total}
-                  <span class="badge ${badge}">
-                    ${text}
-                  </span>
-                </span>
-              </li>
-            `;
-          });
-
-          html += "</ul>";
-        }
-
-        content.innerHTML = html;
-
-        // 一度取得したら再取得しない
-        loaded = true;
-
-      } catch (error) {
-
-        console.error(error);
-
-        content.innerHTML = `
-          <p class="text-danger">
-            読み込みに失敗しました。
-          </p>
-        `;
-
-      } finally {
-
-        // 成功・失敗に関係なく非表示
-        loading.classList.add("d-none");
 
       }
 
     });
 
-  });
+  }
+
 </script>
+
+{% endif %}
+
+<!-- ============================================================
+     メンバー別コンプ状況 AJAX
+     ============================================================ -->
+
+<script>
+
+  document
+    .querySelectorAll(".member-button")
+    .forEach(button => {
+
+      let loaded = false;
+
+
+      button.addEventListener("click", async function () {
+
+        // すでに読み込み済みなら再取得しない
+        if (loaded) {
+          return;
+        }
+
+
+        const member = this.dataset.member;
+
+
+        const body = this
+          .closest(".accordion-item")
+          .querySelector(".accordion-body");
+
+
+        const content = body.querySelector(".member-content");
+
+        const loading = body.querySelector(".loading");
+
+
+        // 読み込み表示
+        loading.classList.remove("d-none");
+
+
+        try {
+
+          const res = await fetch(
+            `/stats/member/{{ group_key }}/${encodeURIComponent(member)}`
+          );
+
+
+          if (!res.ok) {
+            throw new Error("API Error");
+          }
+
+
+          const data = await res.json();
+
+
+          let html = "";
+
+
+          // データなし
+          if (data.length === 0) {
+
+            html = `
+              <p class="text-muted">
+                データがありません。
+              </p>
+            `;
+
+          }
+
+
+          // データあり
+          else {
+
+            html = '<ul class="list-group">';
+
+
+            data.forEach(item => {
+
+              const badge = item.is_complete
+                ? "bg-success"
+                : "bg-secondary";
+
+
+              const text = item.is_complete
+                ? "コンプ"
+                : "未コンプ";
+
+
+              html += `
+
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+
+                  ${item.costume}
+
+                  <span>
+
+                    ${item.owned}/${item.total}
+
+                    <span class="badge ${badge}">
+                      ${text}
+                    </span>
+
+                  </span>
+
+                </li>
+
+              `;
+
+            });
+
+
+            html += "</ul>";
+
+          }
+
+
+          content.innerHTML = html;
+
+
+          // 一度取得したら再取得しない
+          loaded = true;
+
+
+        } catch (error) {
+
+          console.error(error);
+
+
+          content.innerHTML = `
+            <p class="text-danger">
+              読み込みに失敗しました。
+            </p>
+          `;
+
+        } finally {
+
+          // 成功・失敗に関係なく読み込み表示を非表示
+          loading.classList.add("d-none");
+
+        }
+
+      });
+
+    });
+
+</script>
+
 {% endblock %}
