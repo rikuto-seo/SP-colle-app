@@ -1,83 +1,188 @@
+<!-- templates/index.html -->
+
 {% extends "base.html" %}
 
 {% block title %}生写真一覧{% endblock %}
 
 {% block content %}
+
 <div class="container mt-4">
 
-  <!--
-  {% set is_free = current_user.plan_type == "free" %}
-  {% set is_search_locked = is_free %}
--->
-
   <div class="text-center mb-3">
-    <h1 class="fw-bold text-body p-2 rounded section-title">生写真一覧</h1>
+    <h1 class="fw-bold text-body p-2 rounded section-title">
+      生写真一覧
+    </h1>
   </div>
+
+
+  <!-- =========================
+       検索
+  ========================== -->
 
   <div class="col-12 position-relative">
 
     <div class="card shadow-sm bg-body text-body position-relative">
 
-      <!--
-      {% if is_search_locked %}
-      <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
-        style="background: rgba(255,255,255,0.6); z-index:10; backdrop-filter: blur(2px);">
-
-        <div class="text-center p-3 bg-white rounded shadow">
-          <h6 class="fw-bold mb-1">
-            <i class="fa-solid fa-lock me-1"></i> プレミアム機能
-          </h6>
-          <p class="text-muted small mb-2">
-            検索・メンバー・衣装フィルターはアップグレードで解放されます
-          </p>
-          <a href="{{ url_for('user.upgrade') }}" class="btn btn-warning btn-sm">
-            アップグレード
-          </a>
-        </div>
-
-      </div>
-      {% endif %}
-      <div class="card-body p-3"
-        style="{% if is_search_locked %}filter: blur(6px); pointer-events:none; user-select:none;{% endif %}">
-    -->
-
       <div class="card-body">
 
-        <form id="searchForm" method="get" action="{{ url_for('photo.index', group_key=group_key) }}">
+        <form
+          id="searchForm"
+          method="get"
+          action="{{ url_for('photo.index', group_key=group_key) }}"
+        >
 
-          <input type="hidden" name="member" id="member-hidden" value="{{ selected_member }}">
+          <input
+            type="hidden"
+            name="member"
+            id="member-hidden"
+            value="{{ selected_member }}"
+          >
 
-          <input type="hidden" name="costume" id="costume-hidden" value="{{ selected_costume }}">
+          <input
+            type="hidden"
+            name="costume"
+            id="costume-hidden"
+            value="{{ selected_costume }}"
+          >
 
-          <input type="hidden" name="favorite" id="favorite-hidden" value="{{ favorite }}">
+          <input
+            type="hidden"
+            name="favorite"
+            id="favorite-hidden"
+            value="{{ favorite_only }}"
+          >
+
 
           <div class="row g-3">
 
-            <div class="col-12 col-md-4">
-              <input type="text" name="query" value="{{ query }}" class="form-control" placeholder="メンバー名・衣装名検索">
-            </div>
+            <!-- =========================
+                 キーワード
+            ========================== -->
 
             <div class="col-12 col-md-4">
+
+              <input
+                type="text"
+                name="query"
+                value="{{ query }}"
+                class="form-control"
+                placeholder="メンバー名・衣装名検索"
+              >
+
+            </div>
+
+
+            <!-- =========================
+                 メンバー
+            ========================== -->
+
+            <div class="col-12 col-md-4">
+
               <select id="member"></select>
+
             </div>
+
+
+            <!-- =========================
+                 衣装
+            ========================== -->
 
             <div class="col-12 col-md-4">
+
               <select id="costume"></select>
+
             </div>
 
-            <div class="col-12 d-flex gap-2">
 
-              <button type="button" id="favorite-btn"
-                class="btn {% if favorite %}btn-warning{% else %}btn-outline-warning{% endif %}">
+            <!-- =========================
+                 並び順
+            ========================== -->
+
+            <div class="col-12 col-md-4">
+
+              <label
+                for="sort"
+                class="form-label small text-body mb-1"
+              >
+                並び順
+              </label>
+
+              <select
+                id="sort"
+                name="sort"
+                class="form-select"
+              >
+
+                <option
+                  value="comp"
+                  {% if selected_sort == "comp" %}
+                    selected
+                  {% endif %}
+                >
+                  コンプ率
+                </option>
+
+                <option
+                  value="quantity"
+                  {% if selected_sort == "quantity" %}
+                    selected
+                  {% endif %}
+                >
+                  枚数
+                </option>
+
+                <option
+                  value="favorite"
+                  {% if selected_sort == "favorite" %}
+                    selected
+                  {% endif %}
+                >
+                  お気に入り優先
+                </option>
+
+                <option
+                  value="name"
+                  {% if selected_sort == "name" %}
+                    selected
+                  {% endif %}
+                >
+                  名前の順
+                </option>
+
+              </select>
+
+            </div>
+
+
+            <!-- =========================
+                 ボタン
+            ========================== -->
+
+            <div class="col-12 col-md-8 d-flex gap-2 align-items-end">
+
+              <button
+                type="button"
+                id="favorite-btn"
+                class="btn {% if favorite_only %}btn-warning{% else %}btn-outline-warning{% endif %}"
+                title="お気に入りのみ表示"
+              >
                 <i class="fa-solid fa-star"></i>
               </button>
 
-              <button type="submit" class="btn btn-outline-primary flex-fill">
+
+              <button
+                type="submit"
+                class="btn btn-outline-primary flex-fill"
+              >
                 <i class="fa-solid fa-magnifying-glass me-1"></i>
                 検索
               </button>
 
-              <a href="{{ url_for('photo.index', group_key=group_key) }}" class="btn btn-outline-danger">
+
+              <a
+                href="{{ url_for('photo.index', group_key=group_key) }}"
+                class="btn btn-outline-danger"
+              >
                 クリア
               </a>
 
@@ -88,433 +193,2263 @@
         </form>
 
       </div>
+
     </div>
 
   </div>
 
+
   <br>
 
-  <!--
-  {% if current_user.plan_type == "free" %}
-  <div class="text-center my-3">
-    <script src="https://adm.shinobi.jp/s/f44799c3a6fdcd4c01a772860347050c"></script>
-  </div>
-  {% endif %}
- -->
 
   <!-- =========================
        カード一覧
   ========================== -->
+
   <div class="row row-cols-2 row-cols-md-3 g-2">
 
     {% for card in cards %}
-    <div class="col">
-      <div class="card shadow-sm p-2 h-100 bg-body text-body card-item" style="cursor:pointer"
-        data-card='{{ card | tojson | safe }}'>
 
-        {% if card.has_favorite %}
-        <div style="position:absolute; top:6px; right:8px;">
-          <i class="fa-solid fa-star text-warning"></i>
-        </div>
+    {# ==========================================
+       一覧表示用の実物画像を探す
+    ========================================== #}
+
+    {% set preview_image = namespace(data=None) %}
+
+    {% for detail in card.details or [] %}
+
+      {% if preview_image.data is none and detail.images %}
+
+        {% if detail.images|length > 0 %}
+
+          {% set preview_image.data = detail.images[0] %}
+
         {% endif %}
 
-        <div class="fw-bold small text-truncate">{{ card.member }}</div>
-        <div class="small text-muted text-truncate">{{ card.costume }}</div>
+      {% endif %}
 
-        <div class="mt-1 small">
-          {{ card.owned }} / {{ card.total }}
-        </div>
-
-        <div class="progress mt-1" style="height:6px;">
-          <div class="progress-bar" style="width: {{ card.rate }}%"></div>
-        </div>
-
-        {% if card.is_complete %}
-        <div class="mt-1">
-          <span class="badge bg-success">コンプ</span>
-        </div>
-        {% endif %}
-
-      </div>
-    </div>
     {% endfor %}
 
+
+    <div class="col">
+
+      <div
+        class="card shadow-sm p-2 h-100 bg-body text-body card-item"
+        style="cursor:pointer"
+        data-card='{{ card | tojson | safe }}'
+      >
+
+        <div class="d-flex gap-2 h-100">
+
+
+          <!-- =========================
+               左側：写真情報
+          ========================== -->
+
+          <div
+            class="flex-grow-1 min-width-0 d-flex flex-column"
+            style="min-width:0;"
+          >
+
+            {% if card.has_favorite %}
+
+            <div class="mb-1">
+
+              <i class="fa-solid fa-star text-warning"></i>
+
+            </div>
+
+            {% endif %}
+
+
+            <div
+              class="fw-bold small text-truncate"
+              title="{{ card.member }}"
+              style="min-width:0;"
+            >
+              {{ card.member }}
+            </div>
+
+
+            <div
+              class="small text-muted text-truncate"
+              title="{{ card.costume }}"
+              style="min-width:0;"
+            >
+              {{ card.costume }}
+            </div>
+
+
+            <div class="mt-auto">
+
+              <div class="small">
+                {{ card.owned }} / {{ card.total }}
+              </div>
+
+
+              <div
+                class="progress mt-1"
+                style="height:6px;"
+              >
+
+                <div
+                  class="progress-bar"
+                  style="width: {{ card.rate }}%"
+                ></div>
+
+              </div>
+
+
+              {% if card.is_complete %}
+
+              <div class="mt-1">
+
+                <span class="badge bg-success">
+                  コンプ
+                </span>
+
+              </div>
+
+              {% endif %}
+
+            </div>
+
+          </div>
+
+
+          <!-- =========================
+               右側：実物画像
+               L判比率 約70:100
+          ========================== -->
+
+          <div
+            class="flex-shrink-0"
+            style="
+              width:70px;
+              min-width:70px;
+              max-width:70px;
+              height:100px;
+              min-height:100px;
+              max-height:100px;
+              flex:0 0 70px;
+            "
+          >
+
+            {% if preview_image.data %}
+
+            <button
+              type="button"
+              class="btn p-0 border rounded overflow-hidden w-100 h-100 card-image-button"
+              data-image-url="{{ preview_image.data.image_url }}"
+              aria-label="実物画像を拡大"
+              style="
+                width:70px;
+                min-width:70px;
+                max-width:70px;
+                height:100px;
+                min-height:100px;
+                max-height:100px;
+                background:#f8f9fa;
+              "
+            >
+
+              <img
+                src="{{ preview_image.data.thumbnail_url }}"
+                alt="実物画像"
+                width="70"
+                height="100"
+                class="d-block"
+                style="
+                  width:70px;
+                  min-width:70px;
+                  max-width:70px;
+                  height:100px;
+                  min-height:100px;
+                  max-height:100px;
+                  object-fit:contain;
+                "
+                loading="lazy"
+              >
+
+            </button>
+
+            {% else %}
+
+            <div
+              class="border rounded w-100 h-100 d-flex align-items-center justify-content-center text-muted"
+              style="
+                width:70px;
+                min-width:70px;
+                max-width:70px;
+                height:100px;
+                min-height:100px;
+                max-height:100px;
+                background:rgba(128,128,128,0.05);
+                font-size:0.7rem;
+              "
+            >
+              画像なし
+            </div>
+
+            {% endif %}
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    {% endfor %}
+
+
     {% if cards|length == 0 %}
-    <p class="text-center text-secondary">データがありません。</p>
+
+    <p class="text-center text-secondary">
+      データがありません。
+    </p>
+
     {% endif %}
 
   </div>
 
 </div>
+
 
 <!-- =========================
      ページネーション
-========================= -->
+========================== -->
 
 <nav class="mt-4">
+
+  <form
+    id="pageJumpForm"
+    class="d-flex justify-content-center align-items-center gap-2 mb-3"
+  >
+
+    <label
+      for="pageJumpInput"
+      class="small text-body mb-0"
+    >
+      ページ
+    </label>
+
+
+    <input
+      type="number"
+      id="pageJumpInput"
+      class="form-control form-control-sm text-center"
+      style="width:80px;"
+      min="1"
+      max="{{ pagination.pages }}"
+      value="{{ pagination.page }}"
+      inputmode="numeric"
+      aria-label="移動先ページ"
+    >
+
+
+    <span class="small text-muted">
+      / {{ pagination.pages }}
+    </span>
+
+
+    <button
+      type="submit"
+      class="btn btn-outline-primary btn-sm"
+    >
+      移動
+    </button>
+
+  </form>
+
+
   <ul class="pagination justify-content-center">
 
-    {# --- 前へ --- #}
-    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-      <a class="page-link" href="{{ url_for('photo.index',
-                          group_key=group_key,
-                          page=pagination.prev_num,
-                          **args) if pagination.has_prev else '#' }}">
+    <li
+      class="page-item {% if not pagination.has_prev %}disabled{% endif %}"
+    >
+
+      <a
+        class="page-link"
+        href="{{
+          url_for(
+            'photo.index',
+            group_key=group_key,
+            page=pagination.prev_num,
+            **args
+          )
+          if pagination.has_prev
+          else '#'
+        }}"
+      >
         前へ
       </a>
+
     </li>
 
-    {# --- ページ番号 --- #}
-    {% for p in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
-    {% if p %}
-    <li class="page-item {% if p == pagination.page %}active{% endif %}">
-      <a class="page-link" href="{{ url_for('photo.index',
-                              group_key=group_key,
-                              page=p,
-                              **args) }}">
-        {{ p }}
-      </a>
-    </li>
-    {% else %}
-    <li class="page-item disabled">
-      <span class="page-link">&hellip;</span>
-    </li>
-    {% endif %}
+
+    {% for p in pagination.iter_pages(
+      left_edge=1,
+      left_current=2,
+      right_current=2,
+      right_edge=1
+    ) %}
+
+      {% if p %}
+
+      <li
+        class="page-item {% if p == pagination.page %}active{% endif %}"
+      >
+
+        <a
+          class="page-link"
+          href="{{
+            url_for(
+              'photo.index',
+              group_key=group_key,
+              page=p,
+              **args
+            )
+          }}"
+        >
+          {{ p }}
+        </a>
+
+      </li>
+
+      {% else %}
+
+      <li class="page-item disabled">
+
+        <span class="page-link">
+          &hellip;
+        </span>
+
+      </li>
+
+      {% endif %}
+
     {% endfor %}
 
-    {# --- 次へ --- #}
-    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-      <a class="page-link" href="{{ url_for('photo.index',
-                          group_key=group_key,
-                          page=pagination.next_num,
-                          **args) if pagination.has_next else '#' }}">
+
+    <li
+      class="page-item {% if not pagination.has_next %}disabled{% endif %}"
+    >
+
+      <a
+        class="page-link"
+        href="{{
+          url_for(
+            'photo.index',
+            group_key=group_key,
+            page=pagination.next_num,
+            **args
+          )
+          if pagination.has_next
+          else '#'
+        }}"
+      >
         次へ
       </a>
+
     </li>
 
   </ul>
+
 </nav>
 
+
 <!-- =========================
-     モーダル
-========================= -->
-<div class="modal fade" id="detailModal" tabindex="-1">
-  <div class="modal-dialog">
+     生写真詳細モーダル
+========================== -->
+
+<div
+  class="modal fade"
+  id="detailModal"
+  tabindex="-1"
+  aria-hidden="true"
+>
+
+  <div class="modal-dialog modal-lg">
+
     <div class="modal-content">
 
       <div class="modal-header">
-        <h5 class="modal-title" id="detailTitle"></h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+
+        <h5
+          class="modal-title"
+          id="detailTitle"
+        ></h5>
+
+
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="閉じる"
+        ></button>
+
       </div>
 
-      <div class="modal-body" id="detailList"></div>
+
+      <div
+        class="modal-body"
+        id="detailList"
+      ></div>
 
     </div>
+
   </div>
+
 </div>
 
-<form method="POST" id="deleteForm">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <input type="hidden" name="next" id="nextUrl" value="{{ current_url }}">
+
+<!-- =========================
+     画像拡大モーダル
+
+     ・×ボタンなし
+     ・背景タップで閉じる
+     ・画像タップでは閉じない
+========================== -->
+
+<div
+  class="modal fade"
+  id="imagePreviewModal"
+  tabindex="-1"
+  aria-hidden="true"
+>
+
+  <div
+    class="modal-dialog modal-dialog-centered modal-lg"
+    style="pointer-events:none;"
+  >
+
+    <div
+      class="modal-content bg-dark border-0"
+      style="
+        pointer-events:auto;
+        background:transparent !important;
+      "
+    >
+
+      <div
+        class="modal-body text-center p-0"
+        style="
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          min-height:20vh;
+        "
+      >
+
+        <img
+          id="imagePreview"
+          src=""
+          alt="実物画像"
+          class="img-fluid"
+          style="
+            max-width:95vw;
+            max-height:90vh;
+            width:auto;
+            height:auto;
+            object-fit:contain;
+            display:block;
+            cursor:default;
+          "
+        >
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- =========================
+     削除用フォーム
+========================== -->
+
+<form
+  method="POST"
+  id="deleteForm"
+>
+
+  <input
+    type="hidden"
+    name="csrf_token"
+    value="{{ csrf_token() }}"
+  >
+
+
+  <input
+    type="hidden"
+    name="next"
+    id="nextUrl"
+    value="{{ current_url }}"
+  >
+
 </form>
 
-<link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+
+<!-- TomSelect -->
+
+<link
+  href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"
+  rel="stylesheet"
+>
+
 <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 
 {% endblock %}
 
+
 {% block scripts %}
+
 <script>
 
-  const groupKey = "{{ group_key }}";
+  const groupKey =
+    {{ group_key | tojson }};
 
-  document.addEventListener("DOMContentLoaded", () => {
+  const selectedMember =
+    {{ selected_member | tojson }};
 
-    initSearch();
+  const selectedCostume =
+    {{ selected_costume | tojson }};
 
-    document.querySelectorAll(".card-item").forEach(el => {
-
-      el.addEventListener("click", () => {
-
-        try {
-
-          const card = JSON.parse(el.dataset.card);
-
-          openGroupModal(card);
-
-        } catch (e) {
-
-          console.error(e);
-
-        }
-
-      });
-
-    });
-
-  });
+  const selectedSort =
+    {{ selected_sort | tojson }};
 
 
-  function initSearch() {
+  /* =====================================================
+     初期化
+  ===================================================== */
 
-    const memberHidden = document.getElementById("member-hidden");
-    const costumeHidden = document.getElementById("costume-hidden");
+  document.addEventListener(
+    "DOMContentLoaded",
+    () => {
 
-    const favoriteHidden =
-      document.getElementById("favorite-hidden");
+      initSearch();
 
-    const favoriteBtn =
-      document.getElementById("favorite-btn");
 
-    favoriteBtn.addEventListener("click", () => {
+      /* =============================================
+         カードクリック
+      ============================================= */
 
-      favoriteHidden.value =
-        favoriteHidden.value === "1"
-          ? ""
-          : "1";
+      document
+        .querySelectorAll(".card-item")
+        .forEach(el => {
 
-      searchForm.submit();
+          el.addEventListener(
+            "click",
+            () => {
 
-    });
+              try {
 
-    const selectedMember = "{{ selected_member }}";
-    const selectedCostume = "{{ selected_costume }}";
+                const card =
+                  JSON.parse(
+                    el.dataset.card
+                  );
 
-    const memberTS = new TomSelect("#member", {
-      create: false,
-      maxItems: 1,
-      placeholder: "メンバーを選択"
-    });
+                openGroupModal(card);
 
-    const costumeTS = new TomSelect("#costume", {
-      create: false,
-      maxItems: 1,
-      placeholder: "衣装を選択"
-    });
+              } catch (e) {
 
-    function loadCostumes(member) {
+                console.error(
+                  "カードデータの読み込みに失敗しました。",
+                  e
+                );
 
-      costumeTS.clear();
-      costumeTS.clearOptions();
+              }
 
-      if (!member) {
-        costumeHidden.value = "";
-        return;
-      }
+            }
+          );
 
-      fetch(
-        `/get_costumes?group=${groupKey}&member=${encodeURIComponent(member)}`
-      )
-        .then(r => r.json())
-        .then(data => {
+        });
 
-          data.costumes.forEach(c => {
 
-            costumeTS.addOption({
-              value: c,
-              text: c
-            });
+      /* =============================================
+         一覧カードの実物画像クリック
+      ============================================= */
 
-          });
+      document
+        .querySelectorAll(".card-image-button")
+        .forEach(button => {
 
-          costumeTS.refreshOptions(false);
+          button.addEventListener(
+            "click",
+            event => {
 
-          if (selectedCostume) {
+              event.preventDefault();
 
-            costumeTS.setValue(selectedCostume, true);
+              event.stopPropagation();
 
-            costumeHidden.value = selectedCostume;
+
+              const imageUrl =
+                button.dataset.imageUrl;
+
+
+              if (imageUrl) {
+
+                openImagePreview(
+                  imageUrl
+                );
+
+              }
+
+            }
+          );
+
+        });
+
+
+      /* =============================================
+         ページ指定
+      ============================================= */
+
+      const pageJumpForm =
+        document.getElementById(
+          "pageJumpForm"
+        );
+
+      const pageJumpInput =
+        document.getElementById(
+          "pageJumpInput"
+        );
+
+
+      pageJumpForm.addEventListener(
+        "submit",
+        event => {
+
+          event.preventDefault();
+
+
+          const page =
+            parseInt(
+              pageJumpInput.value,
+              10
+            );
+
+
+          const maxPage =
+            {{ pagination.pages }};
+
+
+          if (
+            !Number.isInteger(page) ||
+            page < 1 ||
+            page > maxPage
+          ) {
+
+            alert(
+              `1～${maxPage}ページの範囲で入力してください。`
+            );
+
+
+            pageJumpInput.focus();
+
+            return;
 
           }
 
-        });
-    }
 
-    fetch(`/get_members?group=${groupKey}`)
-      .then(r => r.json())
-      .then(data => {
+          const url =
+            new URL(
+              window.location.href
+            );
 
-        data.members.forEach(m => {
 
-          memberTS.addOption({
-            value: m,
-            text: m
-          });
+          url.searchParams.set(
+            "page",
+            page
+          );
 
-        });
 
-        memberTS.refreshOptions(false);
-
-        if (selectedMember) {
-
-          memberTS.setValue(selectedMember, true);
-
-          memberHidden.value = selectedMember;
-
-          loadCostumes(selectedMember);
+          window.location.href =
+            url.toString();
 
         }
+      );
 
-      });
+    }
+  );
 
-    memberTS.on("change", member => {
 
-      memberHidden.value = member;
+  /* =====================================================
+     検索
+  ===================================================== */
 
-      costumeHidden.value = "";
+  function initSearch() {
 
-      loadCostumes(member);
+    const memberHidden =
+      document.getElementById(
+        "member-hidden"
+      );
 
-    });
 
-    costumeTS.on("change", costume => {
+    const costumeHidden =
+      document.getElementById(
+        "costume-hidden"
+      );
 
-      costumeHidden.value = costume;
 
-    });
+    const favoriteHidden =
+      document.getElementById(
+        "favorite-hidden"
+      );
+
+
+    const favoriteBtn =
+      document.getElementById(
+        "favorite-btn"
+      );
+
+
+    /* =============================================
+       お気に入りのみ
+    ============================================= */
+
+    favoriteBtn.addEventListener(
+      "click",
+      () => {
+
+        favoriteHidden.value =
+          favoriteHidden.value === "1"
+            ? ""
+            : "1";
+
+
+        document
+          .getElementById(
+            "searchForm"
+          )
+          .submit();
+
+      }
+    );
+
+
+    /* =============================================
+       Member
+    ============================================= */
+
+    const memberTS =
+      new TomSelect(
+        "#member",
+        {
+          create: false,
+          maxItems: 1,
+          placeholder: "メンバーを選択"
+        }
+      );
+
+
+    /* =============================================
+       Costume
+    ============================================= */
+
+    const costumeTS =
+      new TomSelect(
+        "#costume",
+        {
+          create: false,
+          maxItems: 1,
+          placeholder: "衣装を選択"
+        }
+      );
+
+
+    /* =============================================
+       衣装読み込み
+    ============================================= */
+
+    function loadCostumes(
+      member
+    ) {
+
+      costumeTS.clear();
+
+      costumeTS.clearOptions();
+
+
+      if (!member) {
+
+        costumeHidden.value =
+          "";
+
+        return;
+
+      }
+
+
+      fetch(
+        `/get_costumes?group=${encodeURIComponent(groupKey)}&member=${encodeURIComponent(member)}`
+      )
+
+        .then(
+          r => {
+
+            if (!r.ok) {
+
+              throw new Error(
+                "衣装情報の取得に失敗しました。"
+              );
+
+            }
+
+            return r.json();
+
+          }
+        )
+
+        .then(
+          data => {
+
+            data.costumes.forEach(
+              costume => {
+
+                costumeTS.addOption({
+
+                  value:
+                    costume,
+
+                  text:
+                    costume
+
+                });
+
+              }
+            );
+
+
+            costumeTS.refreshOptions(
+              false
+            );
+
+
+            if (selectedCostume) {
+
+              costumeTS.setValue(
+                selectedCostume,
+                true
+              );
+
+
+              costumeHidden.value =
+                selectedCostume;
+
+            }
+
+          }
+        )
+
+        .catch(
+          error => {
+
+            console.error(
+              error
+            );
+
+          }
+        );
+
+    }
+
+
+    /* =============================================
+       メンバー読み込み
+    ============================================= */
+
+    fetch(
+      `/get_members?group=${encodeURIComponent(groupKey)}`
+    )
+
+      .then(
+        r => {
+
+          if (!r.ok) {
+
+            throw new Error(
+              "メンバー情報の取得に失敗しました。"
+            );
+
+          }
+
+          return r.json();
+
+        }
+      )
+
+      .then(
+        data => {
+
+          data.members.forEach(
+            member => {
+
+              memberTS.addOption({
+
+                value:
+                  member,
+
+                text:
+                  member
+
+              });
+
+            }
+          );
+
+
+          memberTS.refreshOptions(
+            false
+          );
+
+
+          if (selectedMember) {
+
+            memberTS.setValue(
+              selectedMember,
+              true
+            );
+
+
+            memberHidden.value =
+              selectedMember;
+
+
+            loadCostumes(
+              selectedMember
+            );
+
+          }
+
+        }
+      )
+
+      .catch(
+        error => {
+
+          console.error(
+            error
+          );
+
+        }
+      );
+
+
+    /* =============================================
+       メンバー変更
+    ============================================= */
+
+    memberTS.on(
+      "change",
+      member => {
+
+        memberHidden.value =
+          member || "";
+
+
+        costumeHidden.value =
+          "";
+
+
+        loadCostumes(
+          member
+        );
+
+      }
+    );
+
+
+    /* =============================================
+       衣装変更
+    ============================================= */
+
+    costumeTS.on(
+      "change",
+      costume => {
+
+        costumeHidden.value =
+          costume || "";
+
+      }
+    );
 
   }
 
-  function openGroupModal(card) {
 
-    const container = document.getElementById("detailList");
+  /* =====================================================
+     生写真詳細モーダル
+  ===================================================== */
 
-    container.innerHTML = "";
+  function openGroupModal(
+    card
+  ) {
 
-    document.getElementById("detailTitle").textContent =
+    const container =
+      document.getElementById(
+        "detailList"
+      );
+
+
+    container.innerHTML =
+      "";
+
+
+    document.getElementById(
+      "detailTitle"
+    ).textContent =
       `${card.member} / ${card.costume}`;
 
-    if (!card.details || card.details.length === 0) {
+
+    if (
+      !card.details ||
+      card.details.length === 0
+    ) {
 
       container.innerHTML =
         "<p class='text-muted'>所持データなし</p>";
 
     }
 
-    (card.details || []).forEach(d => {
 
-      const html = `
+    (card.details || [])
+      .forEach(
+        d => {
 
-        <form method="POST"
-              action="/update_user_photo/${groupKey}/${d.id}"
-              class="border p-2 mb-2 rounded">
+          const wrapper =
+            document.createElement(
+              "div"
+            );
 
-            <input type="hidden"
-                   name="csrf_token"
-                   value="{{ csrf_token() }}">
 
-            <input type="hidden"
-                   name="next"
-                   value="${window.location.pathname + window.location.search}">
+          wrapper.className =
+            "border p-2 mb-3 rounded";
 
-            <div class="d-flex justify-content-between">
 
-                <strong>${d.type}</strong>
+          /* =============================================
+             種類・お気に入り
+          ============================================= */
 
-                ${d.is_favorite
-          ? '<i class="fa-solid fa-star text-warning"></i>'
-          : ''}
+          const header =
+            document.createElement(
+              "div"
+            );
 
-            </div>
 
-            <div>所持数</div>
+          header.className =
+            "d-flex justify-content-between align-items-center mb-2";
 
-            <input
-                type="number"
-                name="quantity"
-                value="${d.quantity ?? 0}"
-                class="form-control mt-1">
 
-            <div>交換可能数</div>
+          const typeElement =
+            document.createElement(
+              "strong"
+            );
 
-            <input
-                type="number"
-                name="available_quantity"
-                value="${d.available ?? 0}"
-                class="form-control mt-1">
 
-            <div>メモ</div>
+          typeElement.textContent =
+            d.type;
 
-            <input
-                type="text"
-                name="memo"
-                value="${d.memo ?? ''}"
-                class="form-control mt-1">
 
-            <div>入手日</div>
+          header.appendChild(
+            typeElement
+          );
 
-            <input
-                type="date"
-                name="date"
-                value="${d.date ?? ''}"
-                class="form-control mt-1">
 
-            <div class="form-check mt-2">
+          if (d.is_favorite) {
 
-                <input
-                    class="form-check-input"
-                    type="checkbox"
-                    name="is_favorite"
-                    ${d.is_favorite ? "checked" : ""}>
+            const favoriteIcon =
+              document.createElement(
+                "i"
+              );
 
-                <label class="form-check-label">
-                    お気に入り
-                </label>
 
-            </div>
+            favoriteIcon.className =
+              "fa-solid fa-star text-warning";
 
-            <div class="d-flex gap-2 mt-3">
 
-                <button
-                    type="submit"
-                    class="btn btn-primary btn-sm w-100">
-                    更新
-                </button>
+            header.appendChild(
+              favoriteIcon
+            );
 
-                <button
-                    type="button"
-                    class="btn btn-danger btn-sm w-100"
-                    onclick="deletePhoto(${d.id})">
-                    削除
-                </button>
+          }
 
-            </div>
 
-        </form>
-        `;
+          wrapper.appendChild(
+            header
+          );
 
-      container.insertAdjacentHTML(
-        "beforeend",
-        html
+
+          /* =============================================
+             実物画像
+          ============================================= */
+
+          const imageSection =
+            document.createElement(
+              "div"
+            );
+
+
+          imageSection.className =
+            "mb-3";
+
+
+          const imageTitle =
+            document.createElement(
+              "div"
+            );
+
+
+          imageTitle.className =
+            "small fw-bold mb-2";
+
+
+          imageTitle.textContent =
+            "実物画像";
+
+
+          imageSection.appendChild(
+            imageTitle
+          );
+
+
+          const images =
+            Array.isArray(
+              d.images
+            )
+              ? d.images
+              : [];
+
+
+          if (images.length > 0) {
+
+            const imageGrid =
+              document.createElement(
+                "div"
+              );
+
+
+            imageGrid.className =
+              "d-flex flex-wrap gap-2";
+
+
+            images.forEach(
+              image => {
+
+                /* =========================================
+                   画像1枚分
+                ========================================== */
+
+                const imageItem =
+                  document.createElement(
+                    "div"
+                  );
+
+
+                imageItem.className =
+                  "d-flex flex-column align-items-center";
+
+
+                imageItem.style.width =
+                  "70px";
+
+
+                /* =========================================
+                   画像ボタン
+                ========================================== */
+
+                const imageButton =
+                  document.createElement(
+                    "button"
+                  );
+
+
+                imageButton.type =
+                  "button";
+
+
+                imageButton.className =
+                  "btn btn-light p-0 border";
+
+
+                imageButton.style.width =
+                  "70px";
+
+
+                imageButton.style.height =
+                  "100px";
+
+
+                imageButton.style.minWidth =
+                  "70px";
+
+
+                imageButton.style.minHeight =
+                  "100px";
+
+
+                imageButton.style.maxWidth =
+                  "70px";
+
+
+                imageButton.style.maxHeight =
+                  "100px";
+
+
+                imageButton.style.overflow =
+                  "hidden";
+
+
+                imageButton.setAttribute(
+                  "aria-label",
+                  "実物画像を拡大"
+                );
+
+
+                const thumbnail =
+                  document.createElement(
+                    "img"
+                  );
+
+
+                thumbnail.src =
+                  image.thumbnail_url;
+
+
+                thumbnail.alt =
+                  "実物画像";
+
+
+                thumbnail.className =
+                  "d-block";
+
+
+                thumbnail.style.width =
+                  "70px";
+
+
+                thumbnail.style.height =
+                  "100px";
+
+
+                thumbnail.style.minWidth =
+                  "70px";
+
+
+                thumbnail.style.minHeight =
+                  "100px";
+
+
+                thumbnail.style.maxWidth =
+                  "70px";
+
+
+                thumbnail.style.maxHeight =
+                  "100px";
+
+
+                thumbnail.style.objectFit =
+                  "contain";
+
+
+                thumbnail.loading =
+                  "lazy";
+
+
+                imageButton.appendChild(
+                  thumbnail
+                );
+
+
+                /* =========================================
+                   画像クリック
+                ========================================== */
+
+                imageButton.addEventListener(
+                  "click",
+                  event => {
+
+                    event.preventDefault();
+
+                    event.stopPropagation();
+
+
+                    openImagePreview(
+                      image.image_url
+                    );
+
+                  }
+                );
+
+
+                imageItem.appendChild(
+                  imageButton
+                );
+
+
+                /* =========================================
+                   画像削除ボタン
+                ========================================== */
+
+                const imageDeleteForm =
+                  document.createElement(
+                    "form"
+                  );
+
+
+                imageDeleteForm.method =
+                  "POST";
+
+
+                imageDeleteForm.action =
+                  `/delete_user_photo_image/${encodeURIComponent(groupKey)}/${image.id}`;
+
+
+                imageDeleteForm.className =
+                  "w-100 mt-1";
+
+
+                const imageDeleteCsrf =
+                  document.createElement(
+                    "input"
+                  );
+
+
+                imageDeleteCsrf.type =
+                  "hidden";
+
+
+                imageDeleteCsrf.name =
+                  "csrf_token";
+
+
+                imageDeleteCsrf.value =
+                  "{{ csrf_token() }}";
+
+
+                imageDeleteForm.appendChild(
+                  imageDeleteCsrf
+                );
+
+
+                const imageDeleteButton =
+                  document.createElement(
+                    "button"
+                  );
+
+
+                imageDeleteButton.type =
+                  "submit";
+
+
+                imageDeleteButton.className =
+                  "btn btn-outline-danger btn-sm w-100 py-0";
+
+
+                imageDeleteButton.style.fontSize =
+                  "0.7rem";
+
+
+                imageDeleteButton.innerHTML =
+                  '<i class="fa-solid fa-trash me-1"></i>削除';
+
+
+                imageDeleteButton.addEventListener(
+                  "click",
+                  event => {
+
+                    event.stopPropagation();
+
+
+                    const confirmed =
+                      confirm(
+                        "この実物画像を削除しますか？\n\n削除した画像は元に戻せません。"
+                      );
+
+
+                    if (!confirmed) {
+
+                      event.preventDefault();
+
+                    }
+
+                  }
+                );
+
+
+                imageDeleteForm.appendChild(
+                  imageDeleteButton
+                );
+
+
+                imageItem.appendChild(
+                  imageDeleteForm
+                );
+
+
+                imageGrid.appendChild(
+                  imageItem
+                );
+
+              }
+            );
+
+
+            imageSection.appendChild(
+              imageGrid
+            );
+
+          } else {
+
+            const noImage =
+              document.createElement(
+                "div"
+              );
+
+
+            noImage.className =
+              "text-muted small mb-2";
+
+
+            noImage.textContent =
+              "実物画像はまだありません。";
+
+
+            imageSection.appendChild(
+              noImage
+            );
+
+          }
+
+
+          /* =============================================
+             画像アップロードフォーム
+          ============================================= */
+
+          const uploadForm =
+            document.createElement(
+              "form"
+            );
+
+
+          uploadForm.method =
+            "POST";
+
+
+          uploadForm.enctype =
+            "multipart/form-data";
+
+
+          uploadForm.action =
+            `/upload_user_photo_image/${encodeURIComponent(groupKey)}/${d.id}`;
+
+
+          uploadForm.className =
+            "mt-2";
+
+
+          const csrf =
+            document.createElement(
+              "input"
+            );
+
+
+          csrf.type =
+            "hidden";
+
+
+          csrf.name =
+            "csrf_token";
+
+
+          csrf.value =
+            "{{ csrf_token() }}";
+
+
+          uploadForm.appendChild(
+            csrf
+          );
+
+
+          const fileRow =
+            document.createElement(
+              "div"
+            );
+
+
+          fileRow.className =
+            "row g-2 align-items-center";
+
+
+          const fileCol =
+            document.createElement(
+              "div"
+            );
+
+
+          fileCol.className =
+            "col-12 col-md-8";
+
+
+          const fileInput =
+            document.createElement(
+              "input"
+            );
+
+
+          fileInput.type =
+            "file";
+
+
+          fileInput.name =
+            "image";
+
+
+          fileInput.accept =
+            "image/jpeg,image/png,image/webp";
+
+
+          fileInput.className =
+            "form-control form-control-sm";
+
+
+          fileInput.required =
+            true;
+
+
+          fileCol.appendChild(
+            fileInput
+          );
+
+
+          const buttonCol =
+            document.createElement(
+              "div"
+            );
+
+
+          buttonCol.className =
+            "col-12 col-md-4";
+
+
+          const uploadButton =
+            document.createElement(
+              "button"
+            );
+
+
+          uploadButton.type =
+            "submit";
+
+
+          uploadButton.className =
+            "btn btn-outline-primary btn-sm w-100";
+
+
+          uploadButton.innerHTML =
+            '<i class="fa-solid fa-camera me-1"></i> 実物画像を追加';
+
+
+          buttonCol.appendChild(
+            uploadButton
+          );
+
+
+          fileRow.appendChild(
+            fileCol
+          );
+
+
+          fileRow.appendChild(
+            buttonCol
+          );
+
+
+          uploadForm.appendChild(
+            fileRow
+          );
+
+
+          /* =============================================
+             アップロード二重送信防止
+          ============================================= */
+
+          uploadForm.addEventListener(
+            "submit",
+            event => {
+
+              if (
+                !fileInput.files ||
+                fileInput.files.length === 0
+              ) {
+
+                event.preventDefault();
+
+
+                alert(
+                  "画像ファイルを選択してください。"
+                );
+
+
+                return;
+
+              }
+
+
+              uploadButton.disabled =
+                true;
+
+
+              uploadButton.innerHTML =
+                '<span class="spinner-border spinner-border-sm me-1"></span> アップロード中...';
+
+            }
+          );
+
+
+          imageSection.appendChild(
+            uploadForm
+          );
+
+
+          wrapper.appendChild(
+            imageSection
+          );
+
+
+          /* =============================================
+             更新フォーム
+          ============================================= */
+
+          const updateForm =
+            document.createElement(
+              "form"
+            );
+
+
+          updateForm.method =
+            "POST";
+
+
+          updateForm.action =
+            `/update_user_photo/${encodeURIComponent(groupKey)}/${d.id}`;
+
+
+          updateForm.className =
+            "mt-2";
+
+
+          const updateCsrf =
+            document.createElement(
+              "input"
+            );
+
+
+          updateCsrf.type =
+            "hidden";
+
+
+          updateCsrf.name =
+            "csrf_token";
+
+
+          updateCsrf.value =
+            "{{ csrf_token() }}";
+
+
+          updateForm.appendChild(
+            updateCsrf
+          );
+
+
+          const nextInput =
+            document.createElement(
+              "input"
+            );
+
+
+          nextInput.type =
+            "hidden";
+
+
+          nextInput.name =
+            "next";
+
+
+          nextInput.value =
+            window.location.pathname +
+            window.location.search;
+
+
+          updateForm.appendChild(
+            nextInput
+          );
+
+
+          /* 所持数 */
+
+          const quantityLabel =
+            document.createElement(
+              "div"
+            );
+
+
+          quantityLabel.textContent =
+            "所持数";
+
+
+          updateForm.appendChild(
+            quantityLabel
+          );
+
+
+          const quantityInput =
+            document.createElement(
+              "input"
+            );
+
+
+          quantityInput.type =
+            "number";
+
+
+          quantityInput.name =
+            "quantity";
+
+
+          quantityInput.value =
+            d.quantity ?? 0;
+
+
+          quantityInput.min =
+            "0";
+
+
+          quantityInput.className =
+            "form-control mt-1";
+
+
+          updateForm.appendChild(
+            quantityInput
+          );
+
+
+          /* 交換可能数 */
+
+          const availableLabel =
+            document.createElement(
+              "div"
+            );
+
+
+          availableLabel.className =
+            "mt-2";
+
+
+          availableLabel.textContent =
+            "交換可能数";
+
+
+          updateForm.appendChild(
+            availableLabel
+          );
+
+
+          const availableInput =
+            document.createElement(
+              "input"
+            );
+
+
+          availableInput.type =
+            "number";
+
+
+          availableInput.name =
+            "available_quantity";
+
+
+          availableInput.value =
+            d.available ?? 0;
+
+
+          availableInput.min =
+            "0";
+
+
+          availableInput.className =
+            "form-control mt-1";
+
+
+          updateForm.appendChild(
+            availableInput
+          );
+
+
+          /* メモ */
+
+          const memoLabel =
+            document.createElement(
+              "div"
+            );
+
+
+          memoLabel.className =
+            "mt-2";
+
+
+          memoLabel.textContent =
+            "メモ";
+
+
+          updateForm.appendChild(
+            memoLabel
+          );
+
+
+          const memoInput =
+            document.createElement(
+              "input"
+            );
+
+
+          memoInput.type =
+            "text";
+
+
+          memoInput.name =
+            "memo";
+
+
+          memoInput.value =
+            d.memo ?? "";
+
+
+          memoInput.maxLength =
+            200;
+
+
+          memoInput.className =
+            "form-control mt-1";
+
+
+          updateForm.appendChild(
+            memoInput
+          );
+
+
+          /* 入手日 */
+
+          const dateLabel =
+            document.createElement(
+              "div"
+            );
+
+
+          dateLabel.className =
+            "mt-2";
+
+
+          dateLabel.textContent =
+            "入手日";
+
+
+          updateForm.appendChild(
+            dateLabel
+          );
+
+
+          const dateInput =
+            document.createElement(
+              "input"
+            );
+
+
+          dateInput.type =
+            "date";
+
+
+          dateInput.name =
+            "date";
+
+
+          dateInput.value =
+            d.date ?? "";
+
+
+          dateInput.className =
+            "form-control mt-1";
+
+
+          updateForm.appendChild(
+            dateInput
+          );
+
+
+          /* お気に入り */
+
+          const favoriteCheckWrapper =
+            document.createElement(
+              "div"
+            );
+
+
+          favoriteCheckWrapper.className =
+            "form-check mt-2";
+
+
+          const favoriteInput =
+            document.createElement(
+              "input"
+            );
+
+
+          favoriteInput.className =
+            "form-check-input";
+
+
+          favoriteInput.type =
+            "checkbox";
+
+
+          favoriteInput.name =
+            "is_favorite";
+
+
+          favoriteInput.checked =
+            !!d.is_favorite;
+
+
+          const favoriteLabel =
+            document.createElement(
+              "label"
+            );
+
+
+          favoriteLabel.className =
+            "form-check-label";
+
+
+          favoriteLabel.textContent =
+            "お気に入り";
+
+
+          favoriteCheckWrapper.appendChild(
+            favoriteInput
+          );
+
+
+          favoriteCheckWrapper.appendChild(
+            favoriteLabel
+          );
+
+
+          updateForm.appendChild(
+            favoriteCheckWrapper
+          );
+
+
+          /* ボタン */
+
+          const buttonRow =
+            document.createElement(
+              "div"
+            );
+
+
+          buttonRow.className =
+            "d-flex gap-2 mt-3";
+
+
+          const updateButton =
+            document.createElement(
+              "button"
+            );
+
+
+          updateButton.type =
+            "submit";
+
+
+          updateButton.className =
+            "btn btn-primary btn-sm w-100";
+
+
+          updateButton.textContent =
+            "更新";
+
+
+          const deleteButton =
+            document.createElement(
+              "button"
+            );
+
+
+          deleteButton.type =
+            "button";
+
+
+          deleteButton.className =
+            "btn btn-danger btn-sm w-100";
+
+
+          deleteButton.textContent =
+            "削除";
+
+
+          deleteButton.addEventListener(
+            "click",
+            () => {
+
+              deletePhoto(
+                d.id
+              );
+
+            }
+          );
+
+
+          buttonRow.appendChild(
+            updateButton
+          );
+
+
+          buttonRow.appendChild(
+            deleteButton
+          );
+
+
+          updateForm.appendChild(
+            buttonRow
+          );
+
+
+          wrapper.appendChild(
+            updateForm
+          );
+
+
+          container.appendChild(
+            wrapper
+          );
+
+        }
       );
 
-    });
 
-    new bootstrap.Modal(
-      document.getElementById("detailModal")
-    ).show();
+    const modalElement =
+      document.getElementById(
+        "detailModal"
+      );
+
+
+    bootstrap.Modal
+      .getOrCreateInstance(
+        modalElement
+      )
+      .show();
 
   }
 
 
-  function deletePhoto(id) {
+  /* =====================================================
+     画像プレビュー
 
-    if (!confirm("本当に削除しますか？")) {
+     重要：
+     詳細モーダルを閉じてから画像モーダルを開く
+  ===================================================== */
+
+  function openImagePreview(
+    imageUrl
+  ) {
+
+    if (!imageUrl) {
+
       return;
+
     }
 
-    const form = document.getElementById("deleteForm");
+
+    const preview =
+      document.getElementById(
+        "imagePreview"
+      );
+
+
+    preview.src =
+      imageUrl;
+
+
+    const detailModalElement =
+      document.getElementById(
+        "detailModal"
+      );
+
+
+    const imageModalElement =
+      document.getElementById(
+        "imagePreviewModal"
+      );
+
+
+    const detailModal =
+      bootstrap.Modal.getInstance(
+        detailModalElement
+      );
+
+
+    const imageModal =
+      bootstrap.Modal.getOrCreateInstance(
+        imageModalElement,
+        {
+          backdrop: true,
+          keyboard: true
+        }
+      );
+
+
+    /*
+     * 詳細モーダルが表示中の場合は、
+     * 先に閉じる。
+     */
+
+    if (
+      detailModal &&
+      detailModalElement.classList.contains(
+        "show"
+      )
+    ) {
+
+      detailModalElement.addEventListener(
+        "hidden.bs.modal",
+        function handleDetailHidden() {
+
+          detailModalElement.removeEventListener(
+            "hidden.bs.modal",
+            handleDetailHidden
+          );
+
+
+          imageModal.show();
+
+        }
+      );
+
+
+      detailModal.hide();
+
+
+      return;
+
+    }
+
+
+    imageModal.show();
+
+  }
+
+
+  /* =====================================================
+     画像モーダル
+
+     背景部分をクリックしたときだけ閉じる
+  ===================================================== */
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+      const imageModalElement =
+        document.getElementById(
+          "imagePreviewModal"
+        );
+
+
+      const imagePreview =
+        document.getElementById(
+          "imagePreview"
+        );
+
+
+      /*
+       * Bootstrapの標準Backdropクリックで
+       * モーダルが閉じるため、基本的にはこれだけでOK。
+       *
+       * 念のため画像自体のクリックは
+       * モーダル閉じる処理に伝播させない。
+       */
+
+      imagePreview.addEventListener(
+        "click",
+        event => {
+
+          event.stopPropagation();
+
+        }
+      );
+
+
+      /*
+       * モーダルが閉じたら画像URLを消す
+       */
+
+      imageModalElement.addEventListener(
+        "hidden.bs.modal",
+        () => {
+
+          imagePreview.src =
+            "";
+
+        }
+      );
+
+    }
+  );
+
+
+  /* =====================================================
+     生写真削除
+  ===================================================== */
+
+  function deletePhoto(
+    id
+  ) {
+
+    if (
+      !confirm(
+        "本当に削除しますか？"
+      )
+    ) {
+
+      return;
+
+    }
+
+
+    const form =
+      document.getElementById(
+        "deleteForm"
+      );
+
 
     form.action =
-      `/delete_user_photo/${groupKey}/${id}`;
+      `/delete_user_photo/${encodeURIComponent(groupKey)}/${id}`;
 
-    document.getElementById("nextUrl").value =
+
+    document.getElementById(
+      "nextUrl"
+    ).value =
       window.location.pathname +
       window.location.search;
+
 
     form.submit();
 
   }
 
 </script>
+
 {% endblock %}

@@ -2,193 +2,959 @@
 {% block title %}生写真を追加{% endblock %}
 
 {% block content %}
+
 <div class="container mt-5">
 
   <div class="text-center mb-4">
+
     <h1 class="display-5 fw-bold text-body p-3 rounded section-title">
       生写真を追加
     </h1>
 
     <div class="mt-3">
+
       <div class="form-check form-switch d-inline-block">
-        <input class="form-check-input" type="checkbox" id="continuous_mode" name="continuous_mode" form="add-form">
-        <label class="form-check-label text-body" for="continuous_mode">
+
+        <input
+          class="form-check-input"
+          type="checkbox"
+          id="continuous_mode"
+          name="continuous_mode"
+          form="add-form"
+        >
+
+        <label
+          class="form-check-label text-body"
+          for="continuous_mode"
+        >
           連続追加モード
         </label>
+
       </div>
+
     </div>
+
   </div>
 
+
   <div class="card shadow-sm bg-body text-body">
+
     <div class="card-body">
 
-      <form method="post" id="add-form" action="{{ url_for('photo.add', group_key=group_key) }}">
+      <form
+        method="post"
+        id="add-form"
+        action="{{ url_for('photo.add', group_key=group_key) }}"
+        enctype="multipart/form-data"
+      >
 
         {{ form.hidden_tag() }}
 
-        <input type="hidden" id="group_key" value="{{ group_key }}">
-        <input type="hidden" name="member" id="member-hidden">
-        <input type="hidden" name="costume" id="costume-hidden">
+
+        <input
+          type="hidden"
+          id="group_key"
+          value="{{ group_key }}"
+        >
+
+        <input
+          type="hidden"
+          name="member"
+          id="member-hidden"
+        >
+
+        <input
+          type="hidden"
+          name="costume"
+          id="costume-hidden"
+        >
+
 
         <div class="row g-4">
 
+
+          <!-- =========================
+               メンバー
+          ========================== -->
+
           <div class="col-md-6">
-            <label class="form-label text-body">メンバー</label>
+
+            <label class="form-label text-body">
+              メンバー
+            </label>
+
             <select id="member"></select>
+
           </div>
+
+
+          <!-- =========================
+               衣装
+          ========================== -->
 
           <div class="col-md-6">
-            <label class="form-label text-body">衣装</label>
+
+            <label class="form-label text-body">
+              衣装
+            </label>
+
             <select id="costume"></select>
+
           </div>
 
+
+          <!-- =========================
+               写真タイプ
+          ========================== -->
+
           <div class="col-md-4">
+
             {{ form.photo_type.label(class="form-label text-body") }}
+
             {{ form.photo_type(id="photo_type") }}
+
           </div>
 
+
+          <!-- =========================
+               枚数
+          ========================== -->
+
           <div class="col-md-4">
-            <label class="form-label text-body">枚数</label>
+
+            <label class="form-label text-body">
+              枚数
+            </label>
+
             {{ form.quantity(class="form-control") }}
+
           </div>
 
+
+          <!-- =========================
+               入手日
+          ========================== -->
+
           <div class="col-md-4">
-            <label class="form-label text-body">入手日</label>
+
+            <label class="form-label text-body">
+              入手日
+            </label>
+
             {{ form.date_acquired(class="form-control") }}
+
           </div>
+
+
+          <!-- =========================
+               メモ
+          ========================== -->
 
           <div class="col-12">
-            <label class="form-label text-body">メモ</label>
+
+            <label class="form-label text-body">
+              メモ
+            </label>
+
             {{ form.memo(class="form-control", rows="2") }}
+
           </div>
+
+
+          <!-- =========================
+               実物画像
+          ========================== -->
+
+          <div class="col-12">
+
+            <label
+              for="user-photo-image"
+              class="form-label text-body"
+            >
+              実物画像
+            </label>
+
+            <input
+              type="file"
+              id="user-photo-image"
+              name="image"
+              class="form-control"
+              accept="image/jpeg,image/png,image/webp"
+            >
+
+            <div class="form-text text-body-secondary">
+              任意です。JPG、PNG、WebPに対応しています。
+              最大10MBまでアップロードできます。
+            </div>
+
+          </div>
+
+
+          <!-- =========================
+               画像プレビュー
+          ========================== -->
+
+          <div
+            class="col-12"
+            id="image-preview-wrapper"
+            style="display:none;"
+          >
+
+            <div class="small text-body-secondary mb-2">
+              選択した画像
+            </div>
+
+            <div
+              class="border rounded p-2 d-inline-block"
+            >
+
+              <img
+                id="image-preview"
+                src=""
+                alt="選択した実物画像"
+                width="70"
+                height="100"
+                style="
+                  width:70px;
+                  height:100px;
+                  object-fit:contain;
+                  display:block;
+                  background:rgba(128,128,128,0.05);
+                "
+              >
+
+            </div>
+
+          </div>
+
+
+          <!-- =========================
+               追加ボタン
+          ========================== -->
 
           <div class="col-12 text-center mt-3">
-            <button type="submit" class="btn btn-success px-5 py-2">
+
+            <button
+              type="submit"
+              id="add-submit-button"
+              class="btn btn-success px-5 py-2"
+            >
               追加
             </button>
+
           </div>
 
+
         </div>
+
       </form>
 
     </div>
+
   </div>
+
 </div>
 
-<link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+
+<!-- =========================
+     TomSelect
+========================== -->
+
+<link
+  href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"
+  rel="stylesheet"
+>
+
 <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 
+
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
 
-    const groupKey = document.getElementById('group_key').value;
+document.addEventListener(
+  "DOMContentLoaded",
+  function () {
 
-    const memberHidden = document.getElementById('member-hidden');
-    const costumeHidden = document.getElementById('costume-hidden');
-    const toggle = document.getElementById("continuous_mode");
+    /* =====================================================
+       基本要素
+    ===================================================== */
 
-    const memberTS = new TomSelect("#member", {
-      create: false,
-      maxItems: 1,
-      maxOptions: null,
-      placeholder: "メンバーを選択",
-      onChange: value => memberHidden.value = value
-    });
+    const groupKey =
+      document.getElementById(
+        "group_key"
+      ).value;
 
-    const costumeTS = new TomSelect("#costume", {
-      create: false,
-      maxItems: 1,
-      placeholder: "衣装を選択",
-      onChange: value => costumeHidden.value = value
-    });
 
-    const typeTS = new TomSelect("#photo_type", {
-      create: false,
-      maxItems: 1
-    });
+    const memberHidden =
+      document.getElementById(
+        "member-hidden"
+      );
 
-    const saved = localStorage.getItem("continuous_mode");
-    if (saved === "true") toggle.checked = true;
 
-    toggle.addEventListener("change", function () {
-      localStorage.setItem("continuous_mode", toggle.checked);
-    });
+    const costumeHidden =
+      document.getElementById(
+        "costume-hidden"
+      );
 
-    fetch(`/get_members?group=${encodeURIComponent(groupKey)}`)
-      .then(res => res.json())
-      .then(data => {
 
-        memberTS.clearOptions();
+    const toggle =
+      document.getElementById(
+        "continuous_mode"
+      );
 
-        data.members.forEach(member => {
-          memberTS.addOption({ value: member, text: member });
-        });
 
-        memberTS.refreshOptions(false);
+    const imageInput =
+      document.getElementById(
+        "user-photo-image"
+      );
 
-        const params = new URLSearchParams(window.location.search);
-        const memberParam = params.get("member");
 
-        if (memberParam) {
-          memberTS.setValue(memberParam);
-        }
-      });
+    const imagePreviewWrapper =
+      document.getElementById(
+        "image-preview-wrapper"
+      );
 
-    memberTS.on("change", function (member) {
 
-      costumeTS.clear();
-      costumeTS.clearOptions();
+    const imagePreview =
+      document.getElementById(
+        "image-preview"
+      );
 
-      typeTS.clear();
-      typeTS.clearOptions();
 
-      if (!member) return;
+    const addForm =
+      document.getElementById(
+        "add-form"
+      );
 
-      fetch(`/get_costumes?group=${groupKey}&member=${encodeURIComponent(member)}`)
-        .then(res => res.json())
-        .then(data => {
 
-          data.costumes.forEach(costume => {
-            costumeTS.addOption({ value: costume, text: costume });
-          });
+    const addSubmitButton =
+      document.getElementById(
+        "add-submit-button"
+      );
 
-          costumeTS.refreshOptions(false);
 
-          const params = new URLSearchParams(window.location.search);
-          const costumeParam = params.get("costume");
+    /* =====================================================
+       TomSelect
+    ===================================================== */
 
-          if (costumeParam) {
-            costumeTS.setValue(costumeParam);
+    const memberTS =
+      new TomSelect(
+        "#member",
+        {
+          create: false,
+          maxItems: 1,
+          maxOptions: null,
+          placeholder: "メンバーを選択",
+
+          onChange: value => {
+
+            memberHidden.value =
+              value || "";
+
           }
-        });
-    });
 
-    costumeTS.on("change", function (costume) {
+        }
+      );
 
-      typeTS.clear();
-      typeTS.clearOptions();
 
-      if (!costume) return;
+    const costumeTS =
+      new TomSelect(
+        "#costume",
+        {
+          create: false,
+          maxItems: 1,
+          placeholder: "衣装を選択",
 
-      fetch(`/get_types?group=${groupKey}&member=${encodeURIComponent(memberTS.getValue())}&costume=${encodeURIComponent(costume)}`)
-        .then(res => res.json())
-        .then(data => {
+          onChange: value => {
 
-          data.types.forEach(type => {
-            typeTS.addOption({
-              value: type,
-              text: type
-            });
-          });
+            costumeHidden.value =
+              value || "";
 
-          typeTS.refreshOptions(false);
-        })
-        .catch(err => {
-          console.error("type取得失敗", err);
-        });
-    });
+          }
 
-  });
+        }
+      );
+
+
+    const typeTS =
+      new TomSelect(
+        "#photo_type",
+        {
+          create: false,
+          maxItems: 1
+        }
+      );
+
+
+    /* =====================================================
+       連続追加モード
+    ===================================================== */
+
+    const saved =
+      localStorage.getItem(
+        "continuous_mode"
+      );
+
+
+    if (
+      saved === "true"
+    ) {
+
+      toggle.checked =
+        true;
+
+    }
+
+
+    toggle.addEventListener(
+      "change",
+      function () {
+
+        localStorage.setItem(
+          "continuous_mode",
+          toggle.checked
+        );
+
+      }
+    );
+
+
+    /* =====================================================
+       メンバー取得
+    ===================================================== */
+
+    fetch(
+      `/get_members?group=${encodeURIComponent(groupKey)}`
+    )
+
+      .then(
+        res => {
+
+          if (!res.ok) {
+
+            throw new Error(
+              "メンバー情報の取得に失敗しました。"
+            );
+
+          }
+
+          return res.json();
+
+        }
+      )
+
+      .then(
+        data => {
+
+          memberTS.clearOptions();
+
+
+          data.members.forEach(
+            member => {
+
+              memberTS.addOption({
+                value: member,
+                text: member
+              });
+
+            }
+          );
+
+
+          memberTS.refreshOptions(false);
+
+
+          const params =
+            new URLSearchParams(
+              window.location.search
+            );
+
+
+          const memberParam =
+            params.get("member");
+
+
+          if (memberParam) {
+
+            memberTS.setValue(
+              memberParam
+            );
+
+          }
+
+        }
+      )
+
+      .catch(
+        error => {
+
+          console.error(
+            error
+          );
+
+        }
+      );
+
+
+    /* =====================================================
+       メンバー変更
+    ===================================================== */
+
+    memberTS.on(
+      "change",
+      function (member) {
+
+        costumeTS.clear();
+
+        costumeTS.clearOptions();
+
+        typeTS.clear();
+
+        typeTS.clearOptions();
+
+
+        memberHidden.value =
+          member || "";
+
+
+        costumeHidden.value =
+          "";
+
+
+        if (!member) {
+
+          return;
+
+        }
+
+
+        fetch(
+          `/get_costumes?group=${encodeURIComponent(groupKey)}&member=${encodeURIComponent(member)}`
+        )
+
+          .then(
+            res => {
+
+              if (!res.ok) {
+
+                throw new Error(
+                  "衣装情報の取得に失敗しました。"
+                );
+
+              }
+
+              return res.json();
+
+            }
+          )
+
+          .then(
+            data => {
+
+              data.costumes.forEach(
+                costume => {
+
+                  costumeTS.addOption({
+                    value: costume,
+                    text: costume
+                  });
+
+                }
+              );
+
+
+              costumeTS.refreshOptions(false);
+
+
+              const params =
+                new URLSearchParams(
+                  window.location.search
+                );
+
+
+              const costumeParam =
+                params.get("costume");
+
+
+              if (costumeParam) {
+
+                costumeTS.setValue(
+                  costumeParam
+                );
+
+              }
+
+            }
+          )
+
+          .catch(
+            error => {
+
+              console.error(
+                error
+              );
+
+            }
+          );
+
+      }
+    );
+
+
+    /* =====================================================
+       衣装変更
+    ===================================================== */
+
+    costumeTS.on(
+      "change",
+      function (costume) {
+
+        typeTS.clear();
+
+        typeTS.clearOptions();
+
+
+        costumeHidden.value =
+          costume || "";
+
+
+        if (!costume) {
+
+          return;
+
+        }
+
+
+        fetch(
+          `/get_types?group=${encodeURIComponent(groupKey)}&member=${encodeURIComponent(memberTS.getValue())}&costume=${encodeURIComponent(costume)}`
+        )
+
+          .then(
+            res => {
+
+              if (!res.ok) {
+
+                throw new Error(
+                  "写真タイプ情報の取得に失敗しました。"
+                );
+
+              }
+
+              return res.json();
+
+            }
+          )
+
+          .then(
+            data => {
+
+              data.types.forEach(
+                type => {
+
+                  typeTS.addOption({
+                    value: type,
+                    text: type
+                  });
+
+                }
+              );
+
+
+              typeTS.refreshOptions(false);
+
+            }
+          )
+
+          .catch(
+            err => {
+
+              console.error(
+                "type取得失敗",
+                err
+              );
+
+            }
+          );
+
+      }
+    );
+
+
+    /* =====================================================
+       実物画像プレビュー
+    ===================================================== */
+
+    imageInput.addEventListener(
+      "change",
+      function () {
+
+        const file =
+          imageInput.files &&
+          imageInput.files.length > 0
+            ? imageInput.files[0]
+            : null;
+
+
+        if (!file) {
+
+          imagePreview.src =
+            "";
+
+          imagePreviewWrapper.style.display =
+            "none";
+
+          return;
+
+        }
+
+
+        /* ---------------------------------------------
+           ブラウザ側でも10MBをチェック
+        --------------------------------------------- */
+
+        const maxBytes =
+          10 * 1024 * 1024;
+
+
+        if (
+          file.size > maxBytes
+        ) {
+
+          alert(
+            "画像サイズが大きすぎます。10MB以下の画像を選択してください。"
+          );
+
+
+          imageInput.value =
+            "";
+
+
+          imagePreview.src =
+            "";
+
+
+          imagePreviewWrapper.style.display =
+            "none";
+
+
+          return;
+
+        }
+
+
+        /* ---------------------------------------------
+           画像形式チェック
+        --------------------------------------------- */
+
+        const allowedTypes = [
+          "image/jpeg",
+          "image/png",
+          "image/webp"
+        ];
+
+
+        if (
+          !allowedTypes.includes(
+            file.type
+          )
+        ) {
+
+          alert(
+            "JPG、PNG、WebP画像のみ選択できます。"
+          );
+
+
+          imageInput.value =
+            "";
+
+
+          imagePreview.src =
+            "";
+
+
+          imagePreviewWrapper.style.display =
+            "none";
+
+
+          return;
+
+        }
+
+
+        /* ---------------------------------------------
+           古いObject URLがあれば破棄
+        --------------------------------------------- */
+
+        if (
+          imagePreview.dataset.objectUrl
+        ) {
+
+          URL.revokeObjectURL(
+            imagePreview.dataset.objectUrl
+          );
+
+        }
+
+
+        /* ---------------------------------------------
+           プレビュー表示
+        --------------------------------------------- */
+
+        const objectUrl =
+          URL.createObjectURL(
+            file
+          );
+
+
+        imagePreview.dataset.objectUrl =
+          objectUrl;
+
+
+        imagePreview.src =
+          objectUrl;
+
+
+        imagePreviewWrapper.style.display =
+          "block";
+
+
+        imagePreview.onload =
+          function () {
+
+            if (
+              imagePreview.dataset.objectUrl
+            ) {
+
+              URL.revokeObjectURL(
+                imagePreview.dataset.objectUrl
+              );
+
+              delete imagePreview.dataset.objectUrl;
+
+            }
+
+          };
+
+      }
+    );
+
+
+    /* =====================================================
+       追加時の二重送信防止
+    ===================================================== */
+
+    addForm.addEventListener(
+      "submit",
+      function (event) {
+
+        const file =
+          imageInput.files &&
+          imageInput.files.length > 0
+            ? imageInput.files[0]
+            : null;
+
+
+        /* ---------------------------------------------
+           念のためブラウザ側で画像サイズを再確認
+        --------------------------------------------- */
+
+        if (file) {
+
+          const maxBytes =
+            10 * 1024 * 1024;
+
+
+          if (
+            file.size > maxBytes
+          ) {
+
+            event.preventDefault();
+
+
+            alert(
+              "画像サイズが大きすぎます。10MB以下の画像を選択してください。"
+            );
+
+
+            imageInput.focus();
+
+            return;
+
+          }
+
+
+          /* ---------------------------------------------
+             念のため画像形式も再確認
+          --------------------------------------------- */
+
+          const allowedTypes = [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ];
+
+
+          if (
+            !allowedTypes.includes(
+              file.type
+            )
+          ) {
+
+            event.preventDefault();
+
+
+            alert(
+              "JPG、PNG、WebP画像のみ選択できます。"
+            );
+
+
+            imageInput.focus();
+
+            return;
+
+          }
+
+        }
+
+
+        /* ---------------------------------------------
+           二重送信防止
+        --------------------------------------------- */
+
+        addSubmitButton.disabled =
+          true;
+
+
+        addSubmitButton.innerHTML =
+          '<span class="spinner-border spinner-border-sm me-1"></span> 追加中...';
+
+      }
+    );
+
+
+    /* =====================================================
+       ページ離脱時のObject URL解放
+    ===================================================== */
+
+    window.addEventListener(
+      "beforeunload",
+      function () {
+
+        if (
+          imagePreview.dataset.objectUrl
+        ) {
+
+          URL.revokeObjectURL(
+            imagePreview.dataset.objectUrl
+          );
+
+        }
+
+      }
+    );
+
+  }
+);
+
 </script>
 
 {% endblock %}
