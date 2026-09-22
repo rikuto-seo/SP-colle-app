@@ -1,4 +1,4 @@
-#route/photo.py
+# route/photo.py
 
 from flask import (
     render_template,
@@ -49,6 +49,97 @@ GROUP_KEY_MAP = {
 
 
 # =========================================================
+# 生写真一覧へ戻るヘルパー
+# =========================================================
+
+def _redirect_to_photo_index(group_key):
+    """
+    生写真一覧へ戻る。
+
+    フォームから next が渡されている場合は、
+    検索条件・並び順・ページ番号などを含めて
+    元のURLへ戻す。
+
+    next はサイト内URLのみ許可し、
+    外部URLへのリダイレクト（Open Redirect）は防止する。
+    """
+
+    next_url = request.form.get(
+        "next",
+        ""
+    ).strip()
+
+    if (
+        next_url
+        and next_url.startswith("/")
+        and not next_url.startswith("//")
+    ):
+        return redirect(next_url)
+
+    return redirect(
+        url_for(
+            "photo.index",
+            group_key=group_key
+        )
+    )
+
+
+# =========================================================
+# AJAX判定・レスポンス
+# =========================================================
+
+def _is_ajax_request():
+    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+
+def _ajax_success(message, action, photo_id=None):
+    return jsonify({
+        "success": True,
+        "message": message,
+        "action": action,
+        "photo_id": photo_id,
+    })
+
+
+def _photo_detail_payload(user_photo):
+    """
+    モーダル再描画用のUserPhoto詳細データを返す。
+    """
+    images = []
+
+    for image in user_photo.images:
+        try:
+            images.append({
+                "id": image.id,
+                "image_url": get_image_url(image.image_key),
+                "thumbnail_url": get_thumbnail_url(image.thumbnail_key),
+                "width": image.width,
+                "height": image.height,
+            })
+        except Exception:
+            current_app.logger.exception(
+                "Failed to generate image URL: user_photo_image_id=%s",
+                image.id
+            )
+
+    return {
+        "id": user_photo.id,
+        "type": user_photo.photo.photo_type.name,
+        "quantity": user_photo.quantity,
+        "available": user_photo.available_quantity,
+        "memo": user_photo.memo or "",
+        "date": (
+            user_photo.date.strftime("%Y-%m-%d")
+            if user_photo.date
+            else ""
+        ),
+        "is_favorite": bool(user_photo.is_favorite),
+        "images": images,
+        "image_count": len(images),
+    }
+
+
+# =========================================================
 # R2画像削除用ヘルパー
 # =========================================================
 
@@ -61,6 +152,7 @@ def _delete_user_photo_images_from_r2(user_photo):
     """
 
     for image in list(user_photo.images):
+
         delete_image_variants(
             image.image_key,
             image.thumbnail_key
@@ -354,7 +446,7 @@ def index(group_key):
         #   所持種類数
         #   メンバー順
         #   衣装名
-        #
+
         summary_query = summary_query.order_by(
             comp_rate_expr.desc(),
 
@@ -378,7 +470,7 @@ def index(group_key):
     elif sort == "quantity":
 
         # 枚数（一覧上の所持種類数）の多い順
-        #
+
         summary_query = summary_query.order_by(
             owned_types_expr.desc(),
 
@@ -402,7 +494,7 @@ def index(group_key):
     elif sort == "favorite":
 
         # お気に入り優先
-        #
+
         summary_query = summary_query.order_by(
             favorite_expr.desc(),
 
@@ -778,6 +870,7 @@ def index(group_key):
             request.full_path
     )
 
+
 # =========================================================
 # 生写真削除
 # =========================================================
@@ -806,75 +899,94 @@ def delete_user_photo(group_key, photo_id):
 
     # 所有チェック
     if photo.user_id != current_user.id:
-        flash('あなたの写真ではありません。', 'error')
+
+        flash(
+            'あなたの写真ではありません。',
+            'error'
+        )
+
         current_app.logger.debug(
             "[DEBUG] user mismatch: "
             "photo.user_id=%s, current_user.id=%s",
             photo.user_id,
             current_user.id
         )
-        return redirect(
-            url_for(
-                'photo.index',
-                group_key=group_key
-            )
+
+        return _redirect_to_photo_index(
+            group_key
         )
 
     # グループ整合性チェック
     if photo.photo.member.group_id != group.id:
-        flash('グループキーが不正です。', 'error')
+
+        flash(
+            'グループキーが不正です。',
+            'error'
+        )
+
         current_app.logger.debug(
             "[DEBUG] group mismatch: "
             "photo_group_id=%s, expected_group_id=%s",
             photo.photo.member.group_id,
             group.id
         )
-        return redirect(
-            url_for(
-                'photo.index',
-                group_key=group_key
-            )
+
+        return _redirect_to_photo_index(
+            group_key
         )
 
     # R2画像を先に削除
     try:
-        _delete_user_photo_images_from_r2(photo)
+
+        _delete_user_photo_images_from_r2(
+            photo
+        )
+
     except Exception:
+
         current_app.logger.exception(
             "Failed to delete R2 images before deleting UserPhoto: "
             "user_photo_id=%s",
             photo.id
         )
+
         flash(
             '画像の削除に失敗したため、生写真を削除できませんでした。',
             'error'
         )
-        return redirect(
-            url_for(
-                'photo.index',
-                group_key=group_key
-            )
+
+        return _redirect_to_photo_index(
+            group_key
         )
 
     # DB削除
     try:
+
         db.session.delete(photo)
         db.session.commit()
+
     except Exception:
+
         db.session.rollback()
+
         current_app.logger.exception(
             "Failed to delete UserPhoto: id=%s",
             photo_id
         )
-        flash('生写真の削除に失敗しました。', 'error')
-        return redirect(
-            url_for(
-                'photo.index',
-                group_key=group_key
-            )
+
+        flash(
+            '生写真の削除に失敗しました。',
+            'error'
         )
 
-    flash('生写真を削除しました。', 'success')
+        return _redirect_to_photo_index(
+            group_key
+        )
+
+    flash(
+        '生写真を削除しました。',
+        'success'
+    )
 
     current_app.logger.debug(
         "[DEBUG] Deleted photo id=%s, user_id=%s, group_key=%s",
@@ -883,11 +995,15 @@ def delete_user_photo(group_key, photo_id):
         group_key
     )
 
-    return redirect(
-        url_for(
-            'photo.index',
-            group_key=group_key
+    if _is_ajax_request():
+        return _ajax_success(
+            "生写真を削除しました。",
+            "photo_deleted",
+            photo_id
         )
+
+    return _redirect_to_photo_index(
+        group_key
     )
 
 
@@ -944,11 +1060,8 @@ def delete_user_photo_image(group_key, image_id):
             'error'
         )
 
-        return redirect(
-            url_for(
-                'photo.index',
-                group_key=group_key
-            )
+        return _redirect_to_photo_index(
+            group_key
         )
 
     if user_photo.user_id != current_user.id:
@@ -958,11 +1071,8 @@ def delete_user_photo_image(group_key, image_id):
             'error'
         )
 
-        return redirect(
-            url_for(
-                'photo.index',
-                group_key=group_key
-            )
+        return _redirect_to_photo_index(
+            group_key
         )
 
     # =====================================================
@@ -976,11 +1086,8 @@ def delete_user_photo_image(group_key, image_id):
             'error'
         )
 
-        return redirect(
-            url_for(
-                'photo.index',
-                group_key=group_key
-            )
+        return _redirect_to_photo_index(
+            group_key
         )
 
     # =====================================================
@@ -1010,11 +1117,8 @@ def delete_user_photo_image(group_key, image_id):
             'error'
         )
 
-        return redirect(
-            url_for(
-                'photo.index',
-                group_key=group_key
-            )
+        return _redirect_to_photo_index(
+            group_key
         )
 
     # =====================================================
@@ -1041,11 +1145,8 @@ def delete_user_photo_image(group_key, image_id):
             'error'
         )
 
-        return redirect(
-            url_for(
-                'photo.index',
-                group_key=group_key
-            )
+        return _redirect_to_photo_index(
+            group_key
         )
 
     # =====================================================
@@ -1067,11 +1168,15 @@ def delete_user_photo_image(group_key, image_id):
         group_key
     )
 
-    return redirect(
-        url_for(
-            'photo.index',
-            group_key=group_key
+    if _is_ajax_request():
+        return _ajax_success(
+            "実物画像を削除しました。",
+            "image_deleted",
+            user_photo.id
         )
+
+    return _redirect_to_photo_index(
+        group_key
     )
 
 
@@ -1102,12 +1207,14 @@ def upload_user_photo_image(group_key, photo_id):
 
     # グループ整合性チェック
     if photo.photo.member.group_id != group.id:
-        flash('グループキーが不正です。', 'error')
-        return redirect(
-            url_for(
-                'photo.index',
-                group_key=group_key
-            )
+
+        flash(
+            'グループキーが不正です。',
+            'error'
+        )
+
+        return _redirect_to_photo_index(
+            group_key
         )
 
     # =====================================================
@@ -1119,26 +1226,31 @@ def upload_user_photo_image(group_key, photo_id):
     form = UserPhotoImageUploadForm()
 
     if not form.validate_on_submit():
-        for errors in form.errors.values():
-            for error in errors:
-                flash(error, 'error')
 
-        return redirect(
-            url_for(
-                'photo.index',
-                group_key=group_key
-            )
+        for errors in form.errors.values():
+
+            for error in errors:
+
+                flash(
+                    error,
+                    'error'
+                )
+
+        return _redirect_to_photo_index(
+            group_key
         )
 
     uploaded_file = form.image.data
 
     if uploaded_file is None:
-        flash('画像ファイルを選択してください。', 'error')
-        return redirect(
-            url_for(
-                'photo.index',
-                group_key=group_key
-            )
+
+        flash(
+            '画像ファイルを選択してください。',
+            'error'
+        )
+
+        return _redirect_to_photo_index(
+            group_key
         )
 
     # =====================================================
@@ -1146,26 +1258,33 @@ def upload_user_photo_image(group_key, photo_id):
     # =====================================================
 
     try:
+
         file_bytes = uploaded_file.read()
+
     except Exception:
+
         current_app.logger.exception(
             "Failed to read uploaded image"
         )
-        flash('画像ファイルの読み込みに失敗しました。', 'error')
-        return redirect(
-            url_for(
-                'photo.index',
-                group_key=group_key
-            )
+
+        flash(
+            '画像ファイルの読み込みに失敗しました。',
+            'error'
+        )
+
+        return _redirect_to_photo_index(
+            group_key
         )
 
     if not file_bytes:
-        flash('画像ファイルが空です。', 'error')
-        return redirect(
-            url_for(
-                'photo.index',
-                group_key=group_key
-            )
+
+        flash(
+            '画像ファイルが空です。',
+            'error'
+        )
+
+        return _redirect_to_photo_index(
+            group_key
         )
 
     # =====================================================
@@ -1177,25 +1296,35 @@ def upload_user_photo_image(group_key, photo_id):
     # =====================================================
 
     try:
-        variants = create_image_variants(file_bytes)
-    except ValueError as exc:
-        flash(str(exc), 'error')
-        return redirect(
-            url_for(
-                'photo.index',
-                group_key=group_key
-            )
+
+        variants = create_image_variants(
+            file_bytes
         )
+
+    except ValueError as exc:
+
+        flash(
+            str(exc),
+            'error'
+        )
+
+        return _redirect_to_photo_index(
+            group_key
+        )
+
     except Exception:
+
         current_app.logger.exception(
             "Failed to create image variants"
         )
-        flash('画像の処理に失敗しました。', 'error')
-        return redirect(
-            url_for(
-                'photo.index',
-                group_key=group_key
-            )
+
+        flash(
+            '画像の処理に失敗しました。',
+            'error'
+        )
+
+        return _redirect_to_photo_index(
+            group_key
         )
 
     image_bytes = variants["image_bytes"]
@@ -1203,7 +1332,8 @@ def upload_user_photo_image(group_key, photo_id):
 
     additional_bytes = (
         len(image_bytes)
-        + len(thumbnail_bytes)
+        +
+        len(thumbnail_bytes)
     )
 
     # =====================================================
@@ -1211,22 +1341,23 @@ def upload_user_photo_image(group_key, photo_id):
     # =====================================================
 
     if not current_user.can_upload_image():
+
         flash(
             '現在のプランでは実物画像をアップロードできません。',
             'error'
         )
-        return redirect(
-            url_for(
-                'photo.index',
-                group_key=group_key
-            )
+
+        return _redirect_to_photo_index(
+            group_key
         )
 
     if not current_user.can_upload_image_bytes(
         additional_bytes
     ):
+
         remaining_bytes = (
-            current_user.get_remaining_image_storage_bytes()
+            current_user
+            .get_remaining_image_storage_bytes()
         )
 
         remaining_mb = max(
@@ -1243,11 +1374,8 @@ def upload_user_photo_image(group_key, photo_id):
             'error'
         )
 
-        return redirect(
-            url_for(
-                'photo.index',
-                group_key=group_key
-            )
+        return _redirect_to_photo_index(
+            group_key
         )
 
     # =====================================================
@@ -1304,10 +1432,14 @@ def upload_user_photo_image(group_key, photo_id):
             height=variants["height"],
         )
 
-        db.session.add(image_record)
+        db.session.add(
+            image_record
+        )
+
         db.session.commit()
 
     except Exception:
+
         db.session.rollback()
 
         current_app.logger.exception(
@@ -1319,12 +1451,21 @@ def upload_user_photo_image(group_key, photo_id):
 
         # R2側に保存済みならロールバック
         if image_uploaded or thumbnail_uploaded:
+
             try:
+
                 delete_image_variants(
-                    image_key if image_uploaded else None,
-                    thumbnail_key if thumbnail_uploaded else None
+                    image_key
+                    if image_uploaded
+                    else None,
+
+                    thumbnail_key
+                    if thumbnail_uploaded
+                    else None
                 )
+
             except Exception:
+
                 current_app.logger.exception(
                     "Failed to rollback R2 objects: "
                     "image_key=%s, thumbnail_key=%s",
@@ -1337,11 +1478,8 @@ def upload_user_photo_image(group_key, photo_id):
             'error'
         )
 
-        return redirect(
-            url_for(
-                'photo.index',
-                group_key=group_key
-            )
+        return _redirect_to_photo_index(
+            group_key
         )
 
     flash(
@@ -1349,11 +1487,15 @@ def upload_user_photo_image(group_key, photo_id):
         'success'
     )
 
-    return redirect(
-        url_for(
-            'photo.index',
-            group_key=group_key
+    if _is_ajax_request():
+        return _ajax_success(
+            "実物画像をアップロードしました。",
+            "image_uploaded",
+            photo.id
         )
+
+    return _redirect_to_photo_index(
+        group_key
     )
 
 
@@ -1361,7 +1503,10 @@ def upload_user_photo_image(group_key, photo_id):
 # 生写真追加
 # =========================================================
 
-@photo_bp.route('/add/<group_key>', methods=['GET', 'POST'])
+@photo_bp.route(
+    '/add/<group_key>',
+    methods=['GET', 'POST']
+)
 @login_required
 @group_required
 def add(group_key):
@@ -1371,6 +1516,7 @@ def add(group_key):
     ).first_or_404()
 
     from forms import AddPhotoForm
+
     form = AddPhotoForm()
 
     # =========================
@@ -1379,24 +1525,43 @@ def add(group_key):
 
     if request.method == 'POST':
 
-        member = request.form.get('member')
-        costume = request.form.get('costume')
-        type_name = request.form.get('photo_type')
+        member = request.form.get(
+            'member'
+        )
+
+        costume = request.form.get(
+            'costume'
+        )
+
+        type_name = request.form.get(
+            'photo_type'
+        )
 
         # 安全にint化
         try:
+
             quantity = int(
                 request.form.get(
                     'quantity',
                     1
                 )
             )
-        except (TypeError, ValueError):
+
+        except (
+            TypeError,
+            ValueError
+        ):
+
             quantity = 1
 
         # バリデーション
         if not member or not costume or not type_name:
-            flash('入力が不正です', 'error')
+
+            flash(
+                '入力が不正です',
+                'error'
+            )
+
             return redirect(
                 url_for(
                     'photo.add',
@@ -1407,23 +1572,30 @@ def add(group_key):
         # 対象photo取得
         photo = (
             db.session.query(Photo)
+
             .join(Member)
+
             .join(Costume)
+
             .join(PhotoType)
+
             .filter(
                 Member.name == member,
                 Costume.name == costume,
                 PhotoType.name == type_name,
                 Member.group_id == group.id
             )
+
             .first()
         )
 
         if not photo:
+
             flash(
                 '該当する写真が見つかりません',
                 'error'
             )
+
             return redirect(
                 url_for(
                     'photo.add',
@@ -1438,7 +1610,9 @@ def add(group_key):
         # ファイルが選択されていない場合は従来通り追加する。
         # =====================================================
 
-        uploaded_file = request.files.get('image')
+        uploaded_file = request.files.get(
+            'image'
+        )
 
         has_image = bool(
             uploaded_file
@@ -1456,8 +1630,11 @@ def add(group_key):
         if has_image:
 
             try:
+
                 file_bytes = uploaded_file.read()
+
             except Exception:
+
                 current_app.logger.exception(
                     "Failed to read uploaded image "
                     "while adding UserPhoto"
@@ -1498,9 +1675,11 @@ def add(group_key):
             # -------------------------------------------------
 
             try:
+
                 variants = create_image_variants(
                     file_bytes
                 )
+
             except ValueError as exc:
 
                 flash(
@@ -1543,7 +1722,8 @@ def add(group_key):
 
             additional_bytes = (
                 len(image_bytes)
-                + len(thumbnail_bytes)
+                +
+                len(thumbnail_bytes)
             )
 
             # -------------------------------------------------
@@ -1585,7 +1765,8 @@ def add(group_key):
                     0,
                     round(
                         remaining_bytes
-                        / (1024 * 1024),
+                        /
+                        (1024 * 1024),
                         1
                     )
                 )
@@ -1637,7 +1818,9 @@ def add(group_key):
                 quantity=quantity
             )
 
-            db.session.add(user_photo)
+            db.session.add(
+                user_photo
+            )
 
             # -------------------------------------------------
             # UserPhoto.idを取得する
@@ -1647,6 +1830,7 @@ def add(group_key):
             # -------------------------------------------------
 
             try:
+
                 db.session.flush()
 
             except Exception:
@@ -1737,7 +1921,9 @@ def add(group_key):
                     height=variants["height"],
                 )
 
-                db.session.add(image_record)
+                db.session.add(
+                    image_record
+                )
 
             except Exception:
 
@@ -1763,6 +1949,7 @@ def add(group_key):
                             image_key
                             if image_uploaded
                             else None,
+
                             thumbnail_key
                             if thumbnail_uploaded
                             else None
@@ -1825,6 +2012,7 @@ def add(group_key):
                         image_key
                         if image_uploaded
                         else None,
+
                         thumbnail_key
                         if thumbnail_uploaded
                         else None
@@ -1912,7 +2100,10 @@ def add(group_key):
 # 生写真をあげる
 # =========================================================
 
-@photo_bp.route('/give/<group_key>', methods=['GET', 'POST'])
+@photo_bp.route(
+    '/give/<group_key>',
+    methods=['GET', 'POST']
+)
 @login_required
 @group_required
 def give(group_key):
@@ -1922,19 +2113,40 @@ def give(group_key):
     ).first_or_404()
 
     from forms import GiveawayPhotoForm
+
     form = GiveawayPhotoForm()
 
     if form.validate_on_submit():
 
         user_photo = (
             db.session.query(UserPhoto)
+
             .options(
-                joinedload(UserPhoto.images)
+                joinedload(
+                    UserPhoto.images
+                )
             )
-            .join(Photo, Photo.id == UserPhoto.photo_id)
-            .join(Member, Member.id == Photo.member_id)
-            .join(Costume, Costume.id == Photo.costume_id)
-            .join(PhotoType, PhotoType.id == Photo.type_id)
+
+            .join(
+                Photo,
+                Photo.id == UserPhoto.photo_id
+            )
+
+            .join(
+                Member,
+                Member.id == Photo.member_id
+            )
+
+            .join(
+                Costume,
+                Costume.id == Photo.costume_id
+            )
+
+            .join(
+                PhotoType,
+                PhotoType.id == Photo.type_id
+            )
+
             .filter(
                 UserPhoto.user_id == current_user.id,
                 Member.group_id == group.id,
@@ -1942,13 +2154,16 @@ def give(group_key):
                 Costume.name == form.costume.data,
                 PhotoType.name == form.photo_type.data
             )
+
             .first()
         )
 
         if (
             not user_photo
-            or user_photo.quantity < form.quantity.data
+            or user_photo.quantity
+            < form.quantity.data
         ):
+
             flash(
                 '所持していない写真、または所持枚数を超える枚数はあげられません。',
                 'error'
@@ -1961,7 +2176,9 @@ def give(group_key):
                 )
             )
 
-        user_photo.quantity -= form.quantity.data
+        user_photo.quantity -= (
+            form.quantity.data
+        )
 
         user_photo.available_quantity = min(
             user_photo.available_quantity,
@@ -1973,10 +2190,13 @@ def give(group_key):
 
             # R2画像も削除
             try:
+
                 _delete_user_photo_images_from_r2(
                     user_photo
                 )
+
             except Exception:
+
                 current_app.logger.exception(
                     "Failed to delete R2 images when "
                     "giving away all photos: user_photo_id=%s",
@@ -1997,12 +2217,16 @@ def give(group_key):
                     )
                 )
 
-            db.session.delete(user_photo)
+            db.session.delete(
+                user_photo
+            )
 
         try:
+
             db.session.commit()
 
         except Exception:
+
             db.session.rollback()
 
             current_app.logger.exception(
@@ -2036,8 +2260,13 @@ def give(group_key):
     if request.method == 'POST':
 
         for errors in form.errors.values():
+
             for error in errors:
-                flash(error, 'error')
+
+                flash(
+                    error,
+                    'error'
+                )
 
     return render_template(
         'give.html',
@@ -2054,13 +2283,16 @@ def give(group_key):
 @login_required
 def get_members():
 
-    group = request.args.get('group')
+    group = request.args.get(
+        'group'
+    )
 
     g = Group.query.filter_by(
         key=group
     ).first()
 
     if not g:
+
         return jsonify({
             "members": []
         })
@@ -2068,7 +2300,9 @@ def get_members():
     from services.photo_service import get_members
 
     return jsonify({
-        "members": get_members(g.id)
+        "members": get_members(
+            g.id
+        )
     })
 
 
@@ -2080,14 +2314,20 @@ def get_members():
 @login_required
 def get_costumes():
 
-    group = request.args.get('group')
-    member = request.args.get('member')
+    group = request.args.get(
+        'group'
+    )
+
+    member = request.args.get(
+        'member'
+    )
 
     g = Group.query.filter_by(
         key=group
     ).first()
 
     if not g:
+
         return jsonify({
             "costumes": []
         })
@@ -2110,15 +2350,24 @@ def get_costumes():
 @login_required
 def get_types():
 
-    group = request.args.get('group')
-    member = request.args.get('member')
-    costume = request.args.get('costume')
+    group = request.args.get(
+        'group'
+    )
+
+    member = request.args.get(
+        'member'
+    )
+
+    costume = request.args.get(
+        'costume'
+    )
 
     g = Group.query.filter_by(
         key=group
     ).first()
 
     if not g:
+
         return jsonify({
             "types": []
         })
@@ -2149,11 +2398,13 @@ def _owned_group_from_request():
     ).first()
 
     if not group:
+
         abort(404)
 
     if not current_user.can_access_group(
         group_key
     ):
+
         abort(403)
 
     return group
@@ -2193,6 +2444,7 @@ def get_owned_costumes():
     ).strip()
 
     if not member:
+
         return jsonify({
             'costumes': []
         })
@@ -2231,6 +2483,7 @@ def get_owned_types():
     ).strip()
 
     if not member or not costume:
+
         return jsonify({
             'types': []
         })
@@ -2246,6 +2499,47 @@ def get_owned_types():
             member,
             costume
         )
+    })
+
+
+# =========================================================
+# 生写真詳細取得（モーダル再描画用）
+# =========================================================
+
+@photo_bp.route(
+    '/get_user_photo_detail/<group_key>/<int:photo_id>',
+    methods=['GET']
+)
+@login_required
+@group_required
+def get_user_photo_detail(group_key, photo_id):
+
+    group = Group.query.filter_by(
+        key=group_key
+    ).first_or_404()
+
+    user_photo = (
+        UserPhoto.query
+        .options(
+            joinedload(UserPhoto.images),
+            joinedload(UserPhoto.photo)
+            .joinedload(Photo.photo_type),
+            joinedload(UserPhoto.photo)
+            .joinedload(Photo.member)
+        )
+        .filter_by(
+            id=photo_id,
+            user_id=current_user.id
+        )
+        .first_or_404()
+    )
+
+    if user_photo.photo.member.group_id != group.id:
+        abort(403)
+
+    return jsonify({
+        "success": True,
+        "detail": _photo_detail_payload(user_photo),
     })
 
 
@@ -2273,11 +2567,8 @@ def update_user_photo(group_key, photo_id):
             'error'
         )
 
-        return redirect(
-            url_for(
-                'photo.index',
-                group_key=group_key
-            )
+        return _redirect_to_photo_index(
+            group_key
         )
 
     # グループ整合性チェック
@@ -2286,16 +2577,14 @@ def update_user_photo(group_key, photo_id):
     ).first_or_404()
 
     if photo.photo.member.group_id != group.id:
+
         flash(
             'グループキーが不正です。',
             'error'
         )
 
-        return redirect(
-            url_for(
-                'photo.index',
-                group_key=group_key
-            )
+        return _redirect_to_photo_index(
+            group_key
         )
 
     try:
@@ -2332,20 +2621,26 @@ def update_user_photo(group_key, photo_id):
         )
 
         if date_str:
+
             photo.date = date.fromisoformat(
                 date_str
             )
+
         else:
+
             photo.date = None
 
         # バリデーション
         if quantity < 0:
+
             quantity = 0
 
         if available < 0:
+
             available = 0
 
         if available > quantity:
+
             available = quantity
 
         photo.quantity = quantity
@@ -2361,23 +2656,31 @@ def update_user_photo(group_key, photo_id):
 
             photo = (
                 UserPhoto.query
+
                 .options(
-                    joinedload(UserPhoto.images)
+                    joinedload(
+                        UserPhoto.images
+                    )
                 )
+
                 .filter_by(
                     id=photo_id,
                     user_id=current_user.id
                 )
+
                 .first()
             )
 
             if photo:
 
                 try:
+
                     _delete_user_photo_images_from_r2(
                         photo
                     )
+
                 except Exception:
+
                     db.session.rollback()
 
                     current_app.logger.exception(
@@ -2392,14 +2695,13 @@ def update_user_photo(group_key, photo_id):
                         'error'
                     )
 
-                    return redirect(
-                        url_for(
-                            'photo.index',
-                            group_key=group_key
-                        )
+                    return _redirect_to_photo_index(
+                        group_key
                     )
 
-                db.session.delete(photo)
+                db.session.delete(
+                    photo
+                )
 
         db.session.commit()
 
@@ -2422,9 +2724,20 @@ def update_user_photo(group_key, photo_id):
             'error'
         )
 
-    return redirect(
-        url_for(
-            'photo.index',
-            group_key=group_key
+    if _is_ajax_request():
+        if quantity == 0:
+            return _ajax_success(
+                "更新しました。",
+                "photo_deleted",
+                photo_id
+            )
+
+        return _ajax_success(
+            "更新しました。",
+            "updated",
+            photo_id
         )
+
+    return _redirect_to_photo_index(
+        group_key
     )
