@@ -91,6 +91,88 @@
     </div>
   </div>
 
+
+  <!-- 画像保存容量 -->
+  <div class="card mb-4">
+    <div class="card-body">
+
+      <h5 class="fw-bold mb-3">
+        <i class="fa-solid fa-hard-drive me-2"></i>画像保存容量
+      </h5>
+
+      <!-- 使用量・上限 -->
+      <div class="d-flex justify-content-between align-items-end mb-2">
+
+        <div>
+          <span class="fs-5 fw-bold">
+            {{ image_storage_used_display }}
+          </span>
+          <span class="text-muted">
+            / {{ image_storage_limit_gb }} GB
+          </span>
+        </div>
+
+        <span class="small text-muted">
+          {{ image_storage_usage_percent }}%
+        </span>
+
+      </div>
+
+      <!-- プログレスバー -->
+      <div
+        class="progress"
+        role="progressbar"
+        aria-label="画像保存容量の使用率"
+        aria-valuenow="{{ image_storage_usage_percent }}"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        style="height: 10px;"
+      >
+        <div
+          class="progress-bar
+          {% if image_storage_usage_percent >= 90 %}
+            bg-danger
+          {% elif image_storage_usage_percent >= 70 %}
+            bg-warning
+          {% endif %}"
+          style="width: {{ image_storage_usage_percent }}%;"
+        ></div>
+      </div>
+
+      <!-- 残り容量 -->
+      <div class="d-flex justify-content-between mt-2 small text-muted">
+        <span>
+          残り {{ image_storage_remaining_display }}
+        </span>
+
+        <span>
+          上限 {{ image_storage_limit_gb }} GB
+        </span>
+      </div>
+
+      <!-- 注意事項 -->
+      <div class="text-muted small mt-3">
+        <i class="fa-solid fa-circle-info me-1"></i>
+        画像は1枚あたり最大10MBまでアップロードできます。
+        保存時にはWebP形式に変換・圧縮されます。
+      </div>
+
+      {% if image_storage_usage_percent >= 90 and image_storage_usage_percent < 100 %}
+      <div class="alert alert-warning mt-3 mb-0 py-2 small">
+        <i class="fa-solid fa-triangle-exclamation me-1"></i>
+        画像保存容量の残りが少なくなっています。
+      </div>
+      {% elif image_storage_usage_percent >= 100 %}
+      <div class="alert alert-danger mt-3 mb-0 py-2 small">
+        <i class="fa-solid fa-circle-exclamation me-1"></i>
+        画像保存容量が上限に達しています。
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+
   <div class="mb-4">
     <h4 class="fw-bold mb-3">
       <i class="fa-solid fa-qrcode me-2"></i>所持一覧のQRコード共有
@@ -128,8 +210,12 @@
 
           <div id="qr-wrapper">
             {% if share_statuses[default_group] %}
-            <img id="qr-image" src="data:image/png;base64,{{ qr_codes.get(default_group, '') }}" class="mb-3"
-              style="height:120px;">
+            <img
+              id="qr-image"
+              src="data:image/png;base64,{{ qr_codes.get(default_group, '') }}"
+              class="mb-3"
+              style="height:120px;"
+            >
             {% else %}
             <div class="text-muted mt-3">
               <i class="fa-solid fa-lock me-1"></i>非公開中です
@@ -137,11 +223,18 @@
             {% endif %}
           </div>
 
-          <form id="share-form" method="post" action="{{ url_for('user.toggle_share', group_key=default_group) }}">
+          <form
+            id="share-form"
+            method="post"
+            action="{{ url_for('user.toggle_share', group_key=default_group) }}"
+          >
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-            <button type="submit" id="share-btn"
-              class="btn {% if share_statuses[default_group] %}btn-success{% else %}btn-outline-secondary{% endif %}">
+            <button
+              type="submit"
+              id="share-btn"
+              class="btn {% if share_statuses[default_group] %}btn-success{% else %}btn-outline-secondary{% endif %}"
+            >
               {% if share_statuses[default_group] %}
               <i class="fa-solid fa-eye"></i> 公開中
               {% else %}
@@ -161,25 +254,44 @@
     </div>
   </div>
 
+
   <div class="card">
     <div class="card-body">
 
       <h5><i class="fa-solid fa-gear me-2"></i>設定</h5>
 
       <div class="setting-links">
-        <a href="{{ url_for('user.edit_profile') }}"><i class="fa-solid fa-user-pen me-2"></i>プロフィール編集</a>
-        <a href="{{ url_for('user.icon_setting') }}"><i class="fa-solid fa-image me-2"></i>アイコン設定</a>
-        <a href="{{ url_for('user.change_password') }}"><i class="fa-solid fa-key me-2"></i>パスワード変更</a>
+        <a href="{{ url_for('user.edit_profile') }}">
+          <i class="fa-solid fa-user-pen me-2"></i>プロフィール編集
+        </a>
+
+        <a href="{{ url_for('user.icon_setting') }}">
+          <i class="fa-solid fa-image me-2"></i>アイコン設定
+        </a>
+
+        <a href="{{ url_for('user.change_password') }}">
+          <i class="fa-solid fa-key me-2"></i>パスワード変更
+        </a>
 
         <form action="{{ url_for('user.toggle_dark_mode') }}" method="post">
           <button type="submit" class="sidebar-like-link">
             <i class="fa-solid fa-moon me-2"></i>
-            {% if current_user.dark_mode %}ダークモード解除{% else %}ダークモード有効{% endif %}
+            {% if current_user.dark_mode %}
+            ダークモード解除
+            {% else %}
+            ダークモード有効
+            {% endif %}
           </button>
         </form>
 
-        <a href="{{ url_for('user.logout') }}"><i class="fa-solid fa-right-from-bracket me-2"></i>ログアウト</a>
-        <a href="{{ url_for('user.confirm_delete_account') }}" class="text-danger">
+        <a href="{{ url_for('user.logout') }}">
+          <i class="fa-solid fa-right-from-bracket me-2"></i>ログアウト
+        </a>
+
+        <a
+          href="{{ url_for('user.confirm_delete_account') }}"
+          class="text-danger"
+        >
           <i class="fa-solid fa-user-xmark me-2"></i>アカウント削除
         </a>
       </div>
@@ -188,6 +300,7 @@
   </div>
 
 </div>
+
 
 <script>
   const qrCodes = {{ qr_codes | tojson }};
@@ -215,17 +328,40 @@
 
       if (shareStatuses[key]) {
         if (qrCodes[key]) {
-          qrWrapper.innerHTML = `<img src="data:image/png;base64,${qrCodes[key]}" style="height:120px;" class="mb-3">`;
+          qrWrapper.innerHTML = `
+            <img
+              src="data:image/png;base64,${qrCodes[key]}"
+              style="height:120px;"
+              class="mb-3"
+            >
+          `;
         }
-        shareBtn.classList.remove("btn-success", "btn-outline-secondary");
+
+        shareBtn.classList.remove(
+          "btn-success",
+          "btn-outline-secondary"
+        );
+
         shareBtn.classList.add("btn-success");
-        shareBtn.innerHTML = '<i class="fa-solid fa-eye"></i> 公開中';
+
+        shareBtn.innerHTML =
+          '<i class="fa-solid fa-eye"></i> 公開中';
+
       } else {
-        qrWrapper.innerHTML = `<div class="text-muted mt-3"><i class="fa-solid fa-lock me-1"></i>非公開中です</div>`;
+
+        qrWrapper.innerHTML = `
+          <div class="text-muted mt-3">
+            <i class="fa-solid fa-lock me-1"></i>非公開中です
+          </div>
+        `;
+
         shareBtn.className = "btn btn-outline-secondary";
-        shareBtn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> 非公開';
+
+        shareBtn.innerHTML =
+          '<i class="fa-solid fa-eye-slash"></i> 非公開';
       }
     });
   });
 </script>
+
 {% endblock %}

@@ -10,11 +10,13 @@
         SP Colle | 坂道グループ生写真管理・交換支援サービス
     </title>
 
-    <meta name="description" content="乃木坂46・櫻坂46・日向坂46対応。所持管理、欲しい写真共有、QR共有、自動トレード照合で生写真交換をもっと便利に。">
+    <meta name="description"
+        content="乃木坂46・櫻坂46・日向坂46対応。生写真の所持管理、実物画像の保存、欲しい写真共有、QR共有、自動トレード照合までまとめて管理できます。">
 
     <meta property="og:title" content="SP Colle">
 
-    <meta property="og:description" content="坂道グループ生写真の所持管理・交換支援サービス">
+    <meta property="og:description"
+        content="坂道グループ生写真の所持管理・画像保存・交換支援サービス">
 
     <meta property="og:image" content="https://spcolle.com/static/images/ogp.png">
 
@@ -24,18 +26,25 @@
 
     <meta name="twitter:card" content="summary_large_image">
 
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="坂道グループ 生写真アプリ">
-    <meta name="twitter:description" content="坂道グループの生写真を管理・記録できるアプリ">
+    <meta name="twitter:title" content="坂道グループ 生写真管理・交換支援サービス">
+
+    <meta name="twitter:description"
+        content="坂道グループの生写真を画像付きで管理・記録。欲しい写真共有やトレード照合にも対応。">
+
     <meta name="twitter:image" content="https://spcolle.com/static/images/ogp.png">
+
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-T328YZ27CL"></script>
+
     <script>
         window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
+
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+
         gtag('js', new Date());
 
         gtag('config', 'G-T328YZ27CL');
@@ -47,8 +56,11 @@
 
     <link rel="apple-touch-icon" href="/static/images/apple-touch-icon.png">
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
     <style>
+
         :root {
             --primary: #6d28d9;
             --primary-dark: #5b21b6;
@@ -112,6 +124,10 @@
             margin: 0 auto 60px;
         }
 
+        /* =========================
+           HERO
+        ========================= */
+
         .hero {
             background:
                 linear-gradient(135deg,
@@ -146,7 +162,7 @@
             color: white;
             opacity: .9;
 
-            max-width: 700px;
+            max-width: 750px;
             margin: auto auto 40px;
 
             font-size: 1.15rem;
@@ -187,105 +203,9 @@
             background: rgba(255, 255, 255, .1);
         }
 
-        .problem {
-            background: var(--bg);
-        }
-
-        .problem-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
-
-        .problem-card {
-            background: white;
-            padding: 24px;
-            border-radius: 16px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, .05);
-        }
-
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 24px;
-        }
-
-        .feature {
-            background: white;
-            border-radius: 18px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, .07);
-        }
-
-        .feature h3 {
-            margin-bottom: 12px;
-        }
-
-        .highlight {
-            background:
-                linear-gradient(135deg,
-                    #f5f3ff,
-                    #eff6ff);
-        }
-
-        .flow {
-            display: flex;
-            justify-content: center;
-            gap: 16px;
-            flex-wrap: wrap;
-            margin-top: 40px;
-        }
-
-        .flow-item {
-            background: white;
-            padding: 18px 24px;
-            border-radius: 12px;
-            font-weight: 600;
-        }
-
-        .screenshot {
-            margin-top: 50px;
-        }
-
-        .screenshot img {
-            width: 100%;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, .12);
-        }
-
-        .faq {
-            max-width: 900px;
-            margin: auto;
-        }
-
-        .faq-item {
-            margin-bottom: 24px;
-            padding: 24px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, .05);
-        }
-
-        .cta {
-            text-align: center;
-
-            background:
-                linear-gradient(135deg,
-                    #6d28d9,
-                    #2563eb);
-
-            color: white;
-        }
-
-        .cta p {
-            color: white;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 40px;
-            color: #999;
-        }
+        /* =========================
+           APP PREVIEW
+        ========================= */
 
         .app-preview {
             background: #fff;
@@ -317,6 +237,194 @@
             margin-top: 20px;
         }
 
+        /* =========================
+           PROBLEM
+        ========================= */
+
+        .problem {
+            background: var(--bg);
+        }
+
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .problem-card {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, .05);
+        }
+
+        /* =========================
+           FEATURES
+        ========================= */
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .feature {
+            background: white;
+            border-radius: 18px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .07);
+        }
+
+        .feature h3 {
+            margin-bottom: 12px;
+        }
+
+        .feature-new {
+            border: 2px solid rgba(109, 40, 217, .15);
+        }
+
+        .feature-label {
+            display: inline-block;
+            font-size: .75rem;
+            font-weight: 700;
+            color: var(--primary);
+            background: #f5f3ff;
+            padding: 4px 10px;
+            border-radius: 999px;
+            margin-bottom: 12px;
+        }
+
+        /* =========================
+           HIGHLIGHT
+        ========================= */
+
+        .highlight {
+            background:
+                linear-gradient(135deg,
+                    #f5f3ff,
+                    #eff6ff);
+        }
+
+        .flow {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 40px;
+        }
+
+        .flow-item {
+            background: white;
+            padding: 18px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        /* =========================
+           IMAGE MANAGEMENT
+        ========================= */
+
+        .image-feature {
+            background:
+                linear-gradient(135deg,
+                    #faf5ff,
+                    #eff6ff);
+        }
+
+        .image-feature-box {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, .07);
+        }
+
+        .image-feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .image-feature-item {
+            padding: 22px;
+            border-radius: 16px;
+            background: #fafafa;
+        }
+
+        .image-feature-item h3 {
+            font-size: 1.05rem;
+            margin-bottom: 8px;
+        }
+
+        .image-feature-item p {
+            font-size: .95rem;
+        }
+
+        .storage-note {
+            margin-top: 28px;
+            padding: 18px 20px;
+            background: #f9fafb;
+            border-radius: 12px;
+            font-size: .9rem;
+            text-align: center;
+        }
+
+        /* =========================
+           FAQ
+        ========================= */
+
+        .faq {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .faq-item {
+            margin-bottom: 24px;
+            padding: 24px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, .05);
+        }
+
+        .faq-item h3 {
+            margin-bottom: 10px;
+        }
+
+        /* =========================
+           CTA
+        ========================= */
+
+        .cta {
+            text-align: center;
+
+            background:
+                linear-gradient(135deg,
+                    #6d28d9,
+                    #2563eb);
+
+            color: white;
+        }
+
+        .cta p {
+            color: white;
+        }
+
+        /* =========================
+           FOOTER
+        ========================= */
+
+        .footer {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        /* =========================
+           RESPONSIVE
+        ========================= */
+
         @media(max-width:768px) {
 
             section {
@@ -327,31 +435,48 @@
                 padding: 100px 0;
             }
 
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .image-feature-box {
+                padding: 28px 20px;
+            }
+
         }
+
     </style>
 
 </head>
 
 <body>
 
-    <section class="hero">
+    <!-- =========================
+         HERO
+    ========================= -->
 
+    <section class="hero">
 
         <div class="container">
 
             <div class="badge">
-                坂道生写真トレード支援サービス
+                坂道グループ生写真管理・交換支援サービス
             </div>
 
             <h1>
-                生写真の交換相手を<br>
-                もっと見つけやすく
+                生写真を、<br>
+                もっと便利に管理する。
             </h1>
 
             <p>
-                所持管理、欲しい写真共有、QRコード共有、
+                所持管理、実物画像の保存、欲しい写真共有、QRコード共有、
                 自動トレード照合をひとつに。
-                Excelやスプレッドシート管理から卒業しませんか？
+                Excelやスプレッドシートだけでは難しかった
+                生写真コレクションを、スマートに管理できます。
             </p>
 
             <div class="hero-buttons">
@@ -372,8 +497,12 @@
 
         </div>
 
-
     </section>
+
+
+    <!-- =========================
+         APP PREVIEW
+    ========================= -->
 
     <section class="app-preview">
 
@@ -392,7 +521,7 @@
                 <div class="swiper-wrapper">
 
                     <div class="swiper-slide">
-                        <img src="/static/lp/trade.png" alt="トレード照合">
+                        <img src="/static/lp/trade.png" alt="自動トレード照合">
                     </div>
 
                     <div class="swiper-slide">
@@ -400,7 +529,7 @@
                     </div>
 
                     <div class="swiper-slide">
-                        <img src="/static/lp/collection.png" alt="所持管理">
+                        <img src="/static/lp/collection.png" alt="生写真所持管理">
                     </div>
 
                 </div>
@@ -413,18 +542,23 @@
 
     </section>
 
-    <section class="problem">
 
+    <!-- =========================
+         PROBLEM
+    ========================= -->
+
+    <section class="problem">
 
         <div class="container">
 
             <h2 class="section-title">
-                トレードのたびに<br>
-                こんな作業をしていませんか？
+                生写真が増えるほど、<br>
+                管理は大変になっていませんか？
             </h2>
 
             <p class="section-sub">
-                生写真が増えるほど管理や照合に時間がかかります。
+                コレクションが増えるほど、所持確認・画像管理・トレード照合に
+                時間がかかります。
             </p>
 
             <div class="problem-grid">
@@ -438,6 +572,10 @@
                 </div>
 
                 <div class="problem-card">
+                    実物の写真をどこに保存したか分からない
+                </div>
+
+                <div class="problem-card">
                     欲しい写真を毎回作り直している
                 </div>
 
@@ -446,89 +584,234 @@
                 </div>
 
                 <div class="problem-card">
-                    現場で確認しづらい
+                    現場でコレクションを確認しづらい
                 </div>
 
             </div>
 
         </div>
 
-
     </section>
 
-    <section id="features">
 
+    <!-- =========================
+         FEATURES
+    ========================= -->
+
+    <section id="features">
 
         <div class="container">
 
             <h2 class="section-title">
-                SPcolleでできること
+                SP Colleでできること
             </h2>
 
             <p class="section-sub">
                 単なるコレクション管理ではなく、
-                生写真交換までサポートします。
+                生写真の登録・画像保存から交換までまとめてサポートします。
             </p>
 
             <div class="features">
 
                 <div class="feature">
-                    <h3>自動トレード照合</h3>
+
+                    <h3>
+                        自動トレード照合
+                    </h3>
+
                     <p>
                         自分の提供可能写真と相手の希望写真を自動照合。
                         交換候補をすぐ確認できます。
                     </p>
+
                 </div>
 
+
                 <div class="feature">
-                    <h3>欲しい写真共有</h3>
+
+                    <h3>
+                        欲しい写真共有
+                    </h3>
+
                     <p>
                         欲しい写真リストを公開。
                         URLやQRコードで簡単に共有できます。
                     </p>
+
                 </div>
 
+
                 <div class="feature">
-                    <h3>所持・提供管理</h3>
+
+                    <h3>
+                        所持・提供管理
+                    </h3>
+
                     <p>
                         所持数や提供可能数を記録。
                         トレード時の確認が簡単になります。
                     </p>
+
                 </div>
 
+
+                <div class="feature feature-new">
+
+                    <span class="feature-label">
+                        NEW
+                    </span>
+
+                    <h3>
+                        生写真の実物画像を保存
+                    </h3>
+
+                    <p>
+                        自分が所有している生写真の実物画像を登録して、
+                        コレクションと一緒に管理できます。
+                    </p>
+
+                </div>
+
+
                 <div class="feature">
-                    <h3>無限回収対応</h3>
+
+                    <h3>
+                        無限回収対応
+                    </h3>
+
                     <p>
                         無限回収中の写真もまとめて管理できます。
                     </p>
+
                 </div>
 
+
                 <div class="feature">
-                    <h3>統一データベース</h3>
+
+                    <h3>
+                        統一データベース
+                    </h3>
+
                     <p>
                         表記ゆれを気にせず、
                         統一された写真データで管理できます。
                     </p>
+
                 </div>
 
             </div>
 
         </div>
 
-
     </section>
 
-    <section class="highlight">
 
+    <!-- =========================
+         IMAGE MANAGEMENT
+    ========================= -->
+
+    <section class="image-feature">
 
         <div class="container">
 
             <h2 class="section-title">
-                Excel管理の限界を解決
+                自分の生写真を、<br>
+                実物画像付きで管理
             </h2>
 
             <p class="section-sub">
-                表記ゆれや複雑な管理に悩まされません。
+                登録した生写真に実物画像を保存して、
+                コレクションをより分かりやすく管理できます。
+            </p>
+
+            <div class="image-feature-box">
+
+                <div class="image-feature-list">
+
+                    <div class="image-feature-item">
+
+                        <h3>
+                            実物画像を保存
+                        </h3>
+
+                        <p>
+                            自分が所有している生写真の画像を
+                            コレクションと紐付けて保存できます。
+                        </p>
+
+                    </div>
+
+
+                    <div class="image-feature-item">
+
+                        <h3>
+                            コレクションと一緒に確認
+                        </h3>
+
+                        <p>
+                            メンバー・衣装・写真タイプなどの登録情報と
+                            実物画像をまとめて確認できます。
+                        </p>
+
+                    </div>
+
+
+                    <div class="image-feature-item">
+
+                        <h3>
+                            WebPで保存
+                        </h3>
+
+                        <p>
+                            アップロードされた画像は保存時に
+                            WebP形式へ変換・圧縮されます。
+                        </p>
+
+                    </div>
+
+
+                    <div class="image-feature-item">
+
+                        <h3>
+                            保存容量を確認
+                        </h3>
+
+                        <p>
+                            マイページから画像の使用容量と
+                            残り容量を確認できます。
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="storage-note">
+                    画像は1枚あたり最大10MBまでアップロードできます。
+                    保存容量にはプランごとの上限があります。
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         DATABASE
+    ========================= -->
+
+    <section class="highlight">
+
+        <div class="container">
+
+            <h2 class="section-title">
+                生写真データを統一して管理
+            </h2>
+
+            <p class="section-sub">
+                表記ゆれや複雑な管理に悩まされず、
+                SP Colleの統一されたデータベースで管理できます。
             </p>
 
             <div class="flow">
@@ -558,18 +841,21 @@
             <div class="flow">
 
                 <div class="flow-item">
-                    SPcolleで統一管理
+                    SP Colleで統一管理
                 </div>
 
             </div>
 
         </div>
 
-
     </section>
 
-    <section>
 
+    <!-- =========================
+         TRADE FLOW
+    ========================= -->
+
+    <section>
 
         <div class="container">
 
@@ -577,10 +863,19 @@
                 トレードまでの流れ
             </h2>
 
+            <p class="section-sub">
+                普段のコレクション管理から、
+                実際の生写真交換までスムーズにつなげられます。
+            </p>
+
             <div class="flow">
 
                 <div class="flow-item">
                     所持写真登録
+                </div>
+
+                <div class="flow-item">
+                    実物画像登録
                 </div>
 
                 <div class="flow-item">
@@ -600,13 +895,17 @@
                 </div>
 
             </div>
-        </div>
 
+        </div>
 
     </section>
 
-    <section>
 
+    <!-- =========================
+         FAQ
+    ========================= -->
+
+    <section>
 
         <div class="container faq">
 
@@ -614,7 +913,9 @@
                 よくある質問
             </h2>
 
+
             <div class="faq-item">
+
                 <h3>
                     過去の写真を全部登録する必要がありますか？
                 </h3>
@@ -623,9 +924,12 @@
                     必要ありません。
                     新しく入手した写真から管理を始めることも可能です。
                 </p>
+
             </div>
 
+
             <div class="faq-item">
+
                 <h3>
                     対応グループは？
                 </h3>
@@ -633,35 +937,89 @@
                 <p>
                     乃木坂46・櫻坂46・日向坂46に対応しています。
                 </p>
+
             </div>
 
+
             <div class="faq-item">
+
+                <h3>
+                    生写真の画像も保存できますか？
+                </h3>
+
+                <p>
+                    はい。
+                    登録した生写真に実物画像を追加して、
+                    コレクションと一緒に管理できます。
+                </p>
+
+            </div>
+
+
+            <div class="faq-item">
+
+                <h3>
+                    画像はどのくらい保存できますか？
+                </h3>
+
+                <p>
+                    プランによって保存容量が異なります。
+                    現在の画像使用量と残り容量はマイページから確認できます。
+                </p>
+
+            </div>
+
+
+            <div class="faq-item">
+
+                <h3>
+                    画像は無料で保存できますか？
+                </h3>
+
+                <p>
+                    はい。
+                    無料プランでも画像保存機能を利用できます。
+                    ただし、プランごとに保存容量の上限があります。
+                </p>
+
+            </div>
+
+
+            <div class="faq-item">
+
                 <h3>
                     無料で利用できますか？
                 </h3>
 
                 <p>
-                    はい。無料プランから利用できます。
+                    はい。
+                    無料プランから利用できます。
                 </p>
+
             </div>
 
         </div>
 
-
     </section>
 
-    <section class="cta">
 
+    <!-- =========================
+         CTA
+    ========================= -->
+
+    <section class="cta">
 
         <div class="container">
 
             <h2 class="section-title">
-                今日のトレードから使えます
+                今日から生写真を<br>
+                もっと便利に管理
             </h2>
 
             <p>
-                欲しい写真リストを作成して、
-                QRコードで共有してみましょう。
+                所持管理から実物画像の保存、
+                欲しい写真の共有、トレード照合まで。
+                SP Colleを無料で始めてみましょう。
             </p>
 
             <br>
@@ -676,12 +1034,17 @@
 
         </div>
 
-
     </section>
 
+
+    <!-- =========================
+         FOOTER
+    ========================= -->
+
     <footer class="footer">
-        © SPcolle
+        © SP Colle
     </footer>
+
 
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
@@ -709,6 +1072,7 @@
         });
 
     </script>
+
 </body>
 
 </html>
