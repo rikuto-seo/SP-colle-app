@@ -39,15 +39,16 @@
             <div class="col-12 col-md-4">
               <label for="sort" class="form-label small text-body mb-1">並び順</label>
               <select id="sort" name="sort" class="form-select">
-                <option value="comp" {% if selected_sort == "comp" %}selected{% endif %}>コンプ率</option>
-                <option value="quantity" {% if selected_sort == "quantity" %}selected{% endif %}>枚数</option>
-                <option value="favorite" {% if selected_sort == "favorite" %}selected{% endif %}>お気に入り優先</option>
-                <option value="name" {% if selected_sort == "name" %}selected{% endif %}>名前の順</option>
+                <option value="comp" {% if selected_sort=="comp" %}selected{% endif %}>コンプ率</option>
+                <option value="quantity" {% if selected_sort=="quantity" %}selected{% endif %}>枚数</option>
+                <option value="favorite" {% if selected_sort=="favorite" %}selected{% endif %}>お気に入り優先</option>
+                <option value="name" {% if selected_sort=="name" %}selected{% endif %}>名前の順</option>
               </select>
             </div>
 
             <div class="col-12 col-md-8 d-flex gap-2 align-items-end">
-              <button type="button" id="favorite-btn" class="btn {% if favorite_only %}btn-warning{% else %}btn-outline-warning{% endif %}" title="お気に入りのみ表示">
+              <button type="button" id="favorite-btn"
+                class="btn {% if favorite_only %}btn-warning{% else %}btn-outline-warning{% endif %}" title="お気に入りのみ表示">
                 <i class="fa-solid fa-star"></i>
               </button>
 
@@ -70,51 +71,61 @@
   ========================== -->
   <div class="row row-cols-2 row-cols-md-3 g-2">
     {% for card in cards %}
-      {% set preview_image = namespace(data=None) %}
-      {% for detail in card.details or [] %}
-        {% if preview_image.data is none and detail.images and detail.images|length > 0 %}
-          {% set preview_image.data = detail.images[0] %}
-        {% endif %}
-      {% endfor %}
+    {% set preview_image = namespace(data=None) %}
+    {% for detail in card.details or [] %}
+    {% if preview_image.data is none and detail.images and detail.images|length > 0 %}
+    {% set preview_image.data = detail.images[0] %}
+    {% endif %}
+    {% endfor %}
 
-      <div class="col">
-        <div class="card shadow-sm p-2 h-100 bg-body text-body card-item" style="cursor:pointer" data-card='{{ card | tojson | safe }}'>
-          <div class="d-flex gap-2 h-100">
-            <div class="flex-grow-1 min-width-0 d-flex flex-column" style="min-width:0;">
-              {% if card.has_favorite %}
-                <div class="mb-1"><i class="fa-solid fa-star text-warning"></i></div>
-              {% endif %}
+    <div class="col">
+      <div class="card shadow-sm p-2 h-100 bg-body text-body card-item" style="cursor:pointer"
+        data-card='{{ card | tojson | safe }}'>
+        <div class="d-flex gap-2 h-100">
+          <div class="flex-grow-1 min-width-0 d-flex flex-column" style="min-width:0;">
+            {% if card.has_favorite %}
+            <div class="mb-1"><i class="fa-solid fa-star text-warning"></i></div>
+            {% endif %}
 
-              <div class="fw-bold small text-truncate" title="{{ card.member }}" style="min-width:0;">{{ card.member }}</div>
-              <div class="small text-muted text-truncate" title="{{ card.costume }}" style="min-width:0;">{{ card.costume }}</div>
-
-              <div class="mt-auto">
-                <div class="small">{{ card.owned }} / {{ card.total }}</div>
-                <div class="progress mt-1" style="height:6px;">
-                  <div class="progress-bar" style="width: {{ card.rate }}%"></div>
-                </div>
-                {% if card.is_complete %}
-                  <div class="mt-1"><span class="badge bg-success">コンプ</span></div>
-                {% endif %}
-              </div>
+            <div class="fw-bold small text-truncate" title="{{ card.member }}" style="min-width:0;">{{ card.member }}
             </div>
 
-            <div class="flex-shrink-0" style="width:70px;min-width:70px;max-width:70px;height:100px;min-height:100px;max-height:100px;flex:0 0 70px;">
-              {% if preview_image.data %}
-                <button type="button" class="btn p-0 border rounded overflow-hidden w-100 h-100 card-image-button" data-image-url="{{ preview_image.data.image_url }}" aria-label="実物画像を拡大" style="width:70px;height:100px;background:#f8f9fa;">
-                  <img src="{{ preview_image.data.thumbnail_url }}" alt="実物画像" width="70" height="100" class="d-block" style="width:70px;height:100px;object-fit:contain;" loading="lazy">
-                </button>
-              {% else %}
-                <div class="border rounded w-100 h-100 d-flex align-items-center justify-content-center text-muted" style="width:70px;height:100px;background:rgba(128,128,128,0.05);font-size:0.7rem;">画像なし</div>
+            <div class="small text-muted costume-name" title="{{ card.costume }}" style="min-width:0;">
+              {{ card.costume }}
+            </div>
+
+            <div class="mt-auto">
+              <div class="small">{{ card.owned }} / {{ card.total }}</div>
+              <div class="progress mt-1" style="height:6px;">
+                <div class="progress-bar" style="width: {{ card.rate }}%"></div>
+              </div>
+              {% if card.is_complete %}
+              <div class="mt-1"><span class="badge bg-success">コンプ</span></div>
               {% endif %}
             </div>
           </div>
+
+          <div class="flex-shrink-0"
+            style="width:70px;min-width:70px;max-width:70px;height:100px;min-height:100px;max-height:100px;flex:0 0 70px;">
+            {% if preview_image.data %}
+            <button type="button" class="btn p-0 border rounded overflow-hidden w-100 h-100 card-image-button"
+              data-image-url="{{ preview_image.data.image_url }}" aria-label="実物画像を拡大"
+              style="width:70px;height:100px;background:#f8f9fa;">
+              <img src="{{ preview_image.data.thumbnail_url }}" alt="実物画像" width="70" height="100" class="d-block"
+                style="width:70px;height:100px;object-fit:contain;" loading="lazy">
+            </button>
+            {% else %}
+            <div class="border rounded w-100 h-100 d-flex align-items-center justify-content-center text-muted"
+              style="width:70px;height:100px;background:rgba(128,128,128,0.05);font-size:0.7rem;">画像なし</div>
+            {% endif %}
+          </div>
         </div>
       </div>
+    </div>
     {% endfor %}
 
     {% if cards|length == 0 %}
-      <p class="text-center text-secondary">データがありません。</p>
+    <p class="text-center text-secondary">データがありません。</p>
     {% endif %}
   </div>
 </div>
@@ -125,28 +136,31 @@
 <nav class="mt-4">
   <form id="pageJumpForm" class="d-flex justify-content-center align-items-center gap-2 mb-3">
     <label for="pageJumpInput" class="small text-body mb-0">ページ</label>
-    <input type="number" id="pageJumpInput" class="form-control form-control-sm text-center" style="width:80px;" min="1" max="{{ pagination.pages }}" value="{{ pagination.page }}" inputmode="numeric" aria-label="移動先ページ">
+    <input type="number" id="pageJumpInput" class="form-control form-control-sm text-center" style="width:80px;" min="1"
+      max="{{ pagination.pages }}" value="{{ pagination.page }}" inputmode="numeric" aria-label="移動先ページ">
     <span class="small text-muted">/ {{ pagination.pages }}</span>
     <button type="submit" class="btn btn-outline-primary btn-sm">移動</button>
   </form>
 
   <ul class="pagination justify-content-center">
     <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-      <a class="page-link" href="{{ url_for('photo.index', group_key=group_key, page=pagination.prev_num, **args) if pagination.has_prev else '#' }}">前へ</a>
+      <a class="page-link"
+        href="{{ url_for('photo.index', group_key=group_key, page=pagination.prev_num, **args) if pagination.has_prev else '#' }}">前へ</a>
     </li>
 
     {% for p in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
-      {% if p %}
-        <li class="page-item {% if p == pagination.page %}active{% endif %}">
-          <a class="page-link" href="{{ url_for('photo.index', group_key=group_key, page=p, **args) }}">{{ p }}</a>
-        </li>
-      {% else %}
-        <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
-      {% endif %}
+    {% if p %}
+    <li class="page-item {% if p == pagination.page %}active{% endif %}">
+      <a class="page-link" href="{{ url_for('photo.index', group_key=group_key, page=p, **args) }}">{{ p }}</a>
+    </li>
+    {% else %}
+    <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+    {% endif %}
     {% endfor %}
 
     <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-      <a class="page-link" href="{{ url_for('photo.index', group_key=group_key, page=pagination.next_num, **args) if pagination.has_next else '#' }}">次へ</a>
+      <a class="page-link"
+        href="{{ url_for('photo.index', group_key=group_key, page=pagination.next_num, **args) if pagination.has_next else '#' }}">次へ</a>
     </li>
   </ul>
 </nav>
@@ -154,7 +168,8 @@
 <!-- =========================
      通知
 ========================== -->
-<div id="actionToast" class="toast position-fixed top-0 start-50 translate-middle-x mt-3" role="status" aria-live="polite" aria-atomic="true" style="z-index:11000;">
+<div id="actionToast" class="toast position-fixed top-0 start-50 translate-middle-x mt-3" role="status"
+  aria-live="polite" aria-atomic="true" style="z-index:11000;">
   <div class="toast-body bg-success text-white rounded shadow-sm px-3 py-2"></div>
 </div>
 
@@ -179,8 +194,10 @@
 <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg" style="pointer-events:none;">
     <div class="modal-content bg-dark border-0" style="pointer-events:auto;background:transparent !important;">
-      <div class="modal-body text-center p-0" style="display:flex;align-items:center;justify-content:center;min-height:20vh;">
-        <img id="imagePreview" src="" alt="実物画像" class="img-fluid" style="max-width:95vw;max-height:90vh;width:auto;height:auto;object-fit:contain;display:block;cursor:default;">
+      <div class="modal-body text-center p-0"
+        style="display:flex;align-items:center;justify-content:center;min-height:20vh;">
+        <img id="imagePreview" src="" alt="実物画像" class="img-fluid"
+          style="max-width:95vw;max-height:90vh;width:auto;height:auto;object-fit:contain;display:block;cursor:default;">
       </div>
     </div>
   </div>
@@ -328,6 +345,7 @@
 
     pageJumpForm.addEventListener("submit", event => {
       event.preventDefault();
+
       const page = parseInt(pageJumpInput.value, 10);
       const maxPage = {{ pagination.pages }};
 
