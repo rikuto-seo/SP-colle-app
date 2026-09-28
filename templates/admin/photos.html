@@ -23,13 +23,22 @@ Photo Admin
         <div class="d-flex gap-3">
 
             <select name="group_id" class="form-select" style="width:300px;">
-                <option value="">選択してください</option>
+
+                <option value="">
+                    選択してください
+                </option>
 
                 {% for g in group_list %}
-                <option value="{{ g.id }}">
+
+                <option
+                    value="{{ g.id }}"
+                    {% if selected_group and selected_group.id == g.id %}selected{% endif %}
+                >
                     {{ g.name }}
                 </option>
+
                 {% endfor %}
+
             </select>
 
             <button class="btn btn-dark">
@@ -63,7 +72,10 @@ Photo Admin
 
                 <label class="flex items-center gap-2 mb-3">
 
-                    <input type="checkbox" id="member-select-all">
+                    <input
+                        type="checkbox"
+                        id="member-select-all"
+                    >
 
                     <span>
                         全選択
@@ -77,7 +89,11 @@ Photo Admin
 
                     <label class="flex items-center gap-2 mb-2">
 
-                        <input type="checkbox" class="member-checkbox" value="{{ member.id }}">
+                        <input
+                            type="checkbox"
+                            class="member-checkbox"
+                            value="{{ member.id }}"
+                        >
 
                         <span>
                             {{ member.name }}
@@ -102,16 +118,27 @@ Photo Admin
 
                 <div class="flex gap-2 mb-3">
 
-                    <input id="costume-name" type="text" placeholder="2026 浴衣"
-                        class="border rounded-lg px-3 py-2 w-full">
+                    <input
+                        id="costume-name"
+                        type="text"
+                        placeholder="2026 浴衣"
+                        class="border rounded-lg px-3 py-2 w-full"
+                    >
 
-                    <button type="button" id="create-costume-btn" class="bg-blue-600 text-white px-4 rounded-lg">
+                    <button
+                        type="button"
+                        id="create-costume-btn"
+                        class="bg-blue-600 text-white px-4 rounded-lg"
+                    >
                         作成
                     </button>
 
                 </div>
 
-                <select id="costume-id" class="border rounded-lg px-3 py-2 w-full bg-white">
+                <select
+                    id="costume-id"
+                    class="border rounded-lg px-3 py-2 w-full bg-white"
+                >
 
                     <option value="">
                         Costume選択
@@ -126,6 +153,125 @@ Photo Admin
                     {% endfor %}
 
                 </select>
+
+
+                <!-- TYPE NORMALIZATION -->
+
+                <div
+                    id="type-normalization-panel"
+                    class="hidden mt-5 border rounded-xl bg-white p-4"
+                >
+
+                    <div class="mb-3">
+
+                        <div class="font-bold">
+                            統計上の種類
+                        </div>
+
+                        <div class="text-xs text-gray-500 mt-1">
+                            この衣装のPhotoTypeを、統計上の「ヨリ・チュウ・ヒキ・座り」に対応付けます。
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        id="normalization-loading"
+                        class="text-sm text-gray-500 py-3"
+                    >
+                        読み込み中...
+                    </div>
+
+
+                    <div
+                        id="normalization-content"
+                        class="hidden"
+                    >
+
+                        <div class="border rounded-lg overflow-hidden">
+
+                            <div class="grid grid-cols-2 bg-gray-100 font-medium text-sm">
+
+                                <div class="p-2 border-r">
+                                    PhotoType
+                                </div>
+
+                                <div class="p-2">
+                                    統計上の種類
+                                </div>
+
+                            </div>
+
+
+                            <div
+                                id="normalization-list"
+                                class="max-h-72 overflow-y-auto"
+                            >
+
+                                {% for type in photo_types %}
+
+                                <div
+                                    class="grid grid-cols-2 border-t normalization-row"
+                                    data-photo-type-id="{{ type.id }}"
+                                >
+
+                                    <div class="p-2 border-r text-sm flex items-center">
+                                        {{ type.name }}
+                                    </div>
+
+                                    <div class="p-2">
+
+                                        <select
+                                            class="normalization-select border rounded-lg px-2 py-1 w-full text-sm"
+                                            data-photo-type-id="{{ type.id }}"
+                                        >
+
+                                            <option value="">
+                                                未設定
+                                            </option>
+
+                                            {% for normalized_type in normalized_types %}
+
+                                            <option value="{{ normalized_type }}">
+                                                {{ normalized_type }}
+                                            </option>
+
+                                            {% endfor %}
+
+                                        </select>
+
+                                    </div>
+
+                                </div>
+
+                                {% endfor %}
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="mt-3 flex items-center justify-between gap-3">
+
+                            <div
+                                id="normalization-status"
+                                class="text-sm text-gray-500"
+                            >
+                            </div>
+
+                            <button
+                                type="button"
+                                id="save-normalization-btn"
+                                class="bg-purple-600 text-white px-4 py-2 rounded-lg font-medium"
+                            >
+                                統計上の種類を保存
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
 
             </div>
 
@@ -143,25 +289,51 @@ Photo Admin
                     {% for type in photo_types[:4] %}
 
                     <label class="flex items-center gap-2 mb-2">
-                        <input type="checkbox" class="type-checkbox" value="{{ type.id }}">
-                        <span>{{ type.name }}</span>
+
+                        <input
+                            type="checkbox"
+                            class="type-checkbox"
+                            value="{{ type.id }}"
+                        >
+
+                        <span>
+                            {{ type.name }}
+                        </span>
+
                     </label>
 
                     {% endfor %}
 
+
                     {% if photo_types|length > 4 %}
 
-                    <button type="button" id="toggle-type-btn" class="text-blue-600 text-sm mt-2">
+                    <button
+                        type="button"
+                        id="toggle-type-btn"
+                        class="text-blue-600 text-sm mt-2"
+                    >
                         ▼ その他
                     </button>
 
-                    <div id="other-types" class="hidden mt-3">
+                    <div
+                        id="other-types"
+                        class="hidden mt-3"
+                    >
 
                         {% for type in photo_types[4:] %}
 
                         <label class="flex items-center gap-2 mb-2">
-                            <input type="checkbox" class="type-checkbox" value="{{ type.id }}">
-                            <span>{{ type.name }}</span>
+
+                            <input
+                                type="checkbox"
+                                class="type-checkbox"
+                                value="{{ type.id }}"
+                            >
+
+                            <span>
+                                {{ type.name }}
+                            </span>
+
                         </label>
 
                         {% endfor %}
@@ -178,13 +350,21 @@ Photo Admin
 
 
         <div class="mt-6">
-            <div id="selection-summary" class="mb-4 text-sm font-medium text-gray-700">
+
+            <div
+                id="selection-summary"
+                class="mb-4 text-sm font-medium text-gray-700"
+            >
                 メンバー: 0人 /
                 種類: 0種 /
                 追加予定: 0件
             </div>
 
-            <button type="button" id="add-photo-btn" class="bg-green-600 text-white px-8 py-3 rounded-xl font-bold">
+            <button
+                type="button"
+                id="add-photo-btn"
+                class="bg-green-600 text-white px-8 py-3 rounded-xl font-bold"
+            >
                 一括追加
             </button>
 
@@ -197,8 +377,11 @@ Photo Admin
 
     <div class="border rounded-2xl overflow-hidden">
 
-        <button id="toggle-table-btn" type="button"
-            class="w-full bg-gray-800 text-white px-6 py-4 text-left font-bold flex items-center justify-between">
+        <button
+            id="toggle-table-btn"
+            type="button"
+            class="w-full bg-gray-800 text-white px-6 py-4 text-left font-bold flex items-center justify-between"
+        >
 
             <span>
                 登録済み一覧
@@ -211,7 +394,10 @@ Photo Admin
         </button>
 
 
-        <div id="table-wrapper" class="hidden p-6 bg-white">
+        <div
+            id="table-wrapper"
+            class="hidden p-6 bg-white"
+        >
 
             <!-- FILTER -->
 
@@ -223,9 +409,15 @@ Photo Admin
                         Member検索
                     </label>
 
-                    <input id="member-filter" type="text" placeholder="山下" class="border rounded-lg px-3 py-2 w-full">
+                    <input
+                        id="member-filter"
+                        type="text"
+                        placeholder="山下"
+                        class="border rounded-lg px-3 py-2 w-full"
+                    >
 
                 </div>
+
 
                 <div>
 
@@ -233,7 +425,12 @@ Photo Admin
                         Costume検索
                     </label>
 
-                    <input id="costume-filter" type="text" placeholder="浴衣" class="border rounded-lg px-3 py-2 w-full">
+                    <input
+                        id="costume-filter"
+                        type="text"
+                        placeholder="浴衣"
+                        class="border rounded-lg px-3 py-2 w-full"
+                    >
 
                 </div>
 
@@ -242,14 +439,20 @@ Photo Admin
 
             <!-- LOADING -->
 
-            <div id="loading-area" class="text-gray-500">
+            <div
+                id="loading-area"
+                class="text-gray-500"
+            >
                 読み込み中...
             </div>
 
 
             <!-- TABLE -->
 
-            <div id="table-area" class="hidden overflow-x-auto">
+            <div
+                id="table-area"
+                class="hidden overflow-x-auto"
+            >
 
                 <table class="w-full border-collapse">
 
@@ -278,18 +481,23 @@ Photo Admin
                     </thead>
 
                     <tbody id="photo-table-body">
-
                     </tbody>
 
                 </table>
 
+
                 <div class="mt-4 text-center">
 
-                    <button id="load-more-btn" type="button" class="hidden bg-gray-700 text-white px-5 py-2 rounded-lg">
+                    <button
+                        id="load-more-btn"
+                        type="button"
+                        class="hidden bg-gray-700 text-white px-5 py-2 rounded-lg"
+                    >
                         さらに読み込む
                     </button>
 
                 </div>
+
             </div>
 
         </div>
@@ -299,566 +507,1268 @@ Photo Admin
     {% endif %}
 
 </div>
+
 {% endblock %}
+
 
 {% block scripts %}
 
-<link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+<link
+    href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css"
+    rel="stylesheet"
+>
 
 <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js">
 </script>
 
+
 <script>
+
+    //
+    // GLOBAL
+    //
 
     let costumeTS = null;
 
-    document.addEventListener("DOMContentLoaded", () => {
+    let currentPage = 1;
+    let hasNext = true;
+    let loading = false;
 
-        const costumeSelect =
-            document.getElementById("costume-id");
-
-        if (costumeSelect) {
-
-            costumeTS = new TomSelect(costumeSelect, {
-                create: false,
-                maxItems: 1,
-                placeholder: "Costume検索"
-            });
-
-        }
-
-    });
 
     //
-    // CREATE COSTUME
+    // DOM
     //
+
+    const costumeSelect =
+        document.getElementById("costume-id");
+
+    const costumeNameInput =
+        document.getElementById("costume-name");
 
     const createCostumeBtn =
-        document.getElementById('create-costume-btn')
-
-    if (createCostumeBtn) {
-
-        createCostumeBtn.addEventListener('click', async () => {
-
-            const name =
-                document.getElementById('costume-name').value
-
-            if (!name) {
-                alert('Costume名を入力してください')
-                return
-            }
-
-            const formData = new FormData()
-
-            formData.append('name', name)
-
-            formData.append(
-                'group_id',
-                '{{ selected_group.id if selected_group else "" }}'
-            )
-
-            const response = await fetch(
-                '/admin/photos/create_costume',
-                {
-                    method: 'POST',
-                    body: formData
-                }
-            )
-
-            const data = await response.json()
-
-            if (data.success) {
-
-                costumeTS.addOption({
-                    value: data.costume_id,
-                    text: name
-                });
-
-                costumeTS.setValue(data.costume_id);
-
-                document.getElementById('costume-name').value = '';
-
-            }
-
-        })
-
-    }
-
-
-
-    //
-    // BULK ADD
-    //
+        document.getElementById("create-costume-btn");
 
     const addPhotoBtn =
-        document.getElementById('add-photo-btn')
-
-    if (addPhotoBtn) {
-
-        addPhotoBtn.addEventListener('click', async () => {
-
-            const memberIds =
-                [...document.querySelectorAll('.member-checkbox:checked')]
-                    .map(el => parseInt(el.value))
-
-            const typeIds =
-                [...document.querySelectorAll('.type-checkbox:checked')]
-                    .map(el => parseInt(el.value))
-
-            const costumeId = costumeTS.getValue();
-
-
-            if (
-                memberIds.length === 0
-                ||
-                typeIds.length === 0
-                ||
-                !costumeId
-            ) {
-                alert('全て選択してください')
-                return
-            }
-
-            const payload = {
-                member_ids: memberIds,
-                type_ids: typeIds,
-                costume_id: parseInt(costumeId)
-            }
-
-            const response = await fetch(
-                '/admin/photos/bulk_create',
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                }
-            )
-
-            const data = await response.json()
-
-            if (data.success) {
-
-                alert(
-                    `追加: ${data.created}件\n`
-                    +
-                    `重複スキップ: ${data.skipped}件`
-                )
-
-            }
-
-        })
-
-    }
-
-
-    function updateSelectionSummary() {
-
-        const memberCount =
-            document.querySelectorAll(
-                '.member-checkbox:checked'
-            ).length
-
-        const typeCount =
-            document.querySelectorAll(
-                '.type-checkbox:checked'
-            ).length
-
-        const total =
-            memberCount * typeCount
-
-        const summary =
-            document.getElementById(
-                'selection-summary'
-            )
-
-        if (!summary) {
-            return
-        }
-
-        summary.textContent =
-            `メンバー: ${memberCount}人 / `
-            +
-            `種類: ${typeCount}種 / `
-            +
-            `追加予定: ${total}件`
-    }
+        document.getElementById("add-photo-btn");
 
     const memberSelectAll =
-        document.getElementById(
-            'member-select-all'
-        )
-
-    const typeSelectAll =
-        document.getElementById(
-            'type-select-all'
-        )
-
-    if (memberSelectAll) {
-
-        memberSelectAll.addEventListener(
-            'change',
-            () => {
-
-                document
-                    .querySelectorAll(
-                        '.member-checkbox'
-                    )
-                    .forEach(cb => {
-                        cb.checked =
-                            memberSelectAll.checked
-                    })
-
-                updateSelectionSummary()
-            }
-        )
-
-    }
-
-    if (typeSelectAll) {
-
-        typeSelectAll.addEventListener(
-            'change',
-            () => {
-
-                document
-                    .querySelectorAll(
-                        '.type-checkbox'
-                    )
-                    .forEach(cb => {
-                        cb.checked =
-                            typeSelectAll.checked
-                    })
-
-                updateSelectionSummary()
-            }
-        )
-
-    }
-
-    document.addEventListener(
-        'change',
-        (e) => {
-
-            if (
-                e.target.classList.contains(
-                    'member-checkbox'
-                )
-                ||
-                e.target.classList.contains(
-                    'type-checkbox'
-                )
-            ) {
-
-                updateSelectionSummary()
-
-            }
-
-        }
-    )
+        document.getElementById("member-select-all");
 
     const loadMoreBtn =
-        document.getElementById(
-            'load-more-btn'
-        )
+        document.getElementById("load-more-btn");
 
-    async function loadPhotos() {
-
-        if (loading || !hasNext) {
-            return
-        }
-
-        loading = true
-
-        const response =
-            await fetch(
-                `/admin/photos/list`
-                +
-                `?group_id={{ selected_group.id }}`
-                +
-                `&page=${currentPage}`
-            )
-
-        const data =
-            await response.json()
-
-        loadingArea.classList.add(
-            'hidden'
-        )
-
-        tableArea.classList.remove(
-            'hidden'
-        )
-
-        if (
-            currentPage === 1
-            &&
-            data.items.length === 0
-        ) {
-
-            tableBody.innerHTML = `
-            <tr>
-                <td colspan="4"
-                    class="border p-6 text-center text-gray-500">
-                    データがありません
-                </td>
-            </tr>
-        `
-
-            hasNext = false
-            return
-        }
-
-        data.items.forEach(photo => {
-
-            const tr =
-                document.createElement('tr')
-
-            tr.className =
-                'photo-row'
-
-            tr.dataset.member =
-                photo.member_name.toLowerCase()
-
-            tr.dataset.costume =
-                photo.costume_name.toLowerCase()
-
-            tr.id =
-                `photo-row-${photo.id}`
-
-            tr.innerHTML = `
-                <td class="border p-3">
-                    ${photo.member_name}
-                </td>
-
-                <td class="border p-3">
-                    ${photo.costume_name}
-                </td>
-
-                <td class="border p-3">
-                    ${photo.type_name}
-                </td>
-
-            <td class="border p-3 text-center">
-
-                <button
-                    class="delete-btn text-red-600 font-bold"
-                    data-photo-id="${photo.id}"
-                >
-                    削除
-                </button>
-
-            </td>
-        `
-
-            tableBody.appendChild(tr)
-
-        })
-
-        hasNext =
-            data.has_next
-
-        currentPage++
-
-        if (hasNext) {
-
-            loadMoreBtn.classList.remove(
-                'hidden'
-            )
-
-        } else {
-
-            loadMoreBtn.classList.add(
-                'hidden'
-            )
-
-        }
-
-        loading = false
-    }
-
-
-    //TYPE
     const toggleTypeBtn =
         document.getElementById("toggle-type-btn");
 
     const otherTypes =
         document.getElementById("other-types");
 
-    if (toggleTypeBtn) {
+    const toggleBtn =
+        document.getElementById("toggle-table-btn");
 
-        toggleTypeBtn.addEventListener("click", () => {
+    const tableWrapper =
+        document.getElementById("table-wrapper");
 
-            otherTypes.classList.toggle("hidden");
+    const tableBody =
+        document.getElementById("photo-table-body");
 
-            toggleTypeBtn.textContent =
-                otherTypes.classList.contains("hidden")
-                    ? "▼ その他"
-                    : "▲ その他";
+    const loadingArea =
+        document.getElementById("loading-area");
 
-        });
+    const tableArea =
+        document.getElementById("table-area");
+
+    const accordionIcon =
+        document.getElementById("accordion-icon");
+
+    const normalizationPanel =
+        document.getElementById(
+            "type-normalization-panel"
+        );
+
+    const normalizationLoading =
+        document.getElementById(
+            "normalization-loading"
+        );
+
+    const normalizationContent =
+        document.getElementById(
+            "normalization-content"
+        );
+
+    const normalizationStatus =
+        document.getElementById(
+            "normalization-status"
+        );
+
+    const saveNormalizationBtn =
+        document.getElementById(
+            "save-normalization-btn"
+        );
+
+
+    //
+    // TOM SELECT
+    //
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        () => {
+
+            if (!costumeSelect) {
+                return;
+            }
+
+            costumeTS =
+                new TomSelect(
+                    costumeSelect,
+                    {
+                        create: false,
+                        maxItems: 1,
+                        placeholder: "Costume検索",
+                        onChange: function(value) {
+                            handleCostumeChange(value);
+                        }
+                    }
+                );
+
+        }
+    );
+
+
+    //
+    // COSTUME CHANGE
+    //
+
+    async function handleCostumeChange(costumeId) {
+
+        resetNormalizationForm();
+
+        if (!costumeId) {
+            return;
+        }
+
+        if (!normalizationPanel) {
+            return;
+        }
+
+        normalizationPanel.classList.remove(
+            "hidden"
+        );
+
+        normalizationLoading.classList.remove(
+            "hidden"
+        );
+
+        normalizationContent.classList.add(
+            "hidden"
+        );
+
+        normalizationStatus.textContent = "";
+
+
+        try {
+
+            const response =
+                await fetch(
+                    `/admin/photos/type_normalizations/${costumeId}`
+                );
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok || !data.success) {
+
+                throw new Error(
+                    data.error ||
+                    "統計上の種類の取得に失敗しました"
+                );
+
+            }
+
+
+            const normalizations =
+                data.normalizations || {};
+
+
+            document
+                .querySelectorAll(
+                    ".normalization-select"
+                )
+                .forEach(select => {
+
+                    const photoTypeId =
+                        select.dataset.photoTypeId;
+
+                    select.value =
+                        normalizations[
+                            String(photoTypeId)
+                        ] || "";
+
+                });
+
+
+            normalizationLoading.classList.add(
+                "hidden"
+            );
+
+            normalizationContent.classList.remove(
+                "hidden"
+            );
+
+            const configuredCount =
+                Object.keys(
+                    normalizations
+                ).length;
+
+            if (configuredCount > 0) {
+
+                normalizationStatus.textContent =
+                    `${configuredCount}種類を設定済み`;
+
+            } else {
+
+                normalizationStatus.textContent =
+                    "まだ設定されていません";
+
+            }
+
+        } catch (error) {
+
+            console.error(error);
+
+            normalizationLoading.textContent =
+                "統計上の種類を取得できませんでした。";
+
+        }
 
     }
+
+
+    //
+    // RESET NORMALIZATION FORM
+    //
+
+    function resetNormalizationForm() {
+
+        if (!normalizationPanel) {
+            return;
+        }
+
+        document
+            .querySelectorAll(
+                ".normalization-select"
+            )
+            .forEach(select => {
+
+                select.value = "";
+
+            });
+
+        normalizationPanel.classList.add(
+            "hidden"
+        );
+
+        if (normalizationLoading) {
+
+            normalizationLoading.textContent =
+                "読み込み中...";
+
+            normalizationLoading.classList.remove(
+                "hidden"
+            );
+
+        }
+
+        if (normalizationContent) {
+
+            normalizationContent.classList.add(
+                "hidden"
+            );
+
+        }
+
+        if (normalizationStatus) {
+
+            normalizationStatus.textContent = "";
+
+        }
+
+    }
+
+
+    //
+    // SAVE NORMALIZATION
+    //
+
+    if (saveNormalizationBtn) {
+
+        saveNormalizationBtn.addEventListener(
+            "click",
+            async () => {
+
+                const costumeId =
+                    costumeTS
+                        ? costumeTS.getValue()
+                        : "";
+
+                if (!costumeId) {
+
+                    alert(
+                        "衣装を選択してください"
+                    );
+
+                    return;
+                }
+
+
+                const normalizations = {};
+
+
+                document
+                    .querySelectorAll(
+                        ".normalization-select"
+                    )
+                    .forEach(select => {
+
+                        const normalizedType =
+                            select.value;
+
+                        const photoTypeId =
+                            select.dataset.photoTypeId;
+
+
+                        if (
+                            normalizedType
+                            &&
+                            photoTypeId
+                        ) {
+
+                            normalizations[
+                                photoTypeId
+                            ] = normalizedType;
+
+                        }
+
+                    });
+
+
+                saveNormalizationBtn.disabled =
+                    true;
+
+                saveNormalizationBtn.textContent =
+                    "保存中...";
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            `/admin/photos/type_normalizations/${costumeId}`,
+                            {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+                                body: JSON.stringify({
+                                    normalizations:
+                                        normalizations
+                                })
+                            }
+                        );
+
+
+                    const data =
+                        await response.json();
+
+
+                    if (
+                        !response.ok
+                        ||
+                        !data.success
+                    ) {
+
+                        throw new Error(
+                            data.error ||
+                            "保存に失敗しました"
+                        );
+
+                    }
+
+
+                    normalizationStatus.textContent =
+                        `${data.saved}種類を保存しました`;
+
+                } catch (error) {
+
+                    console.error(error);
+
+                    alert(
+                        error.message ||
+                        "統計上の種類の保存に失敗しました"
+                    );
+
+                } finally {
+
+                    saveNormalizationBtn.disabled =
+                        false;
+
+                    saveNormalizationBtn.textContent =
+                        "統計上の種類を保存";
+
+                }
+
+            }
+        );
+
+    }
+
+
+    //
+    // CREATE COSTUME
+    //
+
+    if (createCostumeBtn) {
+
+        createCostumeBtn.addEventListener(
+            "click",
+            async () => {
+
+                const name =
+                    costumeNameInput.value.trim();
+
+
+                if (!name) {
+
+                    alert(
+                        "Costume名を入力してください"
+                    );
+
+                    return;
+
+                }
+
+
+                const formData =
+                    new FormData();
+
+
+                formData.append(
+                    "name",
+                    name
+                );
+
+                formData.append(
+                    "group_id",
+                    "{{ selected_group.id if selected_group else '' }}"
+                );
+
+
+                createCostumeBtn.disabled =
+                    true;
+
+                createCostumeBtn.textContent =
+                    "作成中...";
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            "/admin/photos/create_costume",
+                            {
+                                method: "POST",
+                                body: formData
+                            }
+                        );
+
+
+                    const data =
+                        await response.json();
+
+
+                    if (
+                        !response.ok
+                        ||
+                        !data.success
+                    ) {
+
+                        throw new Error(
+                            data.error ||
+                            "Costumeの作成に失敗しました"
+                        );
+
+                    }
+
+
+                    /*
+                     * 既存Costumeの場合
+                     */
+
+                    if (data.already_exists) {
+
+                        costumeTS.setValue(
+                            String(data.costume_id)
+                        );
+
+                        costumeNameInput.value =
+                            "";
+
+                        return;
+
+                    }
+
+
+                    /*
+                     * 新規Costumeの場合
+                     */
+
+                    costumeTS.addOption({
+                        value:
+                            String(
+                                data.costume_id
+                            ),
+                        text:
+                            name
+                    });
+
+
+                    costumeTS.setValue(
+                        String(
+                            data.costume_id
+                        )
+                    );
+
+
+                    costumeNameInput.value =
+                        "";
+
+
+                } catch (error) {
+
+                    console.error(error);
+
+                    alert(
+                        error.message ||
+                        "Costumeの作成に失敗しました"
+                    );
+
+                } finally {
+
+                    createCostumeBtn.disabled =
+                        false;
+
+                    createCostumeBtn.textContent =
+                        "作成";
+
+                }
+
+            }
+        );
+
+    }
+
+
+    //
+    // BULK ADD
+    //
+
+    if (addPhotoBtn) {
+
+        addPhotoBtn.addEventListener(
+            "click",
+            async () => {
+
+                const memberIds =
+                    [
+                        ...document.querySelectorAll(
+                            ".member-checkbox:checked"
+                        )
+                    ]
+                    .map(
+                        el =>
+                            parseInt(
+                                el.value
+                            )
+                    );
+
+
+                const typeIds =
+                    [
+                        ...document.querySelectorAll(
+                            ".type-checkbox:checked"
+                        )
+                    ]
+                    .map(
+                        el =>
+                            parseInt(
+                                el.value
+                            )
+                    );
+
+
+                const costumeId =
+                    costumeTS
+                        ? costumeTS.getValue()
+                        : "";
+
+
+                if (
+                    memberIds.length === 0
+                    ||
+                    typeIds.length === 0
+                    ||
+                    !costumeId
+                ) {
+
+                    alert(
+                        "全て選択してください"
+                    );
+
+                    return;
+
+                }
+
+
+                const payload = {
+
+                    member_ids:
+                        memberIds,
+
+                    type_ids:
+                        typeIds,
+
+                    costume_id:
+                        parseInt(
+                            costumeId
+                        )
+
+                };
+
+
+                addPhotoBtn.disabled =
+                    true;
+
+                addPhotoBtn.textContent =
+                    "追加中...";
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            "/admin/photos/bulk_create",
+                            {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+                                body:
+                                    JSON.stringify(
+                                        payload
+                                    )
+                            }
+                        );
+
+
+                    const data =
+                        await response.json();
+
+
+                    if (
+                        !response.ok
+                        ||
+                        !data.success
+                    ) {
+
+                        throw new Error(
+                            data.error ||
+                            "一括追加に失敗しました"
+                        );
+
+                    }
+
+
+                    alert(
+                        `追加: ${data.created}件\n`
+                        +
+                        `重複スキップ: ${data.skipped}件`
+                    );
+
+
+                } catch (error) {
+
+                    console.error(error);
+
+                    alert(
+                        error.message ||
+                        "一括追加に失敗しました"
+                    );
+
+                } finally {
+
+                    addPhotoBtn.disabled =
+                        false;
+
+                    addPhotoBtn.textContent =
+                        "一括追加";
+
+                }
+
+            }
+        );
+
+    }
+
+
+    //
+    // SELECTION SUMMARY
+    //
+
+    function updateSelectionSummary() {
+
+        const memberCount =
+            document.querySelectorAll(
+                ".member-checkbox:checked"
+            ).length;
+
+
+        const typeCount =
+            document.querySelectorAll(
+                ".type-checkbox:checked"
+            ).length;
+
+
+        const total =
+            memberCount *
+            typeCount;
+
+
+        const summary =
+            document.getElementById(
+                "selection-summary"
+            );
+
+
+        if (!summary) {
+            return;
+        }
+
+
+        summary.textContent =
+            `メンバー: ${memberCount}人 / `
+            +
+            `種類: ${typeCount}種 / `
+            +
+            `追加予定: ${total}件`;
+
+    }
+
+
+    //
+    // MEMBER SELECT ALL
+    //
+
+    if (memberSelectAll) {
+
+        memberSelectAll.addEventListener(
+            "change",
+            () => {
+
+                document
+                    .querySelectorAll(
+                        ".member-checkbox"
+                    )
+                    .forEach(cb => {
+
+                        cb.checked =
+                            memberSelectAll.checked;
+
+                    });
+
+
+                updateSelectionSummary();
+
+            }
+        );
+
+    }
+
+
+    //
+    // MEMBER / TYPE CHECKBOX
+    //
+
+    document.addEventListener(
+        "change",
+        (e) => {
+
+            if (
+                e.target.classList.contains(
+                    "member-checkbox"
+                )
+                ||
+                e.target.classList.contains(
+                    "type-checkbox"
+                )
+            ) {
+
+                updateSelectionSummary();
+
+            }
+
+        }
+    );
+
+
+    //
+    // OTHER TYPES
+    //
+
+    if (toggleTypeBtn) {
+
+        toggleTypeBtn.addEventListener(
+            "click",
+            () => {
+
+                otherTypes.classList.toggle(
+                    "hidden"
+                );
+
+
+                toggleTypeBtn.textContent =
+                    otherTypes.classList.contains(
+                        "hidden"
+                    )
+                        ? "▼ その他"
+                        : "▲ その他";
+
+            }
+        );
+
+    }
+
+
+    //
+    // LOAD PHOTOS
+    //
+
+    async function loadPhotos() {
+
+        if (
+            loading
+            ||
+            !hasNext
+        ) {
+
+            return;
+
+        }
+
+
+        loading = true;
+
+
+        try {
+
+            const response =
+                await fetch(
+                    `/admin/photos/list`
+                    +
+                    `?group_id={{ selected_group.id }}`
+                    +
+                    `&page=${currentPage}`
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.error ||
+                    "一覧の読み込みに失敗しました"
+                );
+
+            }
+
+
+            loadingArea.classList.add(
+                "hidden"
+            );
+
+            tableArea.classList.remove(
+                "hidden"
+            );
+
+
+            if (
+                currentPage === 1
+                &&
+                data.items.length === 0
+            ) {
+
+                tableBody.innerHTML = `
+                    <tr>
+                        <td
+                            colspan="4"
+                            class="border p-6 text-center text-gray-500"
+                        >
+                            データがありません
+                        </td>
+                    </tr>
+                `;
+
+
+                hasNext = false;
+
+                return;
+
+            }
+
+
+            data.items.forEach(
+                photo => {
+
+                    const tr =
+                        document.createElement(
+                            "tr"
+                        );
+
+
+                    tr.className =
+                        "photo-row";
+
+
+                    tr.dataset.member =
+                        photo.member_name
+                            .toLowerCase();
+
+
+                    tr.dataset.costume =
+                        photo.costume_name
+                            .toLowerCase();
+
+
+                    tr.id =
+                        `photo-row-${photo.id}`;
+
+
+                    tr.innerHTML = `
+                        <td class="border p-3">
+                            ${photo.member_name}
+                        </td>
+
+                        <td class="border p-3">
+                            ${photo.costume_name}
+                        </td>
+
+                        <td class="border p-3">
+                            ${photo.type_name}
+                        </td>
+
+                        <td class="border p-3 text-center">
+
+                            <button
+                                class="delete-btn text-red-600 font-bold"
+                                data-photo-id="${photo.id}"
+                            >
+                                削除
+                            </button>
+
+                        </td>
+                    `;
+
+
+                    tableBody.appendChild(
+                        tr
+                    );
+
+                }
+            );
+
+
+            hasNext =
+                data.has_next;
+
+
+            currentPage++;
+
+
+            if (hasNext) {
+
+                loadMoreBtn.classList.remove(
+                    "hidden"
+                );
+
+            } else {
+
+                loadMoreBtn.classList.add(
+                    "hidden"
+                );
+
+            }
+
+        } catch (error) {
+
+            console.error(error);
+
+            loadingArea.textContent =
+                "一覧の読み込みに失敗しました。";
+
+            loadingArea.classList.remove(
+                "hidden"
+            );
+
+        } finally {
+
+            loading = false;
+
+        }
+
+    }
+
 
     //
     // ACCORDION
     //
 
-    const toggleBtn =
-        document.getElementById('toggle-table-btn')
-
-    const tableWrapper =
-        document.getElementById('table-wrapper')
-
-    const tableBody =
-        document.getElementById('photo-table-body')
-
-    const loadingArea =
-        document.getElementById('loading-area')
-
-    const tableArea =
-        document.getElementById('table-area')
-
-    const accordionIcon =
-        document.getElementById('accordion-icon')
-
-    let currentPage = 1
-    let hasNext = true
-    let loading = false
-
-
     if (toggleBtn) {
 
         toggleBtn.addEventListener(
-            'click',
+            "click",
             async () => {
 
                 tableWrapper.classList.toggle(
-                    'hidden'
-                )
+                    "hidden"
+                );
+
 
                 accordionIcon.textContent =
                     tableWrapper.classList.contains(
-                        'hidden'
+                        "hidden"
                     )
-                        ? '▼'
-                        : '▲'
+                        ? "▼"
+                        : "▲";
+
 
                 if (
                     currentPage === 1
                     &&
                     tableBody.children.length === 0
+                    &&
+                    !tableWrapper.classList.contains(
+                        "hidden"
+                    )
                 ) {
 
-                    await loadPhotos()
+                    await loadPhotos();
 
                 }
 
             }
-        )
+        );
 
     }
+
+
+    //
+    // LOAD MORE
+    //
 
     if (loadMoreBtn) {
 
         loadMoreBtn.addEventListener(
-            'click',
+            "click",
             loadPhotos
-        )
+        );
 
     }
+
 
     //
     // DELETE
     //
 
-    document.addEventListener('click', async (e) => {
+    document.addEventListener(
+        "click",
+        async (e) => {
 
-        if (!e.target.classList.contains('delete-btn')) {
-            return
-        }
+            if (
+                !e.target.classList.contains(
+                    "delete-btn"
+                )
+            ) {
 
-        const photoId =
-            e.target.dataset.photoId
+                return;
 
-        if (!confirm('削除しますか？')) {
-            return
-        }
-
-        const response = await fetch(
-            `/admin/photos/${photoId}`,
-            {
-                method: 'DELETE'
-            }
-        )
-
-        const data = await response.json()
-
-        if (data.success) {
-
-            const row =
-                document.getElementById(`photo-row-${photoId}`)
-
-            if (row) {
-                row.remove()
             }
 
+
+            const photoId =
+                e.target.dataset.photoId;
+
+
+            if (
+                !confirm(
+                    "削除しますか？"
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        `/admin/photos/${photoId}`,
+                        {
+                            method: "DELETE"
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                if (
+                    !response.ok
+                    ||
+                    !data.success
+                ) {
+
+                    throw new Error(
+                        data.error ||
+                        "削除に失敗しました"
+                    );
+
+                }
+
+
+                const row =
+                    document.getElementById(
+                        `photo-row-${photoId}`
+                    );
+
+
+                if (row) {
+
+                    row.remove();
+
+                }
+
+            } catch (error) {
+
+                console.error(error);
+
+                alert(
+                    error.message ||
+                    "削除に失敗しました"
+                );
+
+            }
+
         }
-
-    })
-
+    );
 
 
     //
     // FILTER
     //
 
-    document.addEventListener('input', (e) => {
+    document.addEventListener(
+        "input",
+        (e) => {
 
-        if (
-            e.target.id !== 'member-filter'
-            &&
-            e.target.id !== 'costume-filter'
-        ) {
-            return
+            if (
+                e.target.id !==
+                    "member-filter"
+                &&
+                e.target.id !==
+                    "costume-filter"
+            ) {
+
+                return;
+
+            }
+
+
+            const memberFilter =
+                document.getElementById(
+                    "member-filter"
+                );
+
+
+            const costumeFilter =
+                document.getElementById(
+                    "costume-filter"
+                );
+
+
+            const memberKeyword =
+                memberFilter
+                    .value
+                    .toLowerCase();
+
+
+            const costumeKeyword =
+                costumeFilter
+                    .value
+                    .toLowerCase();
+
+
+            document
+                .querySelectorAll(
+                    ".photo-row"
+                )
+                .forEach(
+                    row => {
+
+                        const member =
+                            row.dataset.member;
+
+
+                        const costume =
+                            row.dataset.costume;
+
+
+                        const visible =
+                            member.includes(
+                                memberKeyword
+                            )
+                            &&
+                            costume.includes(
+                                costumeKeyword
+                            );
+
+
+                        row.style.display =
+                            visible
+                                ? ""
+                                : "none";
+
+                    }
+                );
+
         }
+    );
 
-        const memberKeyword =
-            document
-                .getElementById('member-filter')
-                .value
-                .toLowerCase()
 
-        const costumeKeyword =
-            document
-                .getElementById('costume-filter')
-                .value
-                .toLowerCase()
+    //
+    // INITIAL SUMMARY
+    //
 
-        document
-            .querySelectorAll('.photo-row')
-            .forEach(row => {
-
-                const member =
-                    row.dataset.member
-
-                const costume =
-                    row.dataset.costume
-
-                const visible =
-                    member.includes(memberKeyword)
-                    &&
-                    costume.includes(costumeKeyword)
-
-                row.style.display =
-                    visible
-                        ? ''
-                        : 'none'
-
-            })
-
-    })
+    updateSelectionSummary();
 
 </script>
+
 {% endblock %}

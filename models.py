@@ -1156,6 +1156,23 @@ class PhotoType(db.Model):
         nullable=False
     )
 
+    # --------------------------------------------------------
+    # Costume Type Normalization
+    # --------------------------------------------------------
+
+    # 衣装ごとの統計用Type設定
+    #
+    # 例:
+    #   衣装A / 03 → ヨリ
+    #   衣装B / 03 → チュウ
+    #
+    # PhotoType自体のnameは変更しない。
+    costume_normalizations = db.relationship(
+        "CostumeTypeNormalization",
+        back_populates="photo_type",
+        cascade="all, delete-orphan"
+    )
+
 
 # ============================================================
 # Costume
@@ -1183,6 +1200,126 @@ class Costume(db.Model):
     group = db.relationship(
         "Group",
         backref="costumes"
+    )
+
+    # --------------------------------------------------------
+    # Costume Type Normalization
+    # --------------------------------------------------------
+
+    # この衣装における
+    # PhotoType → 統計用Type の対応設定
+    type_normalizations = db.relationship(
+        "CostumeTypeNormalization",
+        back_populates="costume",
+        cascade="all, delete-orphan"
+    )
+
+
+# ============================================================
+# CostumeTypeNormalization
+# ============================================================
+
+class CostumeTypeNormalization(db.Model):
+    """
+    衣装ごとのPhotoType統計分類を管理する。
+
+    PhotoTypeの表示名は変更せず、
+    統計処理で使用する分類だけを
+    衣装単位で設定する。
+
+    例:
+
+        衣装A
+            01 → ヒキ
+            02 → チュウ
+            03 → ヨリ
+            04 → 座り
+
+        衣装B
+            01 → ヨリ
+            02 → ヒキ
+            03 → チュウ
+            04 → 座り
+
+    「03」の意味が衣装によって異なるケースにも対応できる。
+    """
+
+    __tablename__ = "costume_type_normalizations"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    # --------------------------------------------------------
+    # Costume
+    # --------------------------------------------------------
+
+    costume_id = db.Column(
+        db.Integer,
+        db.ForeignKey(
+            "costumes.id",
+            ondelete="CASCADE"
+        ),
+        nullable=False,
+        index=True
+    )
+
+    # --------------------------------------------------------
+    # PhotoType
+    # --------------------------------------------------------
+
+    photo_type_id = db.Column(
+        db.Integer,
+        db.ForeignKey(
+            "photo_types.id",
+            ondelete="CASCADE"
+        ),
+        nullable=False,
+        index=True
+    )
+
+    # --------------------------------------------------------
+    # Normalized Type
+    # --------------------------------------------------------
+
+    normalized_type = db.Column(
+        db.String(20),
+        nullable=False
+    )
+
+    # --------------------------------------------------------
+    # Relationships
+    # --------------------------------------------------------
+
+    costume = db.relationship(
+        "Costume",
+        back_populates="type_normalizations"
+    )
+
+    photo_type = db.relationship(
+        "PhotoType",
+        back_populates="costume_normalizations"
+    )
+
+    # --------------------------------------------------------
+    # Constraints
+    # --------------------------------------------------------
+
+    __table_args__ = (
+        # 同じ衣装・同じPhotoTypeについて
+        # 統計Type設定を1件だけ保持する。
+        db.UniqueConstraint(
+            "costume_id",
+            "photo_type_id",
+            name="uq_costume_type_normalization"
+        ),
+
+        # 統計上の分類は4種類に限定する。
+        CheckConstraint(
+            "normalized_type IN ('ヨリ','チュウ','ヒキ','座り')",
+            name="check_normalized_type"
+        ),
     )
 
 
