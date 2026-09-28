@@ -16,6 +16,7 @@ from extensions import db
 from datetime import date
 from collections import defaultdict
 from routes.core import group_required
+from services.type_normalizer import normalize_type, get_type_order
 
 from sqlalchemy import func, case
 from sqlalchemy.orm import joinedload
@@ -124,7 +125,11 @@ def _photo_detail_payload(user_photo):
 
     return {
         "id": user_photo.id,
-        "type": user_photo.photo.photo_type.name,
+        "type": normalize_type(
+            user_photo.photo.member.name,
+            user_photo.photo.costume.name,
+            user_photo.photo.photo_type.name,
+        ),
         "quantity": user_photo.quantity,
         "available": user_photo.available_quantity,
         "memo": user_photo.memo or "",
@@ -663,7 +668,11 @@ def index(group_key):
                 up.id,
 
             "type":
-                up.photo.photo_type.name,
+                normalize_type(
+                    up.photo.member.name,
+                    up.photo.costume.name,
+                    up.photo.photo_type.name,
+                ),
 
             "quantity":
                 up.quantity,
@@ -694,6 +703,22 @@ def index(group_key):
             "image_count":
                 len(images),
         })
+
+    # =========================================================
+    # 種類の表示順を統一
+    #
+    # ヨリ → チュウ → ヒキ → 座り
+    #
+    # type_normalizer.py の get_type_order() を利用することで、
+    # この順序を他の箇所と共通化する。
+    # =========================================================
+
+    for details in details_map.values():
+        details.sort(
+            key=lambda detail: get_type_order(
+                detail["type"]
+            )
+        )
 
     # =========================================================
     # カード生成
