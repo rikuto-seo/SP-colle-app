@@ -2,115 +2,287 @@
 {% block title %}マイページ{% endblock %}
 
 {% block content %}
+
 <div class="container mt-5" style="max-width: 800px;">
 
+  <!-- =====================================================
+       ページタイトル
+  ====================================================== -->
+
   <div class="text-center mb-4">
-    <h1 class="display-5 fw-bold text-black p-3 rounded section-title">マイページ</h1>
+    <h1 class="display-5 fw-bold text-black p-3 rounded section-title">
+      マイページ
+    </h1>
   </div>
 
+
+  <!-- =====================================================
+       プロフィール
+  ====================================================== -->
+
   <div class="card mb-4 border-warning">
-    <div class="card-body d-flex flex-column gap-3">
 
-      <div class="card-body">
-        <div class="d-flex align-items-start gap-3">
+    <div class="card-body">
 
-          <!-- アイコン -->
-          <img src="{{ icon_url }}" style="width:64px;height:64px;object-fit:cover;border-radius:50%;">
+      <div class="d-flex align-items-start gap-3">
 
-          <!-- 右側 -->
-          <div class="flex-grow-1">
+        <!-- アイコン -->
 
-            <!-- 上：ユーザー名＋SNS -->
-            <div class="d-flex align-items-center gap-3 mb-2">
-              <h5 class="mb-0">
-                {{ current_user.username if current_user.username else 'ゲスト' }}
-              </h5>
+        <img
+          src="{{ icon_url }}"
+          alt="プロフィールアイコン"
+          style="
+            width:64px;
+            height:64px;
+            object-fit:cover;
+            border-radius:50%;
+          "
+        >
 
-              <div class="d-flex gap-2">
-                {% if current_user.twitter_id %}
-                <a href="https://x.com/{{ current_user.twitter_id }}" target="_blank">
-                  <i class="fa-brands fa-x-twitter"></i>
-                </a>
-                {% endif %}
 
-                {% if current_user.instagram_id %}
-                <a href="https://www.instagram.com/{{ current_user.instagram_id }}" target="_blank">
-                  <i class="fa-brands fa-instagram"></i>
-                </a>
-                {% endif %}
-              </div>
-            </div>
+        <!-- 右側 -->
 
-            <!-- 下：プラン情報（横並び） -->
-            <div class="d-flex align-items-center gap-3 flex-wrap">
+        <div class="flex-grow-1">
 
-              <!-- プラン -->
-              <div>
-                <span class="text-muted small">プラン：</span>
-                <span class="fw-bold">
-                  {% if current_user.is_premium() %}
-                  SUPPORTER
-                  {% elif current_user.is_standard() %}
-                  スタンダード
-                  {% elif current_user.is_lite() %}
-                  ライト
-                  {% else %}
-                  無料
-                  {% endif %}
-                </span>
-              </div>
+          <!-- ユーザー名＋SNS -->
 
-              <!-- 更新日 -->
-              <div class="text-muted small">
-                {% if cancel_at_period_end %}
-                {% if next_billing %}
-                {{ next_billing }}で終了
-                {% else %}
-                終了日取得中
-                {% endif %}
-                {% else %}
-                {% if next_billing %}
-                次回：{{ next_billing }}
-                {% else %}
-                次回未設定
-                {% endif %}
-                {% endif %}
-              </div>
+          <div class="d-flex align-items-center gap-3 mb-2">
 
-              <!-- ボタン -->
-              <a href="{{ url_for('user.upgrade') }}" class="btn btn-warning btn-sm">
-                プラン変更
+            <h5 class="mb-0">
+              {{ current_user.username if current_user.username else 'ゲスト' }}
+            </h5>
+
+            <div class="d-flex gap-2">
+
+              {% if current_user.twitter_id %}
+
+              <a
+                href="https://x.com/{{ current_user.twitter_id }}"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="X"
+              >
+                <i class="fa-brands fa-x-twitter"></i>
               </a>
+
+              {% endif %}
+
+
+              {% if current_user.instagram_id %}
+
+              <a
+                href="https://www.instagram.com/{{ current_user.instagram_id }}"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+              >
+                <i class="fa-brands fa-instagram"></i>
+              </a>
+
+              {% endif %}
 
             </div>
 
           </div>
+
+
+          <!-- プラン情報 -->
+
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+
+            <div>
+
+              <span class="text-muted small">
+                プラン：
+              </span>
+
+              <span class="fw-bold">
+
+                {% if current_user.is_premium() %}
+
+                  SUPPORTER
+
+                {% elif current_user.is_standard() %}
+
+                  スタンダード
+
+                {% elif current_user.is_lite() %}
+
+                  ライト
+
+                {% else %}
+
+                  無料
+
+                {% endif %}
+
+              </span>
+
+            </div>
+
+
+            <div class="text-muted small">
+
+              {% if cancel_at_period_end %}
+
+                {% if next_billing %}
+
+                  {{ next_billing }}で終了
+
+                {% else %}
+
+                  終了日取得中
+
+                {% endif %}
+
+              {% else %}
+
+                {% if next_billing %}
+
+                  次回：{{ next_billing }}
+
+                {% else %}
+
+                  次回未設定
+
+                {% endif %}
+
+              {% endif %}
+
+            </div>
+
+
+            <a
+              href="{{ url_for('user.upgrade') }}"
+              class="btn btn-warning btn-sm"
+            >
+              プラン変更
+            </a>
+
+          </div>
+
         </div>
+
       </div>
 
     </div>
+
   </div>
 
 
-  <!-- 画像保存容量 -->
+  <!-- =====================================================
+       所持総数
+  ====================================================== -->
+
   <div class="card mb-4">
+
+    <div class="card-body">
+
+      <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <h5 class="fw-bold mb-0">
+          <i class="fa-solid fa-box-archive me-2"></i>
+          所持総数
+        </h5>
+
+        <a
+          href="{{ url_for('stats.stats', group_key=selected_group) }}"
+          class="small text-decoration-none"
+        >
+          詳しい統計を見る
+          <i class="fa-solid fa-chevron-right ms-1"></i>
+        </a>
+
+      </div>
+
+
+      <!-- =================================================
+           全グループ合計
+      ================================================== -->
+
+      <div class="text-center py-2">
+
+        <div
+          class="fw-bold text-primary"
+          style="font-size: 2.5rem; line-height: 1.2;"
+        >
+          {{ "{:,}".format(possession_total) }}枚
+        </div>
+
+        <div class="text-muted small mt-1">
+          登録している生写真の所持総数
+        </div>
+
+      </div>
+
+
+      <!-- =================================================
+           グループ別
+      ================================================== -->
+
+      {% if possession_group_totals %}
+
+      <div class="border-top mt-3 pt-3">
+
+        <div class="row g-2">
+
+          {% for item in possession_group_totals %}
+
+          <div class="col-12 col-sm-4 text-center">
+
+            <div class="small text-muted">
+              {{ item.name }}
+            </div>
+
+            <div class="fw-semibold">
+              {{ "{:,}".format(item.total) }}枚
+            </div>
+
+          </div>
+
+          {% endfor %}
+
+        </div>
+
+      </div>
+
+      {% endif %}
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       画像保存容量
+  ====================================================== -->
+
+  <div class="card mb-4">
+
     <div class="card-body">
 
       <h5 class="fw-bold mb-3">
-        <i class="fa-solid fa-hard-drive me-2"></i>画像保存容量
+        <i class="fa-solid fa-hard-drive me-2"></i>
+        画像保存容量
       </h5>
 
+
       <!-- 使用量・上限 -->
+
       <div class="d-flex justify-content-between align-items-end mb-2">
 
         <div>
+
           <span class="fs-5 fw-bold">
             {{ image_storage_used_display }}
           </span>
+
           <span class="text-muted">
             / {{ image_storage_limit_gb }} GB
           </span>
+
         </div>
+
 
         <span class="small text-muted">
           {{ image_storage_usage_percent }}%
@@ -118,7 +290,9 @@
 
       </div>
 
+
       <!-- プログレスバー -->
+
       <div
         class="progress"
         role="progressbar"
@@ -126,21 +300,30 @@
         aria-valuenow="{{ image_storage_usage_percent }}"
         aria-valuemin="0"
         aria-valuemax="100"
-        style="height: 10px;"
+        style="height:10px;"
       >
+
         <div
-          class="progress-bar
-          {% if image_storage_usage_percent >= 90 %}
-            bg-danger
-          {% elif image_storage_usage_percent >= 70 %}
-            bg-warning
-          {% endif %}"
-          style="width: {{ image_storage_usage_percent }}%;"
+          class="
+            progress-bar
+            {% if image_storage_usage_percent >= 90 %}
+              bg-danger
+            {% elif image_storage_usage_percent >= 70 %}
+              bg-warning
+            {% endif %}
+          "
+          style="
+            width: {{ image_storage_usage_percent }}%;
+          "
         ></div>
+
       </div>
 
+
       <!-- 残り容量 -->
+
       <div class="d-flex justify-content-between mt-2 small text-muted">
+
         <span>
           残り {{ image_storage_remaining_display }}
         </span>
@@ -148,163 +331,311 @@
         <span>
           上限 {{ image_storage_limit_gb }} GB
         </span>
+
       </div>
+
 
       <!-- 注意事項 -->
+
       <div class="text-muted small mt-3">
+
         <i class="fa-solid fa-circle-info me-1"></i>
+
         画像は1枚あたり最大10MBまでアップロードできます。
         保存時にはWebP形式に変換・圧縮されます。
+
       </div>
 
+
+      <!-- 容量警告 -->
+
       {% if image_storage_usage_percent >= 90 and image_storage_usage_percent < 100 %}
+
       <div class="alert alert-warning mt-3 mb-0 py-2 small">
+
         <i class="fa-solid fa-triangle-exclamation me-1"></i>
+
         画像保存容量の残りが少なくなっています。
+
       </div>
+
       {% elif image_storage_usage_percent >= 100 %}
+
       <div class="alert alert-danger mt-3 mb-0 py-2 small">
+
         <i class="fa-solid fa-circle-exclamation me-1"></i>
+
         画像保存容量が上限に達しています。
+
       </div>
+
       {% endif %}
 
     </div>
+
   </div>
 
 
+  <!-- =====================================================
+       QRコード共有
+  ====================================================== -->
+
   <div class="mb-4">
+
     <h4 class="fw-bold mb-3">
-      <i class="fa-solid fa-qrcode me-2"></i>所持一覧のQRコード共有
+      <i class="fa-solid fa-qrcode me-2"></i>
+      所持一覧のQRコード共有
     </h4>
 
+
     {% set group_names = {
-    'nogizaka':'乃木坂46',
-    'sakurazaka':'櫻坂46',
-    'hinatazaka':'日向坂46'
+      'nogizaka': '乃木坂46',
+      'sakurazaka': '櫻坂46',
+      'hinatazaka': '日向坂46'
     } %}
 
+
     <div class="card">
+
       <div class="card-body d-flex flex-column flex-md-row">
 
+        <!-- グループ選択 -->
+
         <div class="d-flex flex-md-column gap-2 me-md-4 mb-3 mb-md-0">
+
           {% for key, name in group_names.items() %}
-          {% if current_user.can_access_group(key) %}
-          <button type="button" class="btn btn-outline-primary group-btn" data-group="{{ key }}">
-            {{ name }}
-          </button>
-          {% else %}
-          <button type="button" class="btn btn-outline-secondary" disabled>
-            <i class="fa-solid fa-lock me-1"></i>{{ name }}
-          </button>
-          {% endif %}
+
+            {% if current_user.can_access_group(key) %}
+
+            <button
+              type="button"
+              class="btn btn-outline-primary group-btn"
+              data-group="{{ key }}"
+            >
+              {{ name }}
+            </button>
+
+            {% else %}
+
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              disabled
+            >
+              <i class="fa-solid fa-lock me-1"></i>
+              {{ name }}
+            </button>
+
+            {% endif %}
+
           {% endfor %}
+
         </div>
+
+
+        <!-- QR表示 -->
 
         <div class="flex-grow-1 text-center">
 
           {% if selected_groups %}
-          {% set default_group = selected_group %}
 
-          <h5 id="group-title">{{ group_names[default_group] }}</h5>
+            {% set default_group = selected_group %}
 
-          <div id="qr-wrapper">
-            {% if share_statuses[default_group] %}
-            <img
-              id="qr-image"
-              src="data:image/png;base64,{{ qr_codes.get(default_group, '') }}"
-              class="mb-3"
-              style="height:120px;"
-            >
-            {% else %}
-            <div class="text-muted mt-3">
-              <i class="fa-solid fa-lock me-1"></i>非公開中です
-            </div>
-            {% endif %}
-          </div>
+            <h5 id="group-title">
+              {{ group_names[default_group] }}
+            </h5>
 
-          <form
-            id="share-form"
-            method="post"
-            action="{{ url_for('user.toggle_share', group_key=default_group) }}"
-          >
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-            <button
-              type="submit"
-              id="share-btn"
-              class="btn {% if share_statuses[default_group] %}btn-success{% else %}btn-outline-secondary{% endif %}"
-            >
+            <div id="qr-wrapper">
+
               {% if share_statuses[default_group] %}
-              <i class="fa-solid fa-eye"></i> 公開中
+
+              <img
+                id="qr-image"
+                src="data:image/png;base64,{{ qr_codes.get(default_group, '') }}"
+                alt="QRコード"
+                class="mb-3"
+                style="height:120px;"
+              >
+
               {% else %}
-              <i class="fa-solid fa-eye-slash"></i> 非公開
+
+              <div class="text-muted mt-3">
+
+                <i class="fa-solid fa-lock me-1"></i>
+                非公開中です
+
+              </div>
+
               {% endif %}
-            </button>
-          </form>
+
+            </div>
+
+
+            <form
+              id="share-form"
+              method="post"
+              action="{{ url_for(
+                'user.toggle_share',
+                group_key=default_group
+              ) }}"
+            >
+
+              <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token() }}"
+              >
+
+
+              <button
+                type="submit"
+                id="share-btn"
+                class="
+                  btn
+                  {% if share_statuses[default_group] %}
+                    btn-success
+                  {% else %}
+                    btn-outline-secondary
+                  {% endif %}
+                "
+              >
+
+                {% if share_statuses[default_group] %}
+
+                  <i class="fa-solid fa-eye"></i>
+                  公開中
+
+                {% else %}
+
+                  <i class="fa-solid fa-eye-slash"></i>
+                  非公開
+
+                {% endif %}
+
+              </button>
+
+            </form>
+
 
           {% else %}
-          <div class="text-muted mt-4">
-            <i class="fa-solid fa-lock me-1"></i>QR機能は有料プランで利用できます
-          </div>
+
+            <div class="text-muted mt-4">
+
+              <i class="fa-solid fa-lock me-1"></i>
+              QR機能は有料プランで利用できます
+
+            </div>
+
           {% endif %}
 
         </div>
+
       </div>
+
     </div>
+
   </div>
 
 
+  <!-- =====================================================
+       設定
+  ====================================================== -->
+
   <div class="card">
+
     <div class="card-body">
 
-      <h5><i class="fa-solid fa-gear me-2"></i>設定</h5>
+      <h5 class="fw-bold mb-3">
+        <i class="fa-solid fa-gear me-2"></i>
+        設定
+      </h5>
+
 
       <div class="setting-links">
+
         <a href="{{ url_for('user.edit_profile') }}">
-          <i class="fa-solid fa-user-pen me-2"></i>プロフィール編集
+          <i class="fa-solid fa-user-pen me-2"></i>
+          プロフィール編集
         </a>
+
 
         <a href="{{ url_for('user.icon_setting') }}">
-          <i class="fa-solid fa-image me-2"></i>アイコン設定
+          <i class="fa-solid fa-image me-2"></i>
+          アイコン設定
         </a>
+
 
         <a href="{{ url_for('user.change_password') }}">
-          <i class="fa-solid fa-key me-2"></i>パスワード変更
+          <i class="fa-solid fa-key me-2"></i>
+          パスワード変更
         </a>
 
-        <form action="{{ url_for('user.toggle_dark_mode') }}" method="post">
-          <button type="submit" class="sidebar-like-link">
+
+        <form
+          action="{{ url_for('user.toggle_dark_mode') }}"
+          method="post"
+        >
+
+          <button
+            type="submit"
+            class="sidebar-like-link"
+          >
+
             <i class="fa-solid fa-moon me-2"></i>
+
             {% if current_user.dark_mode %}
-            ダークモード解除
+
+              ダークモード解除
+
             {% else %}
-            ダークモード有効
+
+              ダークモード有効
+
             {% endif %}
+
           </button>
+
         </form>
 
+
         <a href="{{ url_for('user.logout') }}">
-          <i class="fa-solid fa-right-from-bracket me-2"></i>ログアウト
+
+          <i class="fa-solid fa-right-from-bracket me-2"></i>
+          ログアウト
+
         </a>
+
 
         <a
           href="{{ url_for('user.confirm_delete_account') }}"
           class="text-danger"
         >
-          <i class="fa-solid fa-user-xmark me-2"></i>アカウント削除
+
+          <i class="fa-solid fa-user-xmark me-2"></i>
+          アカウント削除
+
         </a>
+
       </div>
 
     </div>
+
   </div>
 
 </div>
 
 
+<!-- =======================================================
+     QRコード切り替え
+======================================================== -->
+
 <script>
+
   const qrCodes = {{ qr_codes | tojson }};
+
   const shareStatuses = {{ share_statuses | tojson }};
+
 
   const groupNames = {
     nogizaka: "乃木坂46",
@@ -312,56 +643,120 @@
     hinatazaka: "日向坂46"
   };
 
-  const toggleShareBase = "{{ url_for('user.toggle_share', group_key='__GROUP__') }}";
 
-  const qrWrapper = document.getElementById("qr-wrapper");
-  const groupTitle = document.getElementById("group-title");
-  const shareForm = document.getElementById("share-form");
-  const shareBtn = document.getElementById("share-btn");
+  const toggleShareBase =
+    "{{ url_for(
+      'user.toggle_share',
+      group_key='__GROUP__'
+    ) }}";
 
-  document.querySelectorAll(".group-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const key = btn.dataset.group;
 
-      groupTitle.textContent = groupNames[key];
-      shareForm.action = toggleShareBase.replace('__GROUP__', key);
+  const qrWrapper =
+    document.getElementById(
+      "qr-wrapper"
+    );
 
-      if (shareStatuses[key]) {
-        if (qrCodes[key]) {
-          qrWrapper.innerHTML = `
-            <img
-              src="data:image/png;base64,${qrCodes[key]}"
-              style="height:120px;"
-              class="mb-3"
-            >
-          `;
+  const groupTitle =
+    document.getElementById(
+      "group-title"
+    );
+
+  const shareForm =
+    document.getElementById(
+      "share-form"
+    );
+
+  const shareBtn =
+    document.getElementById(
+      "share-btn"
+    );
+
+
+  document
+    .querySelectorAll(".group-btn")
+    .forEach(btn => {
+
+      btn.addEventListener(
+        "click",
+        () => {
+
+          const key =
+            btn.dataset.group;
+
+
+          if (
+            !groupTitle ||
+            !shareForm ||
+            !shareBtn ||
+            !qrWrapper
+          ) {
+            return;
+          }
+
+
+          groupTitle.textContent =
+            groupNames[key];
+
+
+          shareForm.action =
+            toggleShareBase.replace(
+              "__GROUP__",
+              key
+            );
+
+
+          if (shareStatuses[key]) {
+
+            if (qrCodes[key]) {
+
+              qrWrapper.innerHTML = `
+                <img
+                  src="data:image/png;base64,${qrCodes[key]}"
+                  alt="QRコード"
+                  style="height:120px;"
+                  class="mb-3"
+                >
+              `;
+
+            }
+
+
+            shareBtn.classList.remove(
+              "btn-outline-secondary"
+            );
+
+            shareBtn.classList.add(
+              "btn-success"
+            );
+
+
+            shareBtn.innerHTML =
+              '<i class="fa-solid fa-eye"></i> 公開中';
+
+          } else {
+
+            qrWrapper.innerHTML = `
+              <div class="text-muted mt-3">
+                <i class="fa-solid fa-lock me-1"></i>
+                非公開中です
+              </div>
+            `;
+
+
+            shareBtn.className =
+              "btn btn-outline-secondary";
+
+
+            shareBtn.innerHTML =
+              '<i class="fa-solid fa-eye-slash"></i> 非公開';
+
+          }
+
         }
+      );
 
-        shareBtn.classList.remove(
-          "btn-success",
-          "btn-outline-secondary"
-        );
-
-        shareBtn.classList.add("btn-success");
-
-        shareBtn.innerHTML =
-          '<i class="fa-solid fa-eye"></i> 公開中';
-
-      } else {
-
-        qrWrapper.innerHTML = `
-          <div class="text-muted mt-3">
-            <i class="fa-solid fa-lock me-1"></i>非公開中です
-          </div>
-        `;
-
-        shareBtn.className = "btn btn-outline-secondary";
-
-        shareBtn.innerHTML =
-          '<i class="fa-solid fa-eye-slash"></i> 非公開';
-      }
     });
-  });
+
 </script>
 
 {% endblock %}
