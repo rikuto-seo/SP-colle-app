@@ -6,10 +6,7 @@ PREFERRED_URL_SCHEME = "https"
 
 
 class Config:
-    SECRET_KEY = os.environ.get(
-        "SECRET_KEY",
-        "koito-annbata"
-    )
+    SECRET_KEY = os.environ["SECRET_KEY"]
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
