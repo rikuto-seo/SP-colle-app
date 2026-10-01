@@ -144,6 +144,40 @@ def _photo_detail_payload(user_photo):
     }
 
 
+
+// =========================================================
+// 画像容量チェック用ユーザーロック
+// =========================================================
+
+def _lock_current_user_for_image_storage():
+    """
+    画像容量チェックとDB保存を同一トランザクション内で
+    直列化するため、現在のユーザー行をロックする。
+
+    PostgreSQLではSELECT FOR UPDATEにより、
+    同じユーザーに対する別の画像アップロード処理が
+    容量チェックを通過する前に待機する。
+
+    Returns:
+        User: 行ロック済みのUser
+    """
+
+    locked_user = (
+        User.query
+        .filter_by(id=current_user.id)
+        .populate_existing()
+        .with_for_update()
+        .first()
+    )
+
+    if locked_user is None:
+        raise RuntimeError(
+            "画像容量チェック用のユーザー情報を取得できません。"
+        )
+
+    return locked_user
+
+
 # =========================================================
 # R2画像削除用ヘルパー
 # =========================================================
@@ -1391,8 +1425,15 @@ def upload_user_photo_image(group_key, photo_id):
     # =====================================================
     # ユーザー容量チェック
     # =====================================================
+    #
+    # 同一ユーザーからの同時アップロードで容量チェックを
+    # すり抜けないよう、ここからDBコミットまでユーザー行を
+    # ロックする。
+    #
 
-    if not current_user.can_upload_image():
+    locked_user = _lock_current_user_for_image_storage()
+
+    if not locked_user.can_upload_image():
 
         flash(
             '現在のプランでは実物画像をアップロードできません。',
@@ -1403,13 +1444,13 @@ def upload_user_photo_image(group_key, photo_id):
             group_key
         )
 
-    if not current_user.can_upload_image_bytes(
+    if not locked_user.can_upload_image_bytes(
         additional_bytes
     ):
 
         remaining_bytes = (
-            current_user
-            .get_remaining_image_storage_bytes()
+            locked_user
+            .get_image_storage_remaining_bytes()
         )
 
         remaining_mb = max(
@@ -1781,8 +1822,15 @@ def add(group_key):
             # -------------------------------------------------
             # アップロード可能か確認
             # -------------------------------------------------
+            #
+            # 同一ユーザーからの同時アップロードで容量チェックを
+            # すり抜けないよう、ここからDBコミットまでユーザー行を
+            # ロックする。
+            #
 
-            if not current_user.can_upload_image():
+            locked_user = _lock_current_user_for_image_storage()
+
+            if not locked_user.can_upload_image():
 
                 flash(
                     '現在のプランでは実物画像をアップロードできません。',
@@ -1804,13 +1852,13 @@ def add(group_key):
             # DBを変更する前にチェックする。
             # -------------------------------------------------
 
-            if not current_user.can_upload_image_bytes(
+            if not locked_user.can_upload_image_bytes(
                 additional_bytes
             ):
 
                 remaining_bytes = (
-                    current_user
-                    .get_remaining_image_storage_bytes()
+                    locked_user
+                    .get_image_storage_remaining_bytes()
                 )
 
                 remaining_mb = max(
