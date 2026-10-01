@@ -179,35 +179,6 @@ def _photo_detail_payload(user_photo):
 
 
 
-def _lock_current_user_for_image_storage():
-    """
-    画像容量チェックとDB保存を同一トランザクション内で
-    直列化するため、現在のユーザー行をロックする。
-
-    PostgreSQLではSELECT FOR UPDATEにより、
-    同じユーザーに対する別の画像アップロード処理が
-    容量チェックを通過する前に待機する。
-
-    Returns:
-        User: 行ロック済みのUser
-    """
-
-    locked_user = (
-        User.query
-        .filter_by(id=current_user.id)
-        .populate_existing()
-        .with_for_update()
-        .first()
-    )
-
-    if locked_user is None:
-        raise RuntimeError(
-            "画像容量チェック用のユーザー情報を取得できません。"
-        )
-
-    return locked_user
-
-
 # =========================================================
 # R2画像削除用ヘルパー
 # =========================================================
@@ -1456,7 +1427,11 @@ def upload_user_photo_image(group_key, photo_id):
     # ユーザー容量チェック
     # =====================================================
 
-    if not current_user.can_upload_image():
+    # 容量チェックとDB保存を同一トランザクション内で
+    # 直列化するため、ユーザー行をロックする。
+    locked_user = _lock_current_user_for_image_storage()
+
+    if not locked_user.can_upload_image():
 
         flash(
             '現在のプランでは実物画像をアップロードできません。',
@@ -1846,7 +1821,11 @@ def add(group_key):
             # アップロード可能か確認
             # -------------------------------------------------
 
-            if not current_user.can_upload_image():
+            # 容量チェックとDB保存を同一トランザクション内で
+            # 直列化するため、ユーザー行をロックする。
+            locked_user = _lock_current_user_for_image_storage()
+
+            if not locked_user.can_upload_image():
 
                 flash(
                     '現在のプランでは実物画像をアップロードできません。',

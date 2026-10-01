@@ -1,0 +1,11 @@
+* [33m4a6b150[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Update images and templates
+* [33m149434c[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Fix concurrent image storage limit checks
+* [33m27be1e6[m Remove accidental sqlite3 executable from repository
+* [33m1152125[m Harden gitignore for generated and local files
+[31m|[m * [33md70825c[m[33m ([m[1;32mbackup-before-rebase[m[33m)[m Update images and templates
+[31m|[m[31m/[m  
+* [33mbe70442[m Update images and templates
+* [33mfe41204[m Update images and templates
+* [33me9934c9[m Update images and templates
+* [33m38dec0d[m Update images and templates
+* [33madbbc17[m Update images and templates
