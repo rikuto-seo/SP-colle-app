@@ -249,6 +249,24 @@ def index(group_key):
         )
     )
 
+    # 同一メンバー × 同一衣装の実際の所持枚数合計
+    #
+    # UserPhoto.quantity を合計する。
+    # これはコンプ率用の owned_types_expr とは別物で、
+    # 「枚数順」専用の集計値。
+    owned_quantity_expr = func.coalesce(
+        func.sum(
+            case(
+                (
+                    UserPhoto.quantity > 0,
+                    UserPhoto.quantity
+                ),
+                else_=0
+            )
+        ),
+        0
+    )
+
     # お気に入りが1件でもあれば1
     favorite_expr = func.max(
         case(
@@ -474,10 +492,19 @@ def index(group_key):
 
     elif sort == "quantity":
 
-        # 枚数（一覧上の所持種類数）の多い順
+        # 枚数の多い順
+        #
+        # 同一メンバー × 同一衣装について、
+        # 所持している各種類の UserPhoto.quantity を合計する。
+        #
+        # 例：
+        #   ヨリ 2枚 + チュウ 3枚 + ヒキ 1枚 = 6枚
+        #
+        # 衣装によって存在する種類が異なっていても、
+        # 単純な合計なので問題なく比較できる。
 
         summary_query = summary_query.order_by(
-            owned_types_expr.desc(),
+            owned_quantity_expr.desc(),
 
             comp_rate_expr.desc(),
 
