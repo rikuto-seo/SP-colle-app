@@ -1,8 +1,18 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash,abort
+from flask import (
+    Blueprint,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+    abort,
+)
 from flask_login import login_required, current_user
 from extensions import db
 from functools import wraps
+
 core_bp = Blueprint('core', __name__)
+
 
 def group_required(f):
     @wraps(f)
@@ -13,16 +23,21 @@ def group_required(f):
         if not group_key:
             abort(400)
 
-        # ✅ 未ログインならスルー（重要）
+        # 未ログインならスルー
         if not current_user.is_authenticated:
             return f(*args, **kwargs)
 
-        # ✅ ログインしている場合のみチェック
+        # ログインしている場合のみチェック
         if not current_user.can_access_group(group_key):
             selected = current_user.get_selected_groups()
 
             if selected:
-                return redirect(url_for("photo.index", group_key=selected[0]))
+                return redirect(
+                    url_for(
+                        "photo.index",
+                        group_key=selected[0]
+                    )
+                )
 
             return redirect(url_for("user.select_group"))
 
@@ -30,13 +45,30 @@ def group_required(f):
 
     return wrapper
 
+
 @core_bp.route('/group/<group_key>')
 def group(group_key):
     info = {
-        'nogizaka': {'name': '乃木坂46', 'color': '#800080', 'description': '清楚で可憐な乃木坂46。', 'image': 'nogizaka_banner.jpg'},
-        'sakurazaka': {'name': '櫻坂46', 'color': '#FF69B4', 'description': '強さと儚さを併せ持つ櫻坂46。', 'image': 'sakurazaka_banner.jpg'},
-        'hinatazaka': {'name': '日向坂46', 'color': '#87CEFA', 'description': '笑顔とハッピーオーラの日向坂46！', 'image': 'hinatazaka_banner.jpg'}
+        'nogizaka': {
+            'name': '乃木坂46',
+            'color': '#800080',
+            'description': '清楚で可憐な乃木坂46。',
+            'image': 'nogizaka_banner.jpg'
+        },
+        'sakurazaka': {
+            'name': '櫻坂46',
+            'color': '#FF69B4',
+            'description': '強さと儚さを併せ持つ櫻坂46。',
+            'image': 'sakurazaka_banner.jpg'
+        },
+        'hinatazaka': {
+            'name': '日向坂46',
+            'color': '#87CEFA',
+            'description': '笑顔とハッピーオーラの日向坂46！',
+            'image': 'hinatazaka_banner.jpg'
+        }
     }
+
     if group_key not in info:
         return 'グループが見つかりません', 404
 
@@ -46,6 +78,7 @@ def group(group_key):
         **info[group_key]
     )
 
+
 @core_bp.route('/<group_key>/dashboard')
 def dashboard(group_key):
     group_names = {
@@ -53,19 +86,23 @@ def dashboard(group_key):
         'sakurazaka': '櫻坂46',
         'hinatazaka': '日向坂46'
     }
+
     return render_template(
         'dashboard.html',
         group_key=group_key,
         group_name=group_names.get(group_key, '不明')
     )
 
+
 @core_bp.route('/terms')
 def terms():
     return render_template('terms.html')
 
+
 @core_bp.route('/legal')
 def legal():
     return render_template('legal.html')
+
 
 @core_bp.route('/switch/<group_key>')
 @login_required
@@ -73,13 +110,66 @@ def legal():
 def group_switch(group_key):
 
     if not current_user.can_access_group(group_key):
-        flash("このグループは有料プランで利用できます", "warning")
+        flash(
+            "このグループは有料プランで利用できます",
+            "warning"
+        )
         return redirect(url_for("user.upgrade"))
 
+    # 現在のグループを変更
     current_user.primary_group = group_key
     db.session.commit()
 
-    return redirect(url_for('photo.index', group_key=group_key))
+    # =========================================================
+    # 現在いるページを維持してグループだけ切り替える
+    # =========================================================
+
+    referrer = request.referrer
+
+    if referrer:
+        from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+
+        parsed = urlparse(referrer)
+
+        # 自サイト内のURLだけを対象にする
+        if parsed.netloc == request.host:
+
+            query = parse_qs(
+                parsed.query,
+                keep_blank_values=True
+            )
+
+            # URLの group_key を新しいグループへ変更
+            if 'group_key' in query:
+                query['group_key'] = [group_key]
+
+                new_query = urlencode(
+                    query,
+                    doseq=True
+                )
+
+                new_url = urlunparse((
+                    parsed.scheme,
+                    parsed.netloc,
+                    parsed.path,
+                    parsed.params,
+                    new_query,
+                    parsed.fragment,
+                ))
+
+                return redirect(new_url)
+
+    # =========================================================
+    # 現在ページを取得できなかった場合の安全なフォールバック
+    # =========================================================
+
+    return redirect(
+        url_for(
+            'photo.index',
+            group_key=group_key
+        )
+    )
+
 
 @core_bp.route('/privacy')
 def privacy():
