@@ -284,45 +284,53 @@ Photo Admin
                     Type
                 </label>
 
-                <div class="border rounded-xl p-3 bg-white checkbox-area">
 
-                    {% for type in photo_types[:4] %}
+                <!-- CREATE TYPE -->
 
-                    <label class="flex items-center gap-2 mb-2">
+                <div class="flex gap-2 mb-3">
 
-                        <input
-                            type="checkbox"
-                            class="type-checkbox"
-                            value="{{ type.id }}"
-                        >
-
-                        <span>
-                            {{ type.name }}
-                        </span>
-
-                    </label>
-
-                    {% endfor %}
-
-
-                    {% if photo_types|length > 4 %}
+                    <input
+                        id="type-name"
+                        type="text"
+                        placeholder="例: 01 / 02 / ヨリ"
+                        class="border rounded-lg px-3 py-2 w-full"
+                    >
 
                     <button
                         type="button"
-                        id="toggle-type-btn"
-                        class="text-blue-600 text-sm mt-2"
+                        id="create-type-btn"
+                        class="bg-blue-600 text-white px-4 rounded-lg whitespace-nowrap"
                     >
-                        ▼ その他
+                        作成
                     </button>
 
-                    <div
-                        id="other-types"
-                        class="hidden mt-3"
-                    >
+                </div>
 
-                        {% for type in photo_types[4:] %}
 
-                        <label class="flex items-center gap-2 mb-2">
+                <div
+                    id="type-create-status"
+                    class="text-xs text-gray-500 mb-3 min-h-[1rem]"
+                >
+                </div>
+
+
+                <!-- TYPE LIST -->
+
+                <div
+                    class="border rounded-xl p-3 bg-white checkbox-area"
+                    id="type-list"
+                >
+
+                    <!-- PRIMARY TYPES -->
+
+                    <div id="primary-types">
+
+                        {% for type in photo_types[:4] %}
+
+                        <label
+                            class="flex items-center gap-2 mb-2 type-checkbox-label"
+                            data-type-id="{{ type.id }}"
+                        >
 
                             <input
                                 type="checkbox"
@@ -340,7 +348,51 @@ Photo Admin
 
                     </div>
 
+
+                    <!-- OTHER TOGGLE -->
+
+                    {% if photo_types|length > 4 %}
+
+                    <button
+                        type="button"
+                        id="toggle-type-btn"
+                        class="text-blue-600 text-sm mt-2"
+                    >
+                        ▼ その他
+                    </button>
+
                     {% endif %}
+
+
+                    <!-- OTHER TYPES -->
+
+                    <div
+                        id="other-types"
+                        class="{% if photo_types|length <= 4 %}hidden {% endif %}mt-3"
+                    >
+
+                        {% for type in photo_types[4:] %}
+
+                        <label
+                            class="flex items-center gap-2 mb-2 type-checkbox-label"
+                            data-type-id="{{ type.id }}"
+                        >
+
+                            <input
+                                type="checkbox"
+                                class="type-checkbox"
+                                value="{{ type.id }}"
+                            >
+
+                            <span>
+                                {{ type.name }}
+                            </span>
+
+                        </label>
+
+                        {% endfor %}
+
+                    </div>
 
                 </div>
 
@@ -563,6 +615,21 @@ Photo Admin
     const otherTypes =
         document.getElementById("other-types");
 
+    const primaryTypes =
+        document.getElementById("primary-types");
+
+    const typeNameInput =
+        document.getElementById("type-name");
+
+    const createTypeBtn =
+        document.getElementById("create-type-btn");
+
+    const typeCreateStatus =
+        document.getElementById("type-create-status");
+
+    const normalizationList =
+        document.getElementById("normalization-list");
+
     const toggleBtn =
         document.getElementById("toggle-table-btn");
 
@@ -626,9 +693,15 @@ Photo Admin
                         create: false,
                         maxItems: 1,
                         placeholder: "Costume検索",
+
                         onChange: function(value) {
-                            handleCostumeChange(value);
+
+                            handleCostumeChange(
+                                value
+                            );
+
                         }
+
                     }
                 );
 
@@ -637,10 +710,754 @@ Photo Admin
 
 
     //
+    // TYPE LIST HELPERS
+    //
+
+    function getTypeCheckbox(typeId) {
+
+        if (!typeId) {
+            return null;
+        }
+
+        return document.querySelector(
+            `.type-checkbox[value="${String(typeId)}"]`
+        );
+
+    }
+
+
+    function getTypeCount() {
+
+        return document.querySelectorAll(
+            ".type-checkbox"
+        ).length;
+
+    }
+
+
+    function ensureOtherTypesUI() {
+
+        let toggleButton =
+            document.getElementById(
+                "toggle-type-btn"
+            );
+
+        let otherContainer =
+            document.getElementById(
+                "other-types"
+            );
+
+
+        /*
+         * 「その他」領域がまだ存在しない場合
+         * 動的に作成する
+         */
+
+        if (!otherContainer) {
+
+            otherContainer =
+                document.createElement(
+                    "div"
+                );
+
+            otherContainer.id =
+                "other-types";
+
+            otherContainer.className =
+                "hidden mt-3";
+
+
+            const typeList =
+                document.getElementById(
+                    "type-list"
+                );
+
+
+            if (typeList) {
+
+                typeList.appendChild(
+                    otherContainer
+                );
+
+            }
+
+        }
+
+
+        /*
+         * 「その他」ボタンがまだ存在しない場合
+         */
+
+        if (!toggleButton) {
+
+            toggleButton =
+                document.createElement(
+                    "button"
+                );
+
+            toggleButton.type =
+                "button";
+
+            toggleButton.id =
+                "toggle-type-btn";
+
+            toggleButton.className =
+                "text-blue-600 text-sm mt-2";
+
+            toggleButton.textContent =
+                "▼ その他";
+
+
+            /*
+             * primary-typesの直後に配置
+             */
+
+            if (primaryTypes) {
+
+                primaryTypes.insertAdjacentElement(
+                    "afterend",
+                    toggleButton
+                );
+
+            } else {
+
+                const typeList =
+                    document.getElementById(
+                        "type-list"
+                    );
+
+                if (typeList) {
+
+                    typeList.insertBefore(
+                        toggleButton,
+                        otherContainer
+                    );
+
+                }
+
+            }
+
+
+            toggleButton.addEventListener(
+                "click",
+                toggleOtherTypes
+            );
+
+        }
+
+
+        return {
+            toggleButton:
+                toggleButton,
+
+            otherContainer:
+                otherContainer
+        };
+
+    }
+
+
+    function toggleOtherTypes() {
+
+        const container =
+            document.getElementById(
+                "other-types"
+            );
+
+        const button =
+            document.getElementById(
+                "toggle-type-btn"
+            );
+
+
+        if (!container || !button) {
+            return;
+        }
+
+
+        container.classList.toggle(
+            "hidden"
+        );
+
+
+        button.textContent =
+            container.classList.contains(
+                "hidden"
+            )
+                ? "▼ その他"
+                : "▲ その他";
+
+    }
+
+
+    function createTypeCheckbox(
+        typeId,
+        typeName,
+        checked = false
+    ) {
+
+        if (!typeId) {
+            return null;
+        }
+
+
+        /*
+         * 既に存在する場合
+         */
+
+        const existing =
+            getTypeCheckbox(
+                typeId
+            );
+
+
+        if (existing) {
+
+            existing.checked =
+                checked;
+
+            return existing;
+
+        }
+
+
+        const totalBefore =
+            getTypeCount();
+
+
+        const label =
+            document.createElement(
+                "label"
+            );
+
+        label.className =
+            "flex items-center gap-2 mb-2 type-checkbox-label";
+
+        label.dataset.typeId =
+            String(typeId);
+
+
+        const checkbox =
+            document.createElement(
+                "input"
+            );
+
+        checkbox.type =
+            "checkbox";
+
+        checkbox.className =
+            "type-checkbox";
+
+        checkbox.value =
+            String(typeId);
+
+        checkbox.checked =
+            checked;
+
+
+        const span =
+            document.createElement(
+                "span"
+            );
+
+        span.textContent =
+            typeName;
+
+
+        label.appendChild(
+            checkbox
+        );
+
+        label.appendChild(
+            span
+        );
+
+
+        /*
+         * 既存Typeが4個未満なら
+         * primary側に追加
+         */
+
+        if (
+            totalBefore < 4
+            &&
+            primaryTypes
+        ) {
+
+            primaryTypes.appendChild(
+                label
+            );
+
+            return checkbox;
+
+        }
+
+
+        /*
+         * 5個目以降は「その他」
+         */
+
+        const ui =
+            ensureOtherTypesUI();
+
+
+        ui.otherContainer.appendChild(
+            label
+        );
+
+
+        return checkbox;
+
+    }
+
+
+    function createNormalizationRow(
+        typeId,
+        typeName
+    ) {
+
+        if (
+            !normalizationList
+            ||
+            !typeId
+        ) {
+
+            return null;
+
+        }
+
+
+        /*
+         * 既存行があれば何もしない
+         */
+
+        const existing =
+            normalizationList.querySelector(
+                `.normalization-row[data-photo-type-id="${String(typeId)}"]`
+            );
+
+
+        if (existing) {
+            return existing;
+        }
+
+
+        const row =
+            document.createElement(
+                "div"
+            );
+
+        row.className =
+            "grid grid-cols-2 border-t normalization-row";
+
+        row.dataset.photoTypeId =
+            String(typeId);
+
+
+        const nameCell =
+            document.createElement(
+                "div"
+            );
+
+        nameCell.className =
+            "p-2 border-r text-sm flex items-center";
+
+        nameCell.textContent =
+            typeName;
+
+
+        const selectCell =
+            document.createElement(
+                "div"
+            );
+
+        selectCell.className =
+            "p-2";
+
+
+        const select =
+            document.createElement(
+                "select"
+            );
+
+        select.className =
+            "normalization-select border rounded-lg px-2 py-1 w-full text-sm";
+
+        select.dataset.photoTypeId =
+            String(typeId);
+
+
+        const emptyOption =
+            document.createElement(
+                "option"
+            );
+
+        emptyOption.value =
+            "";
+
+        emptyOption.textContent =
+            "未設定";
+
+        select.appendChild(
+            emptyOption
+        );
+
+
+        const normalizedTypes = [
+            "ヨリ",
+            "チュウ",
+            "ヒキ",
+            "座り"
+        ];
+
+
+        normalizedTypes.forEach(
+            normalizedType => {
+
+                const option =
+                    document.createElement(
+                        "option"
+                    );
+
+                option.value =
+                    normalizedType;
+
+                option.textContent =
+                    normalizedType;
+
+                select.appendChild(
+                    option
+                );
+
+            }
+        );
+
+
+        selectCell.appendChild(
+            select
+        );
+
+
+        row.appendChild(
+            nameCell
+        );
+
+        row.appendChild(
+            selectCell
+        );
+
+
+        normalizationList.appendChild(
+            row
+        );
+
+
+        return row;
+
+    }
+
+
+    function selectTypeCheckbox(
+        typeId
+    ) {
+
+        const checkbox =
+            getTypeCheckbox(
+                typeId
+            );
+
+
+        if (!checkbox) {
+            return;
+        }
+
+
+        checkbox.checked =
+            true;
+
+
+        /*
+         * 「その他」にあるTypeなら
+         * 自動で展開する
+         */
+
+        const label =
+            checkbox.closest(
+                ".type-checkbox-label"
+            );
+
+
+        const otherContainer =
+            document.getElementById(
+                "other-types"
+            );
+
+
+        if (
+            label
+            &&
+            otherContainer
+            &&
+            otherContainer.contains(
+                label
+            )
+        ) {
+
+            otherContainer.classList.remove(
+                "hidden"
+            );
+
+
+            const button =
+                document.getElementById(
+                    "toggle-type-btn"
+                );
+
+
+            if (button) {
+
+                button.textContent =
+                    "▲ その他";
+
+            }
+
+        }
+
+
+        updateSelectionSummary();
+
+    }
+
+
+    //
+    // CREATE TYPE
+    //
+
+    if (createTypeBtn) {
+
+        createTypeBtn.addEventListener(
+            "click",
+            async () => {
+
+                const name =
+                    typeNameInput
+                        ? typeNameInput.value.trim()
+                        : "";
+
+
+                if (!name) {
+
+                    alert(
+                        "Type名を入力してください"
+                    );
+
+                    if (typeNameInput) {
+
+                        typeNameInput.focus();
+
+                    }
+
+                    return;
+
+                }
+
+
+                createTypeBtn.disabled =
+                    true;
+
+                createTypeBtn.textContent =
+                    "作成中...";
+
+
+                if (typeCreateStatus) {
+
+                    typeCreateStatus.textContent =
+                        "";
+
+                }
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            "/admin/photos/create_type",
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+
+                                body:
+                                    JSON.stringify({
+                                        name:
+                                            name
+                                    })
+
+                            }
+                        );
+
+
+                    const data =
+                        await response.json();
+
+
+                    if (
+                        !response.ok
+                        ||
+                        !data.success
+                    ) {
+
+                        throw new Error(
+                            data.error ||
+                            "Typeの作成に失敗しました"
+                        );
+
+                    }
+
+
+                    const typeId =
+                        data.type_id;
+
+                    const typeName =
+                        data.type_name ||
+                        name;
+
+
+                    /*
+                     * Typeチェックボックスを追加
+                     * または既存Typeを取得
+                     */
+
+                    createTypeCheckbox(
+                        typeId,
+                        typeName,
+                        true
+                    );
+
+
+                    /*
+                     * 統計上の種類の行を追加
+                     */
+
+                    createNormalizationRow(
+                        typeId,
+                        typeName
+                    );
+
+
+                    /*
+                     * 入力欄をクリア
+                     */
+
+                    if (typeNameInput) {
+
+                        typeNameInput.value =
+                            "";
+
+                    }
+
+
+                    /*
+                     * 重複の場合も既存Typeを
+                     * 選択状態にする
+                     */
+
+                    selectTypeCheckbox(
+                        typeId
+                    );
+
+
+                    /*
+                     * メッセージ
+                     */
+
+                    if (typeCreateStatus) {
+
+                        if (data.already_exists) {
+
+                            typeCreateStatus.textContent =
+                                `既存のType「${typeName}」を選択しました。`;
+
+                        } else {
+
+                            typeCreateStatus.textContent =
+                                `Type「${typeName}」を作成しました。`;
+
+                        }
+
+                    }
+
+
+                } catch (error) {
+
+                    console.error(error);
+
+                    alert(
+                        error.message ||
+                        "Typeの作成に失敗しました"
+                    );
+
+                } finally {
+
+                    createTypeBtn.disabled =
+                        false;
+
+                    createTypeBtn.textContent =
+                        "作成";
+
+                }
+
+            }
+        );
+
+    }
+
+
+    //
+    // ENTER KEY - CREATE TYPE
+    //
+
+    if (typeNameInput) {
+
+        typeNameInput.addEventListener(
+            "keydown",
+            event => {
+
+                if (
+                    event.key ===
+                    "Enter"
+                ) {
+
+                    event.preventDefault();
+
+                    if (
+                        createTypeBtn
+                        &&
+                        !createTypeBtn.disabled
+                    ) {
+
+                        createTypeBtn.click();
+
+                    }
+
+                }
+
+            }
+        );
+
+    }
+
+
+    //
     // COSTUME CHANGE
     //
 
-    async function handleCostumeChange(costumeId) {
+    async function handleCostumeChange(
+        costumeId
+    ) {
 
         resetNormalizationForm();
 
@@ -664,7 +1481,8 @@ Photo Admin
             "hidden"
         );
 
-        normalizationStatus.textContent = "";
+        normalizationStatus.textContent =
+            "";
 
 
         try {
@@ -674,11 +1492,16 @@ Photo Admin
                     `/admin/photos/type_normalizations/${costumeId}`
                 );
 
+
             const data =
                 await response.json();
 
 
-            if (!response.ok || !data.success) {
+            if (
+                !response.ok
+                ||
+                !data.success
+            ) {
 
                 throw new Error(
                     data.error ||
@@ -689,24 +1512,30 @@ Photo Admin
 
 
             const normalizations =
-                data.normalizations || {};
+                data.normalizations ||
+                {};
 
 
             document
                 .querySelectorAll(
                     ".normalization-select"
                 )
-                .forEach(select => {
+                .forEach(
+                    select => {
 
-                    const photoTypeId =
-                        select.dataset.photoTypeId;
+                        const photoTypeId =
+                            select.dataset.photoTypeId;
 
-                    select.value =
-                        normalizations[
-                            String(photoTypeId)
-                        ] || "";
 
-                });
+                        select.value =
+                            normalizations[
+                                String(
+                                    photoTypeId
+                                )
+                            ] || "";
+
+                    }
+                );
 
 
             normalizationLoading.classList.add(
@@ -717,10 +1546,12 @@ Photo Admin
                 "hidden"
             );
 
+
             const configuredCount =
                 Object.keys(
                     normalizations
                 ).length;
+
 
             if (configuredCount > 0) {
 
@@ -756,19 +1587,25 @@ Photo Admin
             return;
         }
 
+
         document
             .querySelectorAll(
                 ".normalization-select"
             )
-            .forEach(select => {
+            .forEach(
+                select => {
 
-                select.value = "";
+                    select.value =
+                        "";
 
-            });
+                }
+            );
+
 
         normalizationPanel.classList.add(
             "hidden"
         );
+
 
         if (normalizationLoading) {
 
@@ -781,6 +1618,7 @@ Photo Admin
 
         }
 
+
         if (normalizationContent) {
 
             normalizationContent.classList.add(
@@ -789,9 +1627,11 @@ Photo Admin
 
         }
 
+
         if (normalizationStatus) {
 
-            normalizationStatus.textContent = "";
+            normalizationStatus.textContent =
+                "";
 
         }
 
@@ -813,6 +1653,7 @@ Photo Admin
                         ? costumeTS.getValue()
                         : "";
 
+
                 if (!costumeId) {
 
                     alert(
@@ -820,38 +1661,43 @@ Photo Admin
                     );
 
                     return;
+
                 }
 
 
-                const normalizations = {};
+                const normalizations =
+                    {};
 
 
                 document
                     .querySelectorAll(
                         ".normalization-select"
                     )
-                    .forEach(select => {
+                    .forEach(
+                        select => {
 
-                        const normalizedType =
-                            select.value;
+                            const normalizedType =
+                                select.value;
 
-                        const photoTypeId =
-                            select.dataset.photoTypeId;
+                            const photoTypeId =
+                                select.dataset.photoTypeId;
 
 
-                        if (
-                            normalizedType
-                            &&
-                            photoTypeId
-                        ) {
-
-                            normalizations[
+                            if (
+                                normalizedType
+                                &&
                                 photoTypeId
-                            ] = normalizedType;
+                            ) {
+
+                                normalizations[
+                                    photoTypeId
+                                ] =
+                                    normalizedType;
+
+                            }
 
                         }
-
-                    });
+                    );
 
 
                 saveNormalizationBtn.disabled =
@@ -868,14 +1714,18 @@ Photo Admin
                             `/admin/photos/type_normalizations/${costumeId}`,
                             {
                                 method: "POST",
+
                                 headers: {
                                     "Content-Type":
                                         "application/json"
                                 },
-                                body: JSON.stringify({
-                                    normalizations:
-                                        normalizations
-                                })
+
+                                body:
+                                    JSON.stringify({
+                                        normalizations:
+                                            normalizations
+                                    })
+
                             }
                         );
 
@@ -960,6 +1810,7 @@ Photo Admin
                     name
                 );
 
+
                 formData.append(
                     "group_id",
                     "{{ selected_group.id if selected_group else '' }}"
@@ -1010,8 +1861,11 @@ Photo Admin
                     if (data.already_exists) {
 
                         costumeTS.setValue(
-                            String(data.costume_id)
+                            String(
+                                data.costume_id
+                            )
                         );
+
 
                         costumeNameInput.value =
                             "";
@@ -1030,8 +1884,10 @@ Photo Admin
                             String(
                                 data.costume_id
                             ),
+
                         text:
                             name
+
                     });
 
 
@@ -1162,14 +2018,17 @@ Photo Admin
                             "/admin/photos/bulk_create",
                             {
                                 method: "POST",
+
                                 headers: {
                                     "Content-Type":
                                         "application/json"
                                 },
+
                                 body:
                                     JSON.stringify(
                                         payload
                                     )
+
                             }
                         );
 
@@ -1282,12 +2141,14 @@ Photo Admin
                     .querySelectorAll(
                         ".member-checkbox"
                     )
-                    .forEach(cb => {
+                    .forEach(
+                        cb => {
 
-                        cb.checked =
-                            memberSelectAll.checked;
+                            cb.checked =
+                                memberSelectAll.checked;
 
-                    });
+                        }
+                    );
 
 
                 updateSelectionSummary();
@@ -1304,7 +2165,7 @@ Photo Admin
 
     document.addEventListener(
         "change",
-        (e) => {
+        e => {
 
             if (
                 e.target.classList.contains(
@@ -1332,21 +2193,7 @@ Photo Admin
 
         toggleTypeBtn.addEventListener(
             "click",
-            () => {
-
-                otherTypes.classList.toggle(
-                    "hidden"
-                );
-
-
-                toggleTypeBtn.textContent =
-                    otherTypes.classList.contains(
-                        "hidden"
-                    )
-                        ? "▼ その他"
-                        : "▲ その他";
-
-            }
+            toggleOtherTypes
         );
 
     }
@@ -1597,7 +2444,7 @@ Photo Admin
 
     document.addEventListener(
         "click",
-        async (e) => {
+        async e => {
 
             if (
                 !e.target.classList.contains(
@@ -1687,7 +2534,7 @@ Photo Admin
 
     document.addEventListener(
         "input",
-        (e) => {
+        e => {
 
             if (
                 e.target.id !==

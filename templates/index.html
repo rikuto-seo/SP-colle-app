@@ -255,6 +255,70 @@
     setTimeout(() => showActionToast(message), 50);
   }
 
+  /* =====================================================
+     種類の並び順
+
+     表示名そのものは変更しない。
+     DBに「01」と入っていれば「01」のまま表示する。
+
+     優先順位：
+       ヨリ → チュウ → ヒキ → 座り
+
+     上記以外の種類は後ろに配置し、
+     数字などは自然な順序で並べる。
+  ====================================================== */
+  function getPhotoTypeOrder(type) {
+    const normalizedType = String(type ?? "");
+
+    const order = {
+      "ヨリ": 0,
+      "チュウ": 1,
+      "ヒキ": 2,
+      "座り": 3
+    };
+
+    if (Object.prototype.hasOwnProperty.call(order, normalizedType)) {
+      return order[normalizedType];
+    }
+
+    return 100;
+  }
+
+  function comparePhotoTypes(a, b) {
+    const aType = String(a?.type ?? "");
+    const bType = String(b?.type ?? "");
+
+    const aOrder = getPhotoTypeOrder(aType);
+    const bOrder = getPhotoTypeOrder(bType);
+
+    if (aOrder !== bOrder) {
+      return aOrder - bOrder;
+    }
+
+    /*
+     * ヨリ・チュウ・ヒキ・座り以外については、
+     * numeric: true により
+     *
+     * 01 → 02 → 03 → 10
+     *
+     * のように自然な並びにする。
+     *
+     * ここでは種類名の変換は一切行わない。
+     */
+    return aType.localeCompare(bType, "ja", {
+      numeric: true,
+      sensitivity: "base"
+    });
+  }
+
+  function sortPhotoDetails(details) {
+    if (!Array.isArray(details)) {
+      return [];
+    }
+
+    return details.sort(comparePhotoTypes);
+  }
+
   async function submitAjaxForm(form) {
     const response = await fetch(form.action, {
       method: "POST",
@@ -306,9 +370,18 @@
     activeCard.details = (activeCard.details || []).filter(
       item => item.id !== detail.id
     );
+
     activeCard.details.push(detail);
 
-    activeCard.details.sort((a, b) => String(a.type).localeCompare(String(b.type), "ja"));
+    /*
+     * 更新後も
+     * ヨリ → チュウ → ヒキ → 座り
+     * の順序を維持する。
+     *
+     * 種類名自体は変換しない。
+     */
+    sortPhotoDetails(activeCard.details);
+
     activeCard.has_favorite = activeCard.details.some(item => !!item.is_favorite);
 
     openGroupModal(activeCard);
@@ -322,6 +395,15 @@
       el.addEventListener("click", () => {
         try {
           const card = JSON.parse(el.dataset.card);
+
+          /*
+           * サーバーから渡された種類名を変更せず、
+           * 詳細表示時の並び順だけ統一する。
+           */
+          if (Array.isArray(card.details)) {
+            sortPhotoDetails(card.details);
+          }
+
           activeCard = card;
           openGroupModal(card);
         } catch (e) {
@@ -444,15 +526,24 @@
 
   function openGroupModal(card) {
     activeCard = card;
+
     const container = document.getElementById("detailList");
     container.innerHTML = "";
+
     document.getElementById("detailTitle").textContent = `${card.member} / ${card.costume}`;
 
     if (!card.details || card.details.length === 0) {
       container.innerHTML = "<p class='text-muted'>所持データなし</p>";
     }
 
-    (card.details || []).forEach(d => renderDetail(container, d));
+    /*
+     * モーダルを開くたびに種類順を保証する。
+     *
+     * 表示値はDBの値をそのまま使用する。
+     */
+    const sortedDetails = sortPhotoDetails(card.details || []);
+
+    sortedDetails.forEach(d => renderDetail(container, d));
 
     const modalElement = document.getElementById("detailModal");
     bootstrap.Modal.getOrCreateInstance(modalElement).show();
@@ -466,7 +557,18 @@
     header.className = "d-flex justify-content-between align-items-center mb-2";
 
     const typeElement = document.createElement("strong");
+
+    /*
+     * 種類名は正規化しない。
+     *
+     * 01 → 01
+     * 02 → 02
+     * ヨリ → ヨリ
+     *
+     * のようにDBの値をそのまま表示する。
+     */
     typeElement.textContent = d.type;
+
     header.appendChild(typeElement);
 
     if (d.is_favorite) {
@@ -514,6 +616,7 @@
         thumbnail.loading = "lazy";
 
         imageButton.appendChild(thumbnail);
+
         imageButton.addEventListener("click", event => {
           event.preventDefault();
           event.stopPropagation();
@@ -818,6 +921,7 @@
 
     imageModalElement.addEventListener("hidden.bs.modal", () => {
       imagePreview.src = "";
+
       if (activeCard) {
         const detailModal = document.getElementById("detailModal");
         bootstrap.Modal.getOrCreateInstance(detailModal).show();

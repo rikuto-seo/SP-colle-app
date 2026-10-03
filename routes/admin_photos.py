@@ -14,6 +14,7 @@ from flask_login import (
 )
 
 from sqlalchemy.orm import joinedload
+from sqlalchemy.exc import IntegrityError
 
 from extensions import db
 
@@ -287,6 +288,171 @@ def create_costume():
     return jsonify({
         "success": True,
         "costume_id": costume.id
+    })
+
+
+#
+# CREATE TYPE
+#
+# PhotoTypeを新規作成する。
+#
+# 例:
+#
+#   01
+#   02
+#   03
+#   04
+#
+# などのPhotoTypeを管理画面から追加する。
+#
+# PhotoType自体には
+# 「ヨリ」「チュウ」「ヒキ」「座り」
+# の意味を持たせない。
+#
+# 統計上の分類は、
+# CostumeTypeNormalizationで
+# 衣装ごとに別途設定する。
+#
+
+@admin_photos_bp.route(
+    "/create_type",
+    methods=["POST"]
+)
+@login_required
+def create_type():
+
+    admin_required()
+
+    #
+    # JSON / form の両方に対応
+    #
+    # 管理画面側の実装によって
+    # request.form / request.get_json()
+    # のどちらでも利用できるようにする。
+    #
+
+    data = request.get_json(
+        silent=True
+    )
+
+    if isinstance(data, dict):
+
+        name = data.get(
+            "name",
+            ""
+        )
+
+    else:
+
+        name = request.form.get(
+            "name",
+            ""
+        )
+
+    #
+    # 文字列として処理
+    #
+
+    if name is None:
+
+        name = ""
+
+    if not isinstance(name, str):
+
+        return jsonify({
+            "success": False,
+            "error": "type name must be a string"
+        }), 400
+
+    name = name.strip()
+
+    #
+    # 空文字チェック
+    #
+
+    if not name:
+
+        return jsonify({
+            "success": False,
+            "error": "type name required"
+        }), 400
+
+    #
+    # 既存Type確認
+    #
+    # PhotoType.name はDB上でもuniqueだが、
+    # 先に確認して正常系として返す。
+    #
+
+    exists = (
+        PhotoType.query
+        .filter_by(
+            name=name
+        )
+        .first()
+    )
+
+    if exists:
+
+        return jsonify({
+            "success": True,
+            "type_id": exists.id,
+            "type_name": exists.name,
+            "already_exists": True
+        })
+
+    #
+    # 新規作成
+    #
+
+    photo_type = PhotoType(
+        name=name
+    )
+
+    db.session.add(
+        photo_type
+    )
+
+    try:
+
+        db.session.commit()
+
+    except IntegrityError:
+
+        #
+        # 同時リクエスト等によって
+        # unique制約に引っかかった場合。
+        #
+
+        db.session.rollback()
+
+        exists = (
+            PhotoType.query
+            .filter_by(
+                name=name
+            )
+            .first()
+        )
+
+        if exists:
+
+            return jsonify({
+                "success": True,
+                "type_id": exists.id,
+                "type_name": exists.name,
+                "already_exists": True
+            })
+
+        return jsonify({
+            "success": False,
+            "error": "failed to create type"
+        }), 500
+
+    return jsonify({
+        "success": True,
+        "type_id": photo_type.id,
+        "type_name": photo_type.name,
+        "already_exists": False
     })
 
 
