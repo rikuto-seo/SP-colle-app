@@ -1,24 +1,22 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" data-bs-theme="{{ 'dark' if current_user.is_authenticated and current_user.dark_mode else 'light' }}">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}坂道グループ 生写真アプリ{% endblock %}</title>
+    <title>{% block title %}SP Colle | 坂道グループ 生写真アプリ{% endblock %}</title>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-    <meta name="apple-mobile-web-app-title" content="坂道生写真">
+    <meta name="apple-mobile-web-app-title" content="SP Colle">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
     <!-- OGP -->
-    <meta property="og:title" content="坂道グループ 生写真アプリ">
+    <meta property="og:title" content="SP Colle | 坂道グループ 生写真アプリ">
     <meta property="og:description" content="坂道グループの生写真を管理・記録できるアプリ">
     <meta property="og:image" content="https://spcolle.com/static/images/ogp-v2.png">
     <meta property="og:url" content="https://spcolle.com/">
@@ -26,9 +24,9 @@
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="坂道グループ 生写真アプリ">
+    <meta name="twitter:title" content="SP Colle | 坂道グループ 生写真アプリ">
     <meta name="twitter:description" content="坂道グループの生写真を管理・記録できるアプリ">
-    <meta name="twitter:image" content="https://spcolle.com/static/images/ogp.png">
+    <meta name="twitter:image" content="https://spcolle.com/static/images/ogp-v2.png">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- Google tag (gtag.js) -->
@@ -45,156 +43,19 @@
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    {% block head %}{% endblock %}
 </head>
 
-<body class="{{ group_color }}{% if current_user.is_authenticated and current_user.dark_mode %} dark-mode{% endif %}">
-
-    {% if force_select_mode %}
-    <div class="p-3 text-center fw-bold">
-        初期設定
-    </div>
-    {% else %}
-    <div class="{% if group_key == 'hinatazaka' %}navbar-hinata
-    {% elif group_key == 'sakurazaka' %}navbar-sakura
-    {% elif group_key == 'nogizaka' %}navbar-nogi
-    {% else %}navbar-default{% endif %} p-3 d-flex justify-content-between align-items-center flex-wrap">
-
-        <button id="menu-button">
-            <i class="fa-solid fa-bars"></i>
-        </button>
-        <div style="font-size: 20px; font-weight: bold;">
-            坂道グループ 生写真アプリ
-        </div>
-        <div style="width: 40px;"></div>
-    </div>
-    {% endif %}
-
-    {% if not force_select_mode %}
-    <div id="sidebar">
-        <div class="sidebar-main">
-            <h3>メニュー</h3>
-
-            {% if group_key %}
-            <a href="{{ url_for('photo.index', group_key=group_key) }}">
-                <i class="fas fa-camera"></i> 生写真一覧
-            </a>
-            <a href="{{ url_for('photo.add', group_key=group_key) }}">
-                <i class="fas fa-plus-circle"></i> 新規追加
-            </a>
-            <a href="{{ url_for('photo.give', group_key=group_key) }}">
-                <i class="fas fa-minus-circle"></i> へらす
-            </a>
-            <a href="{{ url_for('stats.stats', group_key=group_key) }}">
-                <i class="fas fa-chart-bar"></i> 統計を見る
-            </a>
-            <a href="{{ url_for('stats.missing', group_key=group_key) }}">
-                <i class="fas fa-box-open"></i> 未所持リスト
-            </a>
-            <a href="{{ url_for('want.index', group_key=group_key) }}">
-                <i class="fas fa-heart"></i> 欲しい生写真
-            </a>
-            {% if current_user.is_authenticated and current_user.id == 1 %}
-            <hr>
-
-            <a href="{{ url_for('admin_photos.index') }}">
-                <i class="fas fa-shield-halved"></i> 管理画面
-            </a>
-            {% endif %}
-            {% endif %}
-
-            <hr>
-
-            <h3>グループ切替</h3>
-
-            {% set groups = [
-            ('nogizaka', '乃木坂46'),
-            ('sakurazaka', '櫻坂46'),
-            ('hinatazaka', '日向坂46')
-            ] %}
-
-            {% for key, name in groups %}
-
-            {% set can_access = current_user.is_authenticated and current_user.can_access_group(key) %}
-
-            {% set target_url = url_for('core.group_switch', group_key=key) %}
-
-            {% if can_access %}
-            <a href="{{ target_url }}">
-                {{ name }}
-            </a>
-            {% else %}
-            <a href="{{ url_for('user.upgrade') }}" class="text-muted" style="pointer-events:auto;">
-                <i class="fas fa-lock me-1"></i>{{ name }}
-            </a>
-            {% endif %}
-
-            {% endfor %}
-
-        </div>
-
-        <div class="sidebar-footer">
-            <hr>
-
-            <div class="px-3 py-2">
-                <small class="text-muted">現在のプラン</small><br>
-
-                {% if current_user.is_authenticated %}
-                {% if current_user.is_premium() %}
-                <span class="badge bg-danger">SUPPORTER</span>
-
-                {% elif current_user.is_standard() %}
-                <span class="badge bg-warning text-dark">スタンダード</span>
-
-                {% elif current_user.is_lite() %}
-                <span class="badge bg-primary">ライト</span>
-
-                {% else %}
-                <span class="badge bg-secondary">無料</span>
-                {% endif %}
-
-                <div class="mt-2">
-                    <a href="{{ url_for('user.upgrade') }}" class="btn btn-sm btn-outline-warning w-100">
-                        プラン変更
-                    </a>
-                </div>
-                {% endif %}
-            </div>
-            <a href="{{ url_for('user.mypage') }}">
-                <img src="{{ icon_url }}" style="width:32px;height:32px;border-radius:50%;">
-                マイページ
-            </a>
-        </div>
-    </div>
-    {% endif %}
-
-    <div class="container mt-4 {{ group_color }}">
-        {% block content %}
-        {% endblock %}
-    </div>
-
-    <button id="scrollTopBtn" class="scroll-top-btn">
-        <i class="fas fa-arrow-up"></i>
-    </button>
-
+{% set surface = 'app' %}
+<body class="app-shell{% if current_user.is_authenticated and current_user.dark_mode %} dark-mode{% endif %}{% if current_user.is_authenticated and group_key and not force_select_mode %} has-mobile-nav{% endif %}" data-group="{{ group_key | default('') }}">
+    {% include '_site_header.html' %}
+    <main id="main-content" class="container app-main" tabindex="-1">
+        {% block content %}{% endblock %}
+    </main>
+    {% include '_site_footer.html' %}
+    <button id="scrollTopBtn" class="scroll-top-btn" type="button" aria-label="ページの先頭へ" hidden><i class="fas fa-arrow-up" aria-hidden="true"></i></button>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const menuBtn = document.getElementById("menu-button");
-            const sidebar = document.getElementById("sidebar");
-
-            menuBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                sidebar.classList.toggle("open");
-            });
-
-            document.addEventListener("click", (e) => {
-                if (!sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
-                    sidebar.classList.remove("open");
-                }
-            });
-        });
-    </script>
+    <script src="{{ url_for('static', filename='js/site.js') }}"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -203,30 +64,11 @@
         }
     </script>
     <script>
-        const scrollBtn = document.getElementById("scrollTopBtn");
-
-        window.addEventListener("scroll", () => {
-            if (window.scrollY > 300) {
-                scrollBtn.style.display = "block";
-            } else {
-                scrollBtn.style.display = "none";
-            }
-        });
-
-        scrollBtn.addEventListener("click", () => {
-            window.scrollTo({
-                top: 0,
-                behavior: "smooth"
-            });
-        });
-    </script>
-
-    <script>
         document.addEventListener("DOMContentLoaded", () => {
             const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
             document.querySelectorAll("form").forEach(form => {
-                if (form.method.toLowerCase() === "post") {
+                if ((form.getAttribute("method") || "get").toLowerCase() === "post") {
 
                     // すでにある場合はスキップ
                     if (form.querySelector('input[name="csrf_token"]')) return;
@@ -292,39 +134,5 @@
 
     {% block scripts %}{% endblock %}
 
-    <!--{% if current_user.is_authenticated and current_user.plan_type == "free" %}
-    <div class="text-center my-4">
-       
-        <script src="https://adm.shinobi.jp/s/da92d64bbf8334c3927e2da0dc38ffea"></script>
-
-    </div>
-    {% endif %}
-    -->
 </body>
-
-<footer class="app-footer mt-5 py-3">
-    <div class="container text-center">
-
-        <div class="mb-2">
-            <a href="{{ url_for('core.terms') }}">利用規約</a>
-            <span class="mx-2">|</span>
-            <a href="{{ url_for('core.privacy') }}">プライバシーポリシー</a>
-            <span class="mx-2">|</span>
-            <a href="{{ url_for('core.legal') }}">特定商取引法表示</a>
-            <span class="mx-2">|</span>
-            <a href="https://forms.gle/vjDsRcq8L724keTM7" target="_blank">お問い合わせ</a>
-            <span class="mx-2">|</span>
-            <a href="https://forms.gle/VVFdPDf6RpY6LEnu9" target="_blank">抜け報告</a>
-            <span class="mx-2">|</span>
-            <a href="https://x.com/SPCollectionApp" target="_blank" class="text-decoration-none">
-                <i class="fab fa-x-twitter"></i>
-            </a>
-        </div>
-
-        <small>© 2026 SP Colle</small>
-        <small>※非公式ファンアプリです</small>
-
-    </div>
-</footer>
-
 </html>

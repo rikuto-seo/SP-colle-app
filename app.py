@@ -228,10 +228,8 @@ def load_user(user_id):
 @login_manager.unauthorized_handler
 def unauthorized():
 
-    # API系（trade）はJSONで返す
-    if request.path.startswith(
-        "/trade/"
-    ):
+    # データ取得APIはJSON、募集・取引の画面はログインへ戻す。
+    if request.endpoint in ("trade.match_trade", "trade.photos"):
         return jsonify({
             "error": "login_required",
             "redirect": url_for(
@@ -314,89 +312,17 @@ def inject_common():
 
 
 # ============================================================
-# Group / Plan Enforcement
+# Group validation
 # ============================================================
 
 @app.before_request
-def enforce_group_and_plan():
-
-    try:
-        user = current_user
-
-    except Exception:
-        return
-
-    # --------------------------------------------------------
-    # 除外
-    # --------------------------------------------------------
-
-    if request.path.startswith((
-        "/static",
-        "/api/",
-        "/stripe/webhook",
-        "/finish-login"
-    )):
-        return
-
-    if request.endpoint in [
-        "user.force_group_select",
-        "auth.login",
-        "auth.logout"
-    ]:
-        return
-
-    # --------------------------------------------------------
-    # 未ログイン
-    # --------------------------------------------------------
-
-    if not user.is_authenticated:
-        return
-
-    # --------------------------------------------------------
-    # グループ選択数チェック
-    # --------------------------------------------------------
-
-    if not user.is_owner_account():
-
-        selected = (
-            user.get_selected_groups()
-            or []
-        )
-
-        allowed = (
-            user.get_allowed_group_count()
-        )
-
-        if len(selected) != allowed:
-
-            return redirect(
-                url_for(
-                    "user.force_group_select"
-                )
-            )
-
-    # --------------------------------------------------------
-    # URLのgroup_keyチェック
-    # --------------------------------------------------------
-
-    group_key = (
-        request.view_args.get("group_key")
-        if request.view_args
-        else None
-    )
-
-    if (
-        group_key
-        and not user.can_access_group(
-            group_key
-        )
-    ):
-
-        return redirect(
-            url_for(
-                "user.upgrade"
-            )
-        )
+def validate_group():
+    group_key = (request.view_args or {}).get("group_key")
+    if group_key:
+        from models import GROUP_KEYS
+        from flask import abort
+        if group_key not in GROUP_KEYS:
+            abort(404)
 
 
 # ============================================================

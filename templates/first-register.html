@@ -2,7 +2,7 @@
 {% block title %}初回登録{% endblock %}
 
 {% block content %}
-<div class="container mt-5" style="max-width:600px;">
+<div class="container auth-main" style="max-width:600px;">
 
   <div class="card p-4 shadow-sm">
 
@@ -239,11 +239,11 @@ document.getElementById("uploadIcon").addEventListener("click", async () => {
     console.error("ICON ERROR:", e);
   }
 
-  window.location.href = "/select-group";
+  window.location.href = "/";
 });
 
 document.getElementById("skipIcon").addEventListener("click", () => {
-  window.location.href = "/select-group";
+  window.location.href = "/";
 });
 </script>
 

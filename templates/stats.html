@@ -398,15 +398,14 @@
   ];
 
 
-  // メンバーごとに色を自動生成
-  const colors = labels.map((_, index) => {
-
-    const hue = index * 360 / labels.length;
-
-    return `hsl(${hue}, 70%, 60%)`;
-
-  });
-
+  // Match the chart to the shared theme, including dark mode.
+  const theme = getComputedStyle(document.documentElement);
+  const chartColor = theme.getPropertyValue('--sc-primary').trim();
+  const chartText = theme.getPropertyValue('--sc-muted').trim();
+  const chartBorder = theme.getPropertyValue('--sc-border').trim();
+  Chart.defaults.color = chartText;
+  Chart.defaults.borderColor = chartBorder;
+  const colors = labels.map(() => chartColor);
 
   const canvas = document.getElementById("memberChart");
 
@@ -428,6 +427,7 @@
 
           {
 
+            label: "所持枚数",
             data: data,
 
             backgroundColor: colors,

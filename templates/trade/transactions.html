@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block title %}トレード取引管理{% endblock %}
+{% block content %}
+<div class="page-heading"><div><h1 class="section-title">取引管理</h1><p>相談・発送・受取を、相手ごとにまとめて。</p></div></div>
+{% include 'trade/_nav.html' %}
+{% for proposal in transactions %}<a class="card trade-listing-card mb-2" href="{{ url_for('trade.transaction', public_id=proposal.public_id) }}"><div class="d-flex justify-content-between"><strong>{{ proposal.alias if proposal.listing.user_id == current_user.id else proposal.listing.alias }}</strong><span class="badge {{ 'bg-success' if proposal.status in ['accepted','completed'] else 'bg-secondary' }}">{{ statuses[proposal.status] }}</span></div><span>{{ methods[proposal.method] }} · {{ proposal.items|sum(attribute='quantity') }}枚の交換案</span><small class="text-muted">{{ proposal.updated_at | trade_time }} 更新</small></a>{% else %}<div class="empty-state"><h2>取引はまだありません</h2><p>募集を探して交換案を送るか、自分の募集を公開してください。</p></div>{% endfor %}
+{% include 'trade/_pagination.html' %}
+{% endblock %}

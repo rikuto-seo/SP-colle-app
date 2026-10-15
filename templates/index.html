@@ -6,134 +6,83 @@
 
 {% block content %}
 
-<div class="container mt-4">
-
-  <div class="text-center mb-3">
-    <h1 class="fw-bold text-body p-2 rounded section-title">生写真一覧</h1>
-  </div>
-
-  <!-- =========================
-       検索
-  ========================== -->
-  <div class="col-12 position-relative">
-    <div class="card shadow-sm bg-body text-body position-relative">
-      <div class="card-body">
-        <form id="searchForm" method="get" action="{{ url_for('photo.index', group_key=group_key) }}">
-          <input type="hidden" name="member" id="member-hidden" value="{{ selected_member }}">
-          <input type="hidden" name="costume" id="costume-hidden" value="{{ selected_costume }}">
-          <input type="hidden" name="favorite" id="favorite-hidden" value="{{ '1' if favorite_only else '' }}">
-
-          <div class="row g-3">
-            <div class="col-12 col-md-4">
-              <input type="text" name="query" value="{{ query }}" class="form-control" placeholder="メンバー名・衣装名検索">
-            </div>
-
-            <div class="col-12 col-md-4">
-              <select id="member"></select>
-            </div>
-
-            <div class="col-12 col-md-4">
-              <select id="costume"></select>
-            </div>
-
-            <div class="col-12 col-md-4">
-              <label for="sort" class="form-label small text-body mb-1">並び順</label>
-              <select id="sort" name="sort" class="form-select">
-                <option value="comp" {% if selected_sort=="comp" %}selected{% endif %}>コンプ率</option>
-                <option value="quantity" {% if selected_sort=="quantity" %}selected{% endif %}>枚数</option>
-                <option value="favorite" {% if selected_sort=="favorite" %}selected{% endif %}>お気に入り優先</option>
-                <option value="name" {% if selected_sort=="name" %}selected{% endif %}>名前の順</option>
-              </select>
-            </div>
-
-            <div class="col-12 col-md-8 d-flex gap-2 align-items-end">
-              <button type="button" id="favorite-btn"
-                class="btn {% if favorite_only %}btn-warning{% else %}btn-outline-warning{% endif %}" title="お気に入りのみ表示">
-                <i class="fa-solid fa-star"></i>
-              </button>
-
-              <button type="submit" class="btn btn-outline-primary flex-fill">
-                <i class="fa-solid fa-magnifying-glass me-1"></i>検索
-              </button>
-
-              <a href="{{ url_for('photo.index', group_key=group_key) }}" class="btn btn-outline-danger">クリア</a>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <br>
-
-  <!-- =========================
-       カード一覧
-  ========================== -->
-  <div class="row row-cols-2 row-cols-md-3 g-2">
-    {% for card in cards %}
-    {% set preview_image = namespace(data=None) %}
-    {% for detail in card.details or [] %}
-    {% if preview_image.data is none and detail.images and detail.images|length > 0 %}
-    {% set preview_image.data = detail.images[0] %}
-    {% endif %}
-    {% endfor %}
-
-    <div class="col">
-      <div class="card shadow-sm p-2 h-100 bg-body text-body card-item" style="cursor:pointer"
-        data-card='{{ card | tojson | safe }}'>
-        <div class="d-flex gap-2 h-100">
-          <div class="flex-grow-1 min-width-0 d-flex flex-column" style="min-width:0;">
-            {% if card.has_favorite %}
-            <div class="mb-1"><i class="fa-solid fa-star text-warning"></i></div>
-            {% endif %}
-
-            <div class="fw-bold small text-truncate" title="{{ card.member }}" style="min-width:0;">{{ card.member }}
-            </div>
-
-            <div class="small text-muted costume-name" title="{{ card.costume }}" style="min-width:0;">
-              {{ card.costume }}
-            </div>
-
-            <div class="mt-auto">
-              <div class="small">{{ card.owned }} / {{ card.total }}</div>
-              <div class="progress mt-1" style="height:6px;">
-                <div class="progress-bar" style="width: {{ card.rate }}%"></div>
-              </div>
-              {% if card.is_complete %}
-              <div class="mt-1"><span class="badge bg-success">コンプ</span></div>
-              {% endif %}
-            </div>
-          </div>
-
-          <div class="flex-shrink-0"
-            style="width:70px;min-width:70px;max-width:70px;height:100px;min-height:100px;max-height:100px;flex:0 0 70px;">
-            {% if preview_image.data %}
-            <button type="button" class="btn p-0 border rounded overflow-hidden w-100 h-100 card-image-button"
-              data-image-url="{{ preview_image.data.image_url }}" aria-label="実物画像を拡大"
-              style="width:70px;height:100px;background:#f8f9fa;">
-              <img src="{{ preview_image.data.thumbnail_url }}" alt="実物画像" width="70" height="100" class="d-block"
-                style="width:70px;height:100px;object-fit:contain;" loading="lazy">
-            </button>
-            {% else %}
-            <div class="border rounded w-100 h-100 d-flex align-items-center justify-content-center text-muted"
-              style="width:70px;height:100px;background:rgba(128,128,128,0.05);font-size:0.7rem;">画像なし</div>
-            {% endif %}
-          </div>
+<div class="page-heading">
+  <div><h1 class="section-title">生写真一覧</h1></div>
+  <a href="{{ url_for('photo.add', group_key=group_key) }}" class="btn btn-primary"><i class="fa-solid fa-plus me-1" aria-hidden="true"></i>追加</a>
+</div>
+<details class="card collection-search" {% if query or selected_member or selected_costume or favorite_only %}open{% endif %}>
+  <summary><span><i class="fa-solid fa-sliders me-2" aria-hidden="true"></i>検索・並び順{% if query or selected_member or selected_costume or favorite_only %}<span class="badge bg-success ms-2">絞り込み中</span>{% endif %}</span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></summary>
+  <div class="card-body">
+    <form id="searchForm" method="get" action="{{ url_for('photo.index', group_key=group_key) }}">
+      <input type="hidden" name="member" id="member-hidden" value="{{ selected_member }}">
+      <input type="hidden" name="costume" id="costume-hidden" value="{{ selected_costume }}">
+      <input type="hidden" name="favorite" id="favorite-hidden" value="{{ '1' if favorite_only else '' }}">
+      <div class="row g-3">
+        <div class="col-12 col-lg-4"><label for="collection-query" class="form-label">キーワード</label><input id="collection-query" type="search" name="query" value="{{ query }}" class="form-control" placeholder="メンバー名・衣装名で検索"></div>
+        <div class="col-6 col-lg-4"><label for="member" class="form-label">メンバー</label><select id="member" aria-label="メンバー"></select></div>
+        <div class="col-6 col-lg-4"><label for="costume" class="form-label">衣装</label><select id="costume" aria-label="衣装"></select></div>
+        <div class="col-12 search-toolbar">
+          <div class="sort-field"><label for="sort" class="form-label">並び順</label><select id="sort" name="sort" class="form-select">
+            <option value="comp" {% if selected_sort == 'comp' %}selected{% endif %}>コンプ率</option>
+            <option value="quantity" {% if selected_sort == 'quantity' %}selected{% endif %}>枚数</option>
+            <option value="favorite" {% if selected_sort == 'favorite' %}selected{% endif %}>お気に入り優先</option>
+            <option value="name" {% if selected_sort == 'name' %}selected{% endif %}>名前の順</option>
+          </select></div>
+          <button type="button" id="favorite-btn" class="btn {% if favorite_only %}btn-warning{% else %}btn-outline-warning{% endif %}" title="お気に入りのみ表示" aria-label="お気に入りのみ表示" aria-pressed="{{ 'true' if favorite_only else 'false' }}"><i class="fa-solid fa-star" aria-hidden="true"></i></button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass me-1" aria-hidden="true"></i>検索</button>
+          <a href="{{ url_for('photo.index', group_key=group_key) }}" class="btn btn-outline-secondary">クリア</a>
         </div>
       </div>
-    </div>
-    {% endfor %}
-
-    {% if cards|length == 0 %}
-    <p class="text-center text-secondary">データがありません。</p>
-    {% endif %}
+    </form>
+  </div>
+</details>
+{% if cards %}
+<div class="collection-view-toolbar">
+  <span class="collection-view-label">表示</span>
+  <div class="collection-view-switch" role="group" aria-label="一覧の表示方法">
+    <button type="button" class="collection-view-button" data-collection-view="info" aria-pressed="true" aria-controls="collection-grid"><i class="fa-solid fa-list" aria-hidden="true"></i>情報付き</button>
+    <button type="button" class="collection-view-button" data-collection-view="images" aria-pressed="false" aria-controls="collection-grid"><i class="fa-regular fa-image" aria-hidden="true"></i>画像のみ</button>
   </div>
 </div>
+<div id="collection-grid" class="photo-grid" data-view="info">
+  {% for card in cards %}
+  {% set preview_image = namespace(data=None) %}
+  {% for detail in card.details or [] %}
+  {% if preview_image.data is none and detail.images and detail.images|length > 0 %}{% set preview_image.data = detail.images[0] %}{% endif %}
+  {% endfor %}
+  <div class="card collection-card card-item" data-card='{{ card | tojson | safe }}' tabindex="0" role="button" aria-label="{{ card.member }}、{{ card.costume }}の詳細">
+    <div class="collection-card-layout">
+      <div class="collection-card-info">
+        <div class="fw-bold card-member" title="{{ card.member }}">{{ card.member }}{% if card.has_favorite %}<i class="fa-solid fa-star text-warning ms-1" aria-label="お気に入り"></i>{% endif %}</div>
+        <div class="text-muted costume-name" title="{{ card.costume }}">{{ card.costume }}</div>
+        <div class="collection-card-summary">
+          <div class="collection-card-status"><span class="collection-count"><strong>{{ card.owned }}</strong> / {{ card.total }} 種</span>{% if card.is_complete %}<span class="badge bg-success"><i class="fa-solid fa-check me-1" aria-hidden="true"></i>コンプ</span>{% endif %}</div>
+          <div class="progress" style="height:5px;" role="progressbar" aria-label="所持率" aria-valuenow="{{ card.rate }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width:{{ card.rate }}%"></div></div>
+        </div>
+      </div>
+      <div class="card-preview">
+        {% if preview_image.data %}
+        <button type="button" class="btn p-0 w-100 h-100 card-image-button" data-image-url="{{ preview_image.data.image_url }}" aria-label="{{ card.member }}、{{ card.costume }}の実物画像を拡大"><img src="{{ preview_image.data.thumbnail_url }}" alt="{{ card.member }}、{{ card.costume }}の実物画像" width="70" height="100" loading="lazy"></button>
+        {% else %}<div class="no-image"><i class="fa-regular fa-image" aria-hidden="true"></i><span>画像未登録</span></div>{% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+  <h2>{% if query or selected_member or selected_costume or favorite_only %}条件に合う生写真がありません{% else %}最初の一枚を登録しましょう{% endif %}</h2>
+  <p>{% if query or selected_member or selected_costume or favorite_only %}条件を変えて、もう一度検索してください。{% else %}メンバーと衣装を選んで、コレクションを始められます。{% endif %}</p>
+  <a href="{{ url_for('photo.index', group_key=group_key) if query or selected_member or selected_costume or favorite_only else url_for('photo.add', group_key=group_key) }}" class="btn btn-outline-primary">{% if query or selected_member or selected_costume or favorite_only %}条件をクリア{% else %}生写真を追加{% endif %}</a>
+</div>
+{% endif %}
 
 <!-- =========================
      ページネーション
 ========================== -->
-<nav class="mt-4">
+{% if pagination.pages > 1 %}
+<nav class="mt-4" aria-label="コレクションのページ">
   <form id="pageJumpForm" class="d-flex justify-content-center align-items-center gap-2 mb-3">
     <label for="pageJumpInput" class="small text-body mb-0">ページ</label>
     <input type="number" id="pageJumpInput" class="form-control form-control-sm text-center" style="width:80px;" min="1"
@@ -164,6 +113,7 @@
     </li>
   </ul>
 </nav>
+{% endif %}
 
 <!-- =========================
      通知
@@ -211,6 +161,7 @@
 
 <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+<script src="{{ url_for('static', filename='js/collection-view.js') }}" defer></script>
 
 {% endblock %}
 
@@ -264,39 +215,47 @@
      優先順位：
        ヨリ → チュウ → ヒキ → 座り
 
-     上記以外の種類は後ろに配置し、
-     数字などは自然な順序で並べる。
+     サーバーで元の種類名を正規化した並べ替え用の値を使う。
+     衣装別の数字マッピングや「ヨリ（カンフー）」にも対応する。
+     分類できない種類は後ろに配置し、数字などは自然順で並べる。
   ====================================================== */
-  function getPhotoTypeOrder(type) {
-    const normalizedType = String(type ?? "");
-
-    const order = {
-      "ヨリ": 0,
-      "チュウ": 1,
-      "ヒキ": 2,
-      "座り": 3
-    };
-
-    if (Object.prototype.hasOwnProperty.call(order, normalizedType)) {
-      return order[normalizedType];
+  function getPhotoTypeOrder(detail) {
+    if (Number.isInteger(detail?.type_order)) {
+      return detail.type_order;
     }
 
-    return 100;
+    // 並べ替え用の値がない既存データでも、種類名は書き換えない。
+    const type = String(detail?.type ?? "");
+
+    const order = {
+      "ヨリ": 1,
+      "チュウ": 2,
+      "ヒキ": 3,
+      "座り": 4
+    };
+
+    for (const [category, rank] of Object.entries(order)) {
+      if (type.includes(category)) {
+        return rank;
+      }
+    }
+
+    return 999;
   }
 
   function comparePhotoTypes(a, b) {
     const aType = String(a?.type ?? "");
     const bType = String(b?.type ?? "");
 
-    const aOrder = getPhotoTypeOrder(aType);
-    const bOrder = getPhotoTypeOrder(bType);
+    const aOrder = getPhotoTypeOrder(a);
+    const bOrder = getPhotoTypeOrder(b);
 
     if (aOrder !== bOrder) {
       return aOrder - bOrder;
     }
 
     /*
-     * ヨリ・チュウ・ヒキ・座り以外については、
+     * 分類が同じものや分類できないものについては、
      * numeric: true により
      *
      * 01 → 02 → 03 → 10
@@ -425,7 +384,7 @@
     const pageJumpForm = document.getElementById("pageJumpForm");
     const pageJumpInput = document.getElementById("pageJumpInput");
 
-    pageJumpForm.addEventListener("submit", event => {
+    pageJumpForm?.addEventListener("submit", event => {
       event.preventDefault();
 
       const page = parseInt(pageJumpInput.value, 10);
@@ -551,7 +510,7 @@
 
   function renderDetail(container, d) {
     const wrapper = document.createElement("div");
-    wrapper.className = "border p-2 mb-3 rounded";
+    wrapper.className = "border p-3 mb-3 rounded detail-photo";
 
     const header = document.createElement("div");
     header.className = "d-flex justify-content-between align-items-center mb-2";

@@ -23,23 +23,9 @@ def group_required(f):
         if not group_key:
             abort(400)
 
-        # 未ログインならスルー
-        if not current_user.is_authenticated:
-            return f(*args, **kwargs)
-
-        # ログインしている場合のみチェック
-        if not current_user.can_access_group(group_key):
-            selected = current_user.get_selected_groups()
-
-            if selected:
-                return redirect(
-                    url_for(
-                        "photo.index",
-                        group_key=selected[0]
-                    )
-                )
-
-            return redirect(url_for("user.select_group"))
+        from models import GROUP_KEYS
+        if group_key not in GROUP_KEYS:
+            abort(404)
 
         return f(*args, **kwargs)
 
@@ -108,13 +94,6 @@ def legal():
 @login_required
 @group_required
 def group_switch(group_key):
-
-    if not current_user.can_access_group(group_key):
-        flash(
-            "このグループは有料プランで利用できます",
-            "warning"
-        )
-        return redirect(url_for("user.upgrade"))
 
     # 現在のグループを変更
     current_user.primary_group = group_key

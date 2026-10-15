@@ -12,6 +12,20 @@ from flask_login import login_user, current_user
 
 auth_bp = Blueprint('auth', __name__)
 
+
+class _AdminIdentityMismatch(Exception):
+    """A different Firebase identity must never take over user ID 1."""
+
+
+def _find_login_user(uid, email):
+    user = User.query.filter_by(firebase_uid=uid).first()
+    if not user and email:
+        user = User.query.filter_by(email=email).first()
+    if user is not None and user.id == 1 and user.firebase_uid != uid:
+        raise _AdminIdentityMismatch
+    return user
+
+
 def get_current_user():
     auth_header = request.headers.get('Authorization', '')
 
@@ -48,20 +62,10 @@ def home():
     if not current_user.is_authenticated:
         return redirect(url_for('auth.login'))
 
-    if not (current_user.username and current_user.get_selected_groups()):
+    if not current_user.username:
         return redirect(url_for('auth.first_register'))
 
-    group_key = current_user.primary_group
-    if group_key and current_user.can_access_group(group_key):
-        return redirect(url_for('photo.index', group_key=group_key))
-
-    selected = current_user.get_selected_groups()
-    if selected:
-        g = selected[0]
-        if current_user.can_access_group(g):
-            return redirect(url_for('photo.index', group_key=g))
-
-    return redirect(url_for('user.select_group'))
+    return redirect(url_for('photo.index', group_key=current_user.get_default_group_key()))
 
 @auth_bp.route('/finish-login')
 def finish_login():
@@ -87,9 +91,7 @@ def create_user():
         if email:
             email = email.lower()
 
-        user = User.query.filter_by(firebase_uid=uid).first()
-        if not user and email:
-            user = User.query.filter_by(email=email).first()
+        user = _find_login_user(uid, email)
 
         if user:
             if user.firebase_uid != uid:
@@ -111,13 +113,15 @@ def create_user():
                 db.session.commit()
             except IntegrityError:
                 db.session.rollback()
-                user = User.query.filter_by(firebase_uid=uid).first()
-                if not user and email:
-                    user = User.query.filter_by(email=email).first()
+                user = _find_login_user(uid, email)
                 if not user:
                     raise
 
         return jsonify({'status': 'ok'})
+
+    except _AdminIdentityMismatch:
+        db.session.rollback()
+        return jsonify({'error': 'unauthorized'}), 401
 
     except firebase_auth.InvalidIdTokenError:
         return jsonify({'error': 'Invalid token'}), 401
@@ -143,9 +147,7 @@ def api_me():
         uid = decoded['uid']
         email = (decoded.get('email') or '').lower() or None
 
-        user = User.query.filter_by(firebase_uid=uid).first()
-        if not user and email:
-            user = User.query.filter_by(email=email).first()
+        user = _find_login_user(uid, email)
 
         if user:
             if user.firebase_uid != uid:
@@ -166,12 +168,13 @@ def api_me():
                 db.session.commit()
             except IntegrityError:
                 db.session.rollback()
-                user = User.query.filter_by(firebase_uid=uid).first()
-                if not user and email:
-                    user = User.query.filter_by(email=email).first()
+                user = _find_login_user(uid, email)
                 if not user:
                     raise
 
+    except _AdminIdentityMismatch:
+        db.session.rollback()
+        return jsonify({'error': 'unauthorized'}), 401
     except firebase_auth.ExpiredIdTokenError:
         return jsonify({'error': 'token_expired'}), 401
     except firebase_auth.InvalidIdTokenError as e:
@@ -184,7 +187,7 @@ def api_me():
     login_user(user, remember=True)
 
     is_setup_complete = bool(
-        user.username and user.get_selected_groups()
+        user.username
     )
 
     return jsonify({

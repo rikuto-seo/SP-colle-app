@@ -1,0 +1,12 @@
+<div class="trade-picker" data-photo-picker>
+  <div class="row g-2">
+    <div class="col-12"><label for="picker-q" class="form-label">写真を検索</label><input id="picker-q" type="search" class="form-control" placeholder="メンバー・衣装・カット"></div>
+    {% for key, label, values in [('member','メンバー',members),('costume','衣装・シリーズ',costumes),('type','カット',types)] %}
+    <div class="col-6 col-lg-4"><label for="picker-{{ key }}" class="form-label">{{ label }}</label><select class="form-select" id="picker-{{ key }}"><option value="">すべて</option>{% for value in values %}<option value="{{ value.id }}">{{ value.name }}</option>{% endfor %}</select></div>
+    {% endfor %}
+    <div class="col-12"><button type="button" class="btn btn-outline-primary btn-sm" id="picker-search">写真を探す</button></div>
+  </div>
+  <p id="picker-status" class="small text-muted mt-2 mb-1" role="status"></p>
+  <div id="picker-results" class="trade-picker-results"></div>
+  <button type="button" id="picker-more" class="btn btn-outline-secondary btn-sm mt-2" hidden>続きを表示</button>
+</div>

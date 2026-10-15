@@ -2,7 +2,7 @@
 
 {% block title %}欲しい生写真一覧{% endblock %}
 
-{% set infinite_wants = wants | selectattr("want.is_infinite") | list %}
+{% set infinite_wants = infinite_wants | default(wants | selectattr("want.is_infinite") | list) %}
 {% set normal_wants = wants | rejectattr("want.is_infinite") | list %}
 
 {% block content %}
@@ -41,7 +41,7 @@
         {% set want = item.want %}
 
         <span class="badge bg-light text-dark border px-3 py-2">
-          {{ want.photo.member.name }}
+          {{ want.member.name if want.member is defined else want.photo.member.name }}
         </span>
 
         {% endfor %}
@@ -116,7 +116,7 @@
 
     {% else %}
 
-    <a href="{{ url_for('auth.login', next=request.full_path + '?auto_trade=1') }}"
+    <a href="{{ url_for('auth.login', next=url_for('want.public_want', public_uuid=uuid, group_key=group_key, auto_trade=1)) }}"
       class="btn btn-outline-success btn-lg px-4">
       ログインして交換チェック
     </a>
@@ -201,27 +201,7 @@ SPcolleのトレードページを拝見してご連絡しました。
   このページは公開用URLです。編集や登録はできません。
 </footer>
 
-<style>
-  .trade-card {
-    border-left: 5px solid #198754;
-  }
 
-  .trade-photo-box {
-    width: 45%;
-  }
-
-  .trade-arrow {
-    font-size: 1.5rem;
-  }
-
-  .section-title {
-    background-color: var(--bs-secondary-bg);
-  }
-
-  #dmTemplate {
-    resize: none;
-  }
-</style>
 
 <script>
 

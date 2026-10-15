@@ -380,7 +380,9 @@ document.addEventListener(
         "#photo_type",
         {
           create: false,
-          maxItems: 1
+          maxItems: 1,
+          // Keep the API's normalized type order; labels and submitted values stay raw.
+          sortField: [{ field: "$order", direction: "asc" }]
         }
       );
 

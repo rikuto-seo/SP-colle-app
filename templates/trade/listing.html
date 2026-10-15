@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% from 'trade/_photo.html' import photo_label %}
+{% block title %}{{ listing.alias }}のトレード募集{% endblock %}
+{% block content %}
+<div class="page-heading"><div><h1 class="section-title">{{ listing.alias }}の募集</h1><p>{{ listing.group.name }} · {{ methods[listing.method] }} · {{ statuses[listing.status] }}</p></div></div>
+{% include 'trade/_nav.html' %}
+{% if is_owner %}
+<div class="card mb-3"><div class="card-body">
+  <h2 class="h5">公開内容の確認</h2><p class="small text-muted">下の写真・希望条件・表示名・交換方法・場所が相手に見えます。所持品全体やSNS、メールは公開されません。</p>
+  <form method="post" action="{{ url_for('trade.visibility', public_id=listing.public_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% if listing.status == 'open' %}<input type="hidden" name="action" value="pause"><button class="btn btn-outline-secondary">公開を停止する</button><button type="button" class="btn btn-outline-primary" data-copy-url="{{ url_for('trade.listing_detail', public_id=listing.public_id, _external=True) }}">募集URLをコピー</button>
+  {% else %}<input type="hidden" name="action" value="publish"><div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="confirm_public" value="1" id="confirm-public" required><label class="form-check-label" for="confirm-public">この募集内容を検索・共有ページに公開します</label></div><button class="btn btn-primary">確認した内容を公開</button>{% endif %}
+  <a class="btn btn-outline-primary" href="{{ url_for('trade.edit_listing', public_id=listing.public_id) }}">内容を編集</a></form>
+</div></div>
+{% endif %}
+{% if listing.location %}<p><i class="fa-solid fa-location-dot me-2" aria-hidden="true"></i>{{ listing.location }}</p>{% endif %}
+{% if listing.notes %}<div class="card mb-3"><div class="card-body"><h2 class="h6">交換条件</h2><p class="trade-preserve mb-0">{{ listing.notes }}</p></div></div>{% endif %}
+{% if listing.bundle %}<div class="alert alert-light">この募集はセット交換です。提供写真一式と、下に登録されている希望写真すべてを交換します。希望枚数はセット全体の指定です。</div>{% endif %}
+{% for offer in listing.offers %}
+<section class="card mb-3"><div class="card-body">
+  <div class="trade-offer-row"><span class="trade-side-tag">譲</span><div class="trade-photo-label">{{ photo_label(offer.photo) }}<small>募集 {{ offer.quantity }}枚 · 現在提案できる枚数 {{ available[offer.photo_id] }}枚</small></div>{% if trade_thumbnail(offer) %}<img class="trade-detail-image" src="{{ trade_thumbnail(offer) }}" alt="{{ offer.photo.member.name }}の提供写真" loading="lazy">{% endif %}</div>
+  <h2 class="h6 mt-3">{% if listing.bundle %}セット全体の希望（すべて必要）{% else %}この写真1枚に対する希望 {% if offer.want_mode == 'all' %}（すべて必要）{% else %}（いずれか一つ）{% endif %}{% endif %}</h2>
+  <div class="trade-want-grid">{% for want in offer.wants %}<div class="trade-want-card"><span class="badge {{ 'bg-warning' if want.priority == 'high' else 'bg-secondary' }}">{{ priorities[want.priority] }}</span><div class="trade-photo-label">{{ photo_label(want.photo) }}<small>{{ want.quantity }}枚</small></div></div>{% endfor %}</div>
+</div></section>
+{% endfor %}
+{% if not is_owner and listing.status == 'open' %}
+{% if current_user.is_authenticated %}
+<section class="card"><div class="card-body"><h2 class="h5">交換案を送る</h2><p class="small text-muted">この内容は募集者とあなたにだけ見えます。写真・枚数の変更は新しい提案で相談できます。</p>
+<form method="post" id="trade-proposal" action="{{ url_for('trade.propose', public_id=listing.public_id) }}" data-picker-url="{{ url_for('trade.photos', group_key=group_key) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="payload" id="trade-payload">
+<div class="row g-2 mb-3"><div class="col-12 col-lg-6"><label for="proposal-alias" class="form-label">相談用の表示名</label><input class="form-control" id="proposal-alias" value="交換希望者" maxlength="30" required></div><div class="col-12 col-lg-6"><label for="proposal-method" class="form-label">交換方法</label><select id="proposal-method" class="form-select">{% for key in ['mail','meet'] if listing.method in [key,'either'] %}<option value="{{ key }}">{{ methods[key] }}</option>{% endfor %}</select></div></div>
+<h3 class="h6">あなたが受け取る写真</h3>
+{% if listing.bundle %}<p class="small text-muted">提供一式を選択しています。部分的な交換はできません。</p>{% endif %}
+{% for offer in listing.offers if available[offer.photo_id] > 0 %}<div class="trade-proposal-choice"><label for="request-{{ offer.photo_id }}">{{ offer.photo.member.name }} / {{ offer.photo.costume.name }} / {{ offer.photo.photo_type.name }}</label><input type="number" class="form-control" id="request-{{ offer.photo_id }}" data-request-photo="{{ offer.photo_id }}" min="0" max="{{ available[offer.photo_id] }}" value="{{ offer.quantity if listing.bundle else 0 }}" {% if listing.bundle %}readonly{% endif %} aria-label="この写真を希望する枚数"></div>{% endfor %}
+<h3 class="h6 mt-4">あなたが渡す写真</h3><div id="proposal-items" class="mb-3"></div>{% include 'trade/_picker.html' %}
+<label for="proposal-note" class="form-label mt-3">相談内容（任意・相手だけに公開）</label><textarea id="proposal-note" class="form-control" maxlength="2000" rows="3" placeholder="写真の状態や日程など"></textarea>
+<p id="editor-error" class="text-danger mt-2" role="alert"></p><button type="submit" class="btn btn-primary mt-2">選んだ交換案を送る</button>
+</form></div></section>
+{% else %}<div class="text-center"><a class="btn btn-primary" href="{{ url_for('auth.login', next=url_for('trade.listing_detail', public_id=listing.public_id)) }}">ログインして交換案を送る</a></div>{% endif %}
+{% endif %}
+{% if current_user.is_authenticated and not is_owner %}{% include 'trade/_select_assets.html' %}{% endif %}
+<script src="{{ url_for('static', filename='js/trade.js') }}" defer></script>
+{% endblock %}

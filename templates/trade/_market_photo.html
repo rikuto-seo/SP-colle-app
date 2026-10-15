@@ -1,0 +1,22 @@
+{% macro market_photo(photo, side, image_url=none, extra=0, quantity=1, extra_label='種類') -%}
+<div class="trade-market-photo {{ 'trade-market-want' if side == '求' else 'trade-market-offer' }}">
+  {% if side == '譲' %}
+  <div class="trade-market-media">
+    <span class="trade-market-side">{{ side }}</span>
+    {% if image_url %}<img src="{{ image_url }}" alt="{{ photo.member.name }}の公開された実物画像" loading="lazy" decoding="async" width="89" height="127">{% endif %}
+    <div class="trade-photo-placeholder" {% if image_url %}hidden{% endif %} aria-hidden="true">
+      <span class="trade-placeholder-member">{{ photo.member.name }}</span>
+      <span class="trade-placeholder-type">{{ photo.photo_type.name }}{% if quantity > 1 %} ×{{ quantity }}{% endif %}</span>
+    </div>
+    {% if extra %}<span class="trade-photo-extra" aria-label="ほか{{ extra }}{{ extra_label }}">+{{ extra }}</span>{% endif %}
+    {% if image_url %}<span class="trade-photo-cut">{{ photo.photo_type.name }}{% if quantity > 1 %} ×{{ quantity }}{% endif %}</span>{% endif %}
+  </div>
+  {% endif %}
+  <div class="trade-market-caption">
+    {% if side == '求' %}<span class="trade-caption-side">求</span>{% endif %}
+    <strong>{{ photo.member.name }}</strong>
+    <em class="trade-caption-cut">{{ photo.photo_type.name }}{% if quantity > 1 %} ×{{ quantity }}{% endif %}{% if extra and side == '求' %}<span aria-label="ほか{{ extra }}{{ extra_label }}"> +{{ extra }}</span>{% endif %}</em>
+    <span class="trade-caption-series">{{ photo.costume.name }}</span>
+  </div>
+</div>
+{%- endmacro %}

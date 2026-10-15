@@ -1,0 +1,1602 @@
+[
+  {
+    "number": 1,
+    "slug": "add",
+    "page": "写真を追加",
+    "image": "images/01-add.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "写真の登録を、\nすっきりした画面で。",
+    "points": [
+      {
+        "title": "入力欄が、すぐそこに",
+        "description": "大きなヘッダーと余白を整理。画面上部から入力欄が見える構成へ。"
+      },
+      {
+        "title": "読みやすいフォーム",
+        "description": "文字・枠線・余白を統一。メンバー、衣装、種類を順に確認。"
+      },
+      {
+        "title": "よく使う機能へ",
+        "description": "スマホ下部にナビを追加。登録画面から一覧へ移動しやすく。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\add-390.png",
+        "sha256": "8b1eddf73fa46548e32aafe61a0c4ac65b5ec413521ffe3c98fef9735d045a83"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\add-390.png",
+        "sha256": "0b32c16653f8b30e78f88623cb296aeeb8977171b2f0b3f79f53066d971d703a"
+      }
+    }
+  },
+  {
+    "number": 2,
+    "slug": "admin--photos",
+    "page": "管理・写真DB",
+    "image": "images/02-admin--photos.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "管理画面も、\nひと目でわかりやすく。",
+    "points": [
+      {
+        "title": "項目をひとまとめに",
+        "description": "グループ切替と写真の追加項目を、共通デザインの画面に整理。"
+      },
+      {
+        "title": "入力のまとまりを明確に",
+        "description": "メンバーや衣装の入力欄を、淡い背景と余白で区切る構成へ。"
+      },
+      {
+        "title": "色と文字を統一",
+        "description": "水色・青中心の画面から、落ち着いた緑と読みやすい文字へ。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\admin--photos-390.png",
+        "sha256": "3b27cf7b0ea110306c6825288db6963e079df3604a3376b85468e01f0779288b"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\admin--photos-390.png",
+        "sha256": "c85e71d2c2713656de9712aee97a3d1ef22aff571bafde252203e447386f92dc"
+      }
+    }
+  },
+  {
+    "number": 3,
+    "slug": "change_password",
+    "page": "パスワード変更",
+    "image": "images/03-change_password.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "大切な設定を、\n迷わず変更。",
+    "points": [
+      {
+        "title": "フォームを見やすく",
+        "description": "現在・新しいパスワードの入力欄を、統一した文字と枠線で表示。"
+      },
+      {
+        "title": "操作の色を整理",
+        "description": "青い変更ボタンから緑へ。戻るボタンは控えめな枠線に。"
+      },
+      {
+        "title": "共通ナビを追加",
+        "description": "ロゴ付きヘッダーとスマホ下部ナビで、ほかの機能へ移動。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\change_password-390.png",
+        "sha256": "a2dbe21b52c7f3d6d1f88a4bbfec3a7fad723b295c8f703225cd885837ad64aa"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\change_password-390.png",
+        "sha256": "34975361f5cefb3ab018e9602a06a523fe385930ac39ddb501748d782c62e09b"
+      }
+    }
+  },
+  {
+    "number": 4,
+    "slug": "confirm_delete_account",
+    "page": "退会確認",
+    "image": "images/04-confirm_delete_account.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "大切な確認を、\n読みやすく。",
+    "points": [
+      {
+        "title": "確認欄が上部に",
+        "description": "大きなヘッダーをコンパクトに。退会前の説明と入力欄が見やすく。"
+      },
+      {
+        "title": "注意と操作を区別",
+        "description": "削除操作は赤、キャンセルは白。文章とボタンの余白も統一。"
+      },
+      {
+        "title": "画面全体を統一",
+        "description": "アカウント設定も、ほかの画面と同じ文字・背景・ナビへ。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\confirm_delete_account-390.png",
+        "sha256": "19c5f57436c0aad5bbc302aed9ea7906988cb464c2078c6a8a428aea134e5b63"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\confirm_delete_account-390.png",
+        "sha256": "04eef8e10f968f7aa453eb3df092276921d44d36e3e394dac11e372d45f7126c"
+      }
+    }
+  },
+  {
+    "number": 5,
+    "slug": "confirm_delete_final",
+    "page": "退会の最終確認",
+    "image": "images/05-confirm_delete_final.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "最後の確認まで、\nわかりやすく。",
+    "points": [
+      {
+        "title": "警告をカードに集約",
+        "description": "最終確認の説明と操作を、まとまりのある白いカードで表示。"
+      },
+      {
+        "title": "選択肢を見分けやすく",
+        "description": "赤い削除ボタンと白いキャンセルボタンを、上下に整理。"
+      },
+      {
+        "title": "ヘッダーをコンパクトに",
+        "description": "共通ロゴと小さなメニューを採用。確認内容が上部から見える。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\confirm_delete_final-390.png",
+        "sha256": "cb480f70293f6175b0195ecf27a0b960a10f3719835b25d2bb9eb7cc93ecc2c1"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\confirm_delete_final-390.png",
+        "sha256": "648e92265e62274e4c0a977166295b145f6a5bf7b9196e708d06dd0f77cff3c9"
+      }
+    }
+  },
+  {
+    "number": 6,
+    "slug": "dashboard",
+    "page": "ダッシュボード",
+    "image": "images/06-dashboard.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "コレクション管理の\n入口を、すっきり。",
+    "points": [
+      {
+        "title": "やることが見つかる",
+        "description": "所持写真、追加、減らすなどを、余白のある機能カードに整理。"
+      },
+      {
+        "title": "見出しをコンパクトに",
+        "description": "グループ名と画面の目的を、上部にまとめて表示。"
+      },
+      {
+        "title": "ナビも同じ使い心地に",
+        "description": "共通ヘッダーと下部ナビを追加。各ページの見た目を統一。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\dashboard-390.png",
+        "sha256": "98c831badce31aa8cd87e6988ec21c8f528a190fa3fd0101363042f38208d6cf"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\dashboard-390.png",
+        "sha256": "1d78f7131ff8efb241c8137b37b1ff8067ef7b1972bbc60ac696f79860695eaa"
+      }
+    }
+  },
+  {
+    "number": 7,
+    "slug": "edit_profile",
+    "page": "プロフィール編集",
+    "image": "images/07-edit_profile.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "プロフィール編集を、\nすっきり見やすく。",
+    "points": [
+      {
+        "title": "項目の区切りを明確に",
+        "description": "基本情報・SNS情報の見出しを、読みやすい文字と余白で整理。"
+      },
+      {
+        "title": "入力欄を統一",
+        "description": "細い枠線と淡い背景を採用。ラベルと入力欄のまとまりが明確に。"
+      },
+      {
+        "title": "ほかの画面へ移動",
+        "description": "ヘッダーを小さくし、スマホ下部に共通ナビを追加。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\edit_profile-390.png",
+        "sha256": "366723af93c7a2244e303a98c51e16a223935e53fb8e02ac88c94d94e710b712"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\edit_profile-390.png",
+        "sha256": "674a3ded85cb039e3d7fbd9920dc90ae5fadbde45025ee031c47256fe426e80f"
+      }
+    }
+  },
+  {
+    "number": 8,
+    "slug": "finish-login",
+    "page": "ログイン処理中",
+    "image": "images/08-finish-login.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "待っている間も、\n統一された画面に。",
+    "points": [
+      {
+        "title": "処理状況をシンプルに",
+        "description": "ログイン処理中の表示を、余白のある落ち着いたカードに。"
+      },
+      {
+        "title": "ブランドを統一",
+        "description": "水色の大きなヘッダーから、SP Colleのロゴ付きヘッダーへ。"
+      },
+      {
+        "title": "フッターも整理",
+        "description": "ページ下部のリンクを、共通の文字と配置でまとめる構成へ。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\finish-login-390.png",
+        "sha256": "5054c891cc11c70fc7d29b522b8c014385c9a6e2a8a622515d6eb63888a9f348"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\finish-login-390.png",
+        "sha256": "5fc812ad70beecd3c68310ba278538d15e0c787c257410cfac20773b202e4cd7"
+      }
+    }
+  },
+  {
+    "number": 9,
+    "slug": "first-register",
+    "page": "初回登録",
+    "image": "images/09-first-register.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "はじめの登録を、\nすっきりした画面で。",
+    "points": [
+      {
+        "title": "登録欄が上部に",
+        "description": "大きなヘッダーを小さくし、初回登録フォームを見やすい位置へ。"
+      },
+      {
+        "title": "読みやすい入力欄",
+        "description": "ユーザー名とパスワードの文字・枠線・余白を統一。"
+      },
+      {
+        "title": "次の操作を見つけやすく",
+        "description": "青いボタンから、ほかの画面と同じ緑のボタンへ。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\first-register-390.png",
+        "sha256": "de1d4ad5e96e0a4cada704c9b1cf5da9d8c6b33196387628cb41c7320de99c40"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\first-register-390.png",
+        "sha256": "35551ee4e82e4fd4f0c4d137f84c258dffa510b6e5cda86b5ed8e1545bfeba9b"
+      }
+    }
+  },
+  {
+    "number": 10,
+    "slug": "force_select_group",
+    "page": "利用グループ設定",
+    "image": "images/10-force_select_group.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": true,
+    "headline": "設定画面も、\n落ち着いたデザインへ。",
+    "points": [
+      {
+        "title": "選択ボタンを整理",
+        "description": "色付きの大きな面から、白を基調にした枠線付きの選択肢へ。"
+      },
+      {
+        "title": "設定操作を見分ける",
+        "description": "設定ボタンは緑、補助操作は淡い色に。色の役割を整理。"
+      },
+      {
+        "title": "説明を読みやすく",
+        "description": "ヘッダーと余白を小さくし、見出し・説明・選択肢をまとめる構成へ。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\force_select_group-390.png",
+        "sha256": "f51cfd785326135f8870978c031aff4349367f00340b1f2611c690e8c4aeb827"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\force_select_group-390.png",
+        "sha256": "62946c68edc74cb30b55d46dddcdc08b411f9d7548a0c0364c5f7d909b75d779"
+      }
+    }
+  },
+  {
+    "number": 11,
+    "slug": "give",
+    "page": "写真を減らす",
+    "image": "images/11-give.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "枚数の調整を、\n見やすいフォームで。",
+    "points": [
+      {
+        "title": "フォームが上部に",
+        "description": "大きな見出しの余白を整理。メンバー・衣装の選択欄がすぐ見える。"
+      },
+      {
+        "title": "操作をひとまとめに",
+        "description": "種類・枚数の入力欄を、統一した文字と白いカードで表示。"
+      },
+      {
+        "title": "下部ナビを追加",
+        "description": "一覧・追加・トレード・マイページへ、画面下部から移動。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\give-390.png",
+        "sha256": "ca85ecd8cfc168d5652b8435d27c2c47faad49ba49ef1794956afa14eee07521"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\give-390.png",
+        "sha256": "1dfd96ea2c05738f37ff7494301fd6fff7b9b25b4f6ff6524b3e6c23b3b5cd94"
+      }
+    }
+  },
+  {
+    "number": 12,
+    "slug": "group",
+    "page": "グループ",
+    "image": "images/12-group.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "グループの入口を、\nもっとすっきり。",
+    "points": [
+      {
+        "title": "見出しと説明を整理",
+        "description": "中央の大きなタイトルから、左揃えのグループ名と説明へ。"
+      },
+      {
+        "title": "ボタンの見た目を統一",
+        "description": "青いボタンから、緑と枠線のボタンへ。操作の並びもコンパクトに。"
+      },
+      {
+        "title": "よく使う機能へ",
+        "description": "共通ヘッダーと下部ナビで、コレクション管理へ移動。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\group-390.png",
+        "sha256": "ce432c585eea9f4b75e231e0e561a4b80073d54dc5343219f6e06e04ed016bc5"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\group-390.png",
+        "sha256": "755af5e1642dd7e1cce5c2cbc814fa681f64a6c8d6577276a2eec395d824968f"
+      }
+    }
+  },
+  {
+    "number": 13,
+    "slug": "icon_setting",
+    "page": "アイコン設定",
+    "image": "images/13-icon_setting.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "自分のアイコンを、\n見やすく設定。",
+    "points": [
+      {
+        "title": "設定項目が上部に",
+        "description": "大きなヘッダーと見出しの余白を整理。現在のアイコンがすぐ見える。"
+      },
+      {
+        "title": "操作の色を統一",
+        "description": "アップロードは緑、削除は赤。カードの枠線と余白も統一。"
+      },
+      {
+        "title": "ナビを追加",
+        "description": "スマホ下部から一覧・追加・トレード・マイページへ移動。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\icon_setting-390.png",
+        "sha256": "10157e7ddec5e6f19ef0082d516f098fcceb379d12e25f07ff2d90373a11fdb4"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\icon_setting-390.png",
+        "sha256": "bb4c32ebb6c6920e0ad5a3ca07d081ba8eeca9433f055e9320b9f019d4603f93"
+      }
+    }
+  },
+  {
+    "number": 14,
+    "slug": "index",
+    "page": "コレクション",
+    "image": "images/14-index.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "推しの一枚を、\nひと目で見渡す。",
+    "points": [
+      {
+        "title": "検索欄を折りたたみ",
+        "description": "常時表示の検索フォームを、開閉できる「検索・並び順」に集約。"
+      },
+      {
+        "title": "写真の見せ方を選べる",
+        "description": "「情報付き／画像のみ」を追加。名前や所持状況が読みやすいカードに。"
+      },
+      {
+        "title": "追加・移動が身近に",
+        "description": "見出し横に追加ボタン、スマホ下部に共通ナビを配置。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\index-390.png",
+        "sha256": "838fe3a34a4a079c466f9e21457aeeb414659b4db6f3a1671bd74a61e457c379"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\index-390.png",
+        "sha256": "09d50e3b043b384424b82c91878dcfcf4b5ec28ffa47e7552dc35b5294234364"
+      }
+    }
+  },
+  {
+    "number": 15,
+    "slug": "legal",
+    "page": "特定商取引法に基づく表記",
+    "image": "images/15-legal.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": true,
+    "headline": "サービスの案内も、\n読みやすい画面に。",
+    "points": [
+      {
+        "title": "見出しを見やすく",
+        "description": "大きなヘッダーを小さくし、案内のタイトルと本文を上部へ。"
+      },
+      {
+        "title": "本文の文字を統一",
+        "description": "ほかの画面と同じ書体・色・行間で、長い説明を読みやすく。"
+      },
+      {
+        "title": "ページ全体を統一",
+        "description": "ロゴ付きヘッダーと共通フッターで、サービス内の見た目を揃える。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\legal-390.png",
+        "sha256": "1757a2c1d182fb51ae4c7ad00814a4cc076d69babfe23ff738912a0c6bebeb5c"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\legal-390.png",
+        "sha256": "9c1d96c5a5018ec3af7393e93f94728e14f155e26a0d37aa32435c89d1d88af9"
+      }
+    }
+  },
+  {
+    "number": 16,
+    "slug": "login",
+    "page": "ログイン",
+    "image": "images/16-login.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "いつものログインを、\n新しい顔で。",
+    "points": [
+      {
+        "title": "入口のメッセージを刷新",
+        "description": "「ログイン」のみの見出しから、「おかえりなさい。」と説明付きの画面へ。"
+      },
+      {
+        "title": "フォームをコンパクトに",
+        "description": "入力欄とログインボタンを、緑を基調にした統一デザインへ。"
+      },
+      {
+        "title": "登録への案内も整理",
+        "description": "ロゴ付きヘッダーと、新規登録へのリンクを備えた構成へ。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\login-390.png",
+        "sha256": "d30c30bb9733e9cb1c31542b55686bd37e05c1e0c3afa16a909d862c54adfdfd"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\login-390.png",
+        "sha256": "dd92f88e009f914f7620b06deeac57a9fa4b51c90864e3a4bb197f9ef57e17ec"
+      }
+    }
+  },
+  {
+    "number": 17,
+    "slug": "lp",
+    "page": "トップ・サービス紹介",
+    "image": "images/17-lp.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "推しの一枚を、\nもっと大切に。",
+    "points": [
+      {
+        "title": "トップの印象を刷新",
+        "description": "紫の背景から、淡い背景と緑へ。生写真への想いが伝わる見出しに。"
+      },
+      {
+        "title": "画面プレビューを追加",
+        "description": "実際のコレクション管理をイメージできる、アプリ画面の紹介を配置。"
+      },
+      {
+        "title": "始め方をわかりやすく",
+        "description": "登録と生写真DBへの入口を、最初の画面にまとめて表示。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\lp-390.png",
+        "sha256": "d575fd0f8e5c7463650675601cfc88eadd0b08b1dabd7c470ce516e653e0451a"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\lp-390.png",
+        "sha256": "7a2bf56286980270cf386887e373a89f0e6ad3e4a648220967ec77cb6fde3886"
+      }
+    }
+  },
+  {
+    "number": 18,
+    "slug": "missing",
+    "page": "未所持の写真",
+    "image": "images/18-missing.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "足りない一枚を、\n見やすく探す。",
+    "points": [
+      {
+        "title": "検索欄が上部に",
+        "description": "大きなヘッダーと見出しの余白を整理。絞り込みフォームが見やすく。"
+      },
+      {
+        "title": "検索ボタンを統一",
+        "description": "青から緑へ。入力欄・カードも、ほかの画面と同じ見た目に。"
+      },
+      {
+        "title": "一覧へ戻りやすく",
+        "description": "スマホ下部に共通ナビを追加。コレクションの確認へ移動。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\missing-390.png",
+        "sha256": "5b3741bb65cad2e76ecd115bf95678fa1fc85bf6b1a5dbcafda290569a590497"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\missing-390.png",
+        "sha256": "5158c0a55dc660f6d0c5ebff27add781640f7df498e221fac51590b7ab82b6a8"
+      }
+    }
+  },
+  {
+    "number": 19,
+    "slug": "mypage",
+    "page": "マイページ",
+    "image": "images/19-mypage.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "自分のコレクションを、\nすっきり把握。",
+    "points": [
+      {
+        "title": "アカウント欄を整理",
+        "description": "大きな見出しと色付きの枠を見直し、シンプルな情報カードへ。"
+      },
+      {
+        "title": "数字が読みやすく",
+        "description": "所持総数とグループ別の枚数を、統一した文字と余白で表示。"
+      },
+      {
+        "title": "日々の操作へ移動",
+        "description": "スマホ下部の共通ナビから、一覧・追加・トレードへ。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\mypage-390.png",
+        "sha256": "3b1be58c707143245aad5b2c911def6b924f20de6fb960fced071c3fc1988f67"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\mypage-390.png",
+        "sha256": "9160b261c692c00d49da40d8f544cb15cc90b2a9e93c8c25fa4ae5ccd88ff6b6"
+      }
+    }
+  },
+  {
+    "number": 20,
+    "slug": "payment_success",
+    "page": "決済処理中",
+    "image": "images/20-payment_success.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": true,
+    "headline": "処理中の画面も、\nすっきり統一。",
+    "points": [
+      {
+        "title": "案内を読みやすく",
+        "description": "処理中の見出しと説明を、コンパクトなヘッダーの下に配置。"
+      },
+      {
+        "title": "色と文字を統一",
+        "description": "水色のヘッダーから、ロゴ・緑・淡い背景を基調にした画面へ。"
+      },
+      {
+        "title": "共通ナビを追加",
+        "description": "下部のナビとフッターを、ほかの画面と同じ見た目に。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\payment_success-390.png",
+        "sha256": "5b80a3a7288c18d6d2b9b5a7da6ece2d76849e5fe804be391a1161c8e85e38b1"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\payment_success-390.png",
+        "sha256": "c2668ff8321c2170406e18963991524fa00b3ea92daac28105e4360953e4bb9e"
+      }
+    }
+  },
+  {
+    "number": 21,
+    "slug": "privacy",
+    "page": "プライバシーポリシー",
+    "image": "images/21-privacy.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "長い説明も、\n読みやすく。",
+    "points": [
+      {
+        "title": "本文が上部に",
+        "description": "大きなヘッダーを小さくし、ポリシーの見出しと本文を上部へ。"
+      },
+      {
+        "title": "文字と行間を統一",
+        "description": "本文や箇条書きを、ほかの画面と同じ書体と落ち着いた色で表示。"
+      },
+      {
+        "title": "サービス全体で統一",
+        "description": "共通ロゴとフッターを採用。案内ページにも同じデザインを。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\privacy-390.png",
+        "sha256": "3b58ab4e3a883503fe99d8b2b9210d16c348e3b0ee78867102bfef01303abb01"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\privacy-390.png",
+        "sha256": "e063d5bc42c00cd4ac59ddaf3a59acc35c7fa7a084386db969240dffd8c6d7fa"
+      }
+    }
+  },
+  {
+    "number": 22,
+    "slug": "public--costume_detail",
+    "page": "生写真DB・衣装詳細",
+    "image": "images/22-public--costume_detail.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "衣装ごとの写真を、\nすっきり確認。",
+    "points": [
+      {
+        "title": "アプリと同じ見た目に",
+        "description": "水色のDBヘッダーから、SP Colle共通のロゴ付きヘッダーへ。"
+      },
+      {
+        "title": "表を落ち着いた色に",
+        "description": "水色の背景を淡い色へ。メンバーと種類の対応を読みやすく。"
+      },
+      {
+        "title": "見出しと枚数を整理",
+        "description": "衣装名と人数・種類数を、まとまりのある上部に配置。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\public--costume_detail-390.png",
+        "sha256": "9874b6578091547688fec9c73956e76db3b8049b262f7cc4ba2ca09472c0aaa7"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\public--costume_detail-390.png",
+        "sha256": "6f29d6488f5e1a80d623e54d406bf0639dad49aba9c34d1e93e028843e4cdbd4"
+      }
+    }
+  },
+  {
+    "number": 23,
+    "slug": "public--costume_list",
+    "page": "生写真DB・衣装一覧",
+    "image": "images/23-public--costume_list.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "衣装の一覧を、\n見やすく探す。",
+    "points": [
+      {
+        "title": "DBの見た目を統一",
+        "description": "水色の画面から、アプリと同じ緑・白・淡い背景のデザインへ。"
+      },
+      {
+        "title": "検索欄を整理",
+        "description": "検索の入力欄とボタンを、細い枠線と緑でわかりやすく表示。"
+      },
+      {
+        "title": "衣装をカードで確認",
+        "description": "衣装名と人数・種類数を、読みやすい文字と余白で表示。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\public--costume_list-390.png",
+        "sha256": "007cbd9a50492ac5ffa561e33659cd7aef007c9cf04f9c86cd47f8317394c13b"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\public--costume_list-390.png",
+        "sha256": "674637e29ef29ee24d57ebec37eb7f5b6cea2a148bff08f015f87d8403ad22f8"
+      }
+    }
+  },
+  {
+    "number": 24,
+    "slug": "public--index",
+    "page": "生写真DB・グループ一覧",
+    "image": "images/24-public--index.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "あの一枚を、\n生写真DBで探す。",
+    "points": [
+      {
+        "title": "DBの入口を刷新",
+        "description": "「生写真データベース」から、「次の一枚を、探しに。」の見出しへ。"
+      },
+      {
+        "title": "グループを見やすく",
+        "description": "大きな色付きの面から、色の目印と矢印を備えた白いカードへ。"
+      },
+      {
+        "title": "サービスと統一",
+        "description": "SP Colle共通のロゴ・配色・フッターを採用。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\public--index-390.png",
+        "sha256": "c2463c3b6f9ab6385aa5a17f4d26e53f9ac1a2749190c57afb36010563f7edf6"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\public--index-390.png",
+        "sha256": "4e2e2c9225a10c1a363c12a8a0ea6b18d365b9fc47603b91c557ad948aedb632"
+      }
+    }
+  },
+  {
+    "number": 25,
+    "slug": "public--member_costumes",
+    "page": "生写真DB・メンバー衣装",
+    "image": "images/25-public--member_costumes.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "メンバーの衣装を、\nすっきり確認。",
+    "points": [
+      {
+        "title": "見出しを読みやすく",
+        "description": "DBの水色ヘッダーから共通ヘッダーへ。メンバー名と衣装名を整理。"
+      },
+      {
+        "title": "表の背景を落ち着かせる",
+        "description": "水色の面を淡い背景へ。種類ごとの情報を統一した文字で表示。"
+      },
+      {
+        "title": "DBとアプリを統一",
+        "description": "ロゴ・ログイン入口・フッターを共通デザインに。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\public--member_costumes-390.png",
+        "sha256": "df38c4647d24433c5bad48355b8f1ac79a6dbe94445cffbaf2d6ab784094321c"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\public--member_costumes-390.png",
+        "sha256": "357513e678dabe830ed81c48a94d0ff10a36f025c21bc68166112058a33a5c3d"
+      }
+    }
+  },
+  {
+    "number": 26,
+    "slug": "register",
+    "page": "新規登録",
+    "image": "images/26-register.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "新しいコレクションを、\nここから。",
+    "points": [
+      {
+        "title": "登録の入口を刷新",
+        "description": "「ユーザー登録」のみの見出しから、「推しの一枚と、ここに。」へ。"
+      },
+      {
+        "title": "フォームを見やすく",
+        "description": "メール入力と登録ボタンを、白いカードと緑で統一。"
+      },
+      {
+        "title": "案内をひとまとめに",
+        "description": "説明・入力・ログインへのリンクを、まとまりのある構成へ。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\register-390.png",
+        "sha256": "2ff1883b64a8ed833101c99b53bb193a8c72d57c46167ccab2369e5fb617696f"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\register-390.png",
+        "sha256": "91e278deddd5b4192ad1ec539aa40362cc63826bc9fd250c373ce98ca6177a31"
+      }
+    }
+  },
+  {
+    "number": 27,
+    "slug": "select_group",
+    "page": "グループ選択",
+    "image": "images/27-select_group.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": true,
+    "headline": "選択画面も、\nすっきりした見た目に。",
+    "points": [
+      {
+        "title": "グループを見分ける",
+        "description": "色付きの大きな面から、グループ色の枠線を使った白い選択肢へ。"
+      },
+      {
+        "title": "見出しをコンパクトに",
+        "description": "大きなヘッダーと余白を整理。選択欄を画面上部にまとめる。"
+      },
+      {
+        "title": "共通のデザインへ",
+        "description": "ロゴ・文字・背景・ナビを、ほかの画面と同じ見た目に。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\select_group-390.png",
+        "sha256": "9e9670062de4c130af099f12a622a0e6b2b0b743dabf147681c6b9212d273e19"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\select_group-390.png",
+        "sha256": "fa697ea60ab34ac1f25e4bcd0251af8a711a0ccd4e79f2a002246c9f9d8b26b3"
+      }
+    }
+  },
+  {
+    "number": 28,
+    "slug": "shared_collection--not_shared",
+    "page": "コレクション・非公開",
+    "image": "images/28-shared_collection--not_shared.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "公開状態も、\n伝わりやすく。",
+    "points": [
+      {
+        "title": "状態をひと目で確認",
+        "description": "非公開の説明を、鍵のアイコン付きのシンプルなカードに。"
+      },
+      {
+        "title": "画面の余白を整理",
+        "description": "大きなヘッダーとタイトルをコンパクトにし、案内を上部へ。"
+      },
+      {
+        "title": "共通ロゴを採用",
+        "description": "公開コレクションの画面にも、アプリと同じブランド表示を。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\shared_collection--not_shared-390.png",
+        "sha256": "622e3299af4796b76db8dabee0d496b6efbe13491dae6127cdc16aa156fdcdd7"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\shared_collection--not_shared-390.png",
+        "sha256": "bdaaa58a7de59cd9fb9150eb5f182f52033dea3b9cdd579dc637bb4e05acbf60"
+      }
+    }
+  },
+  {
+    "number": 29,
+    "slug": "shared_collection--shared_view",
+    "page": "公開コレクション",
+    "image": "images/29-shared_collection--shared_view.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "コレクション共有も、\n読みやすく。",
+    "points": [
+      {
+        "title": "名前とグループを整理",
+        "description": "中央の大きな見出しから、左揃えのタイトルと余白へ。"
+      },
+      {
+        "title": "カードの文字を統一",
+        "description": "メンバー・衣装・枚数の情報を、読みやすい共通の書体で表示。"
+      },
+      {
+        "title": "画面全体を統一",
+        "description": "公開画面にもロゴ付きヘッダーと共通フッターを採用。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\shared_collection--shared_view-390.png",
+        "sha256": "f2da9c785f1f03528e58675113982df4399ca1ddcebfe6db1e7e21c7fc415288"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\shared_collection--shared_view-390.png",
+        "sha256": "5037e654da10504ffc4b08136a243c0d48019fed48f57bc4360b3f07268d08e8"
+      }
+    }
+  },
+  {
+    "number": 30,
+    "slug": "shared_stats",
+    "page": "公開コレクション統計",
+    "image": "images/30-shared_stats.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "共有した数字も、\nすっきり見える。",
+    "points": [
+      {
+        "title": "見出しをコンパクトに",
+        "description": "大きなヘッダーとタイトルを整理。統計の内容が上部に。"
+      },
+      {
+        "title": "数字と項目を統一",
+        "description": "総所持数とランキングを、落ち着いた緑と共通の文字で表示。"
+      },
+      {
+        "title": "公開画面も同じ印象に",
+        "description": "ロゴ・背景・フッターを、サービス内のほかの画面と統一。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\shared_stats-390.png",
+        "sha256": "d6f0f4f8a934dbc2044c3ae6056348f90fbd94b8e809adabbd53926049e454d1"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\shared_stats-390.png",
+        "sha256": "2a376c4e3e3f714be31cf527d49e1da6cd2862f11964d8ebd21ce6b27e14b617"
+      }
+    }
+  },
+  {
+    "number": 31,
+    "slug": "stats",
+    "page": "統計",
+    "image": "images/31-stats.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "集めた数字を、\nすっきり眺める。",
+    "points": [
+      {
+        "title": "数字が上部に",
+        "description": "ヘッダーと見出しを小さくし、総所持数とランキングが見やすい位置へ。"
+      },
+      {
+        "title": "色を落ち着かせる",
+        "description": "青い数字・色付きの項目から、緑を基調にした統一デザインへ。"
+      },
+      {
+        "title": "日々の操作へ移動",
+        "description": "スマホ下部に共通ナビを追加。一覧や追加画面へ移動。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\stats-390.png",
+        "sha256": "9f1e26fc800e07aa1995253fa23377a6b6f5b9527135ca240c6c675fef8f3f23"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\stats-390.png",
+        "sha256": "ae41d1721cbe0e32df5519a4acb61d37f1605616a964133f7b042a75a01d95f1"
+      }
+    }
+  },
+  {
+    "number": 32,
+    "slug": "terms",
+    "page": "利用規約",
+    "image": "images/32-terms.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "利用の案内も、\n読みやすく。",
+    "points": [
+      {
+        "title": "本文を上部へ",
+        "description": "大きなヘッダーと余白を整理。規約の見出しと文章を上部に。"
+      },
+      {
+        "title": "長文の見た目を統一",
+        "description": "文字の書体・色・行間を、ほかのページと同じデザインに。"
+      },
+      {
+        "title": "共通のブランド表示",
+        "description": "案内ページにもSP Colleのロゴと共通フッターを採用。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\terms-390.png",
+        "sha256": "edd182cbe741a98ebcd03a1176153ae10f0f9ee7dd84b7d9a341501667a4b767"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\terms-390.png",
+        "sha256": "95aa7fbd5ff5bd5705b13630999deaea6951d8300ff42dc04d3ea31d61957d4f"
+      }
+    }
+  },
+  {
+    "number": 33,
+    "slug": "trade--editor",
+    "page": "トレード・募集作成",
+    "image": "images/33-trade--editor.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": true,
+    "historical": false,
+    "headline": "交換の募集を、\nアプリの中で。",
+    "points": [
+      {
+        "title": "募集作成ページを追加",
+        "description": "募集用の表示名、交換方法、交換場所を入力できる画面に。"
+      },
+      {
+        "title": "公開内容を案内",
+        "description": "ページ上部に、下書きと公開情報についての説明を表示。"
+      },
+      {
+        "title": "交換条件をまとめる",
+        "description": "同種優先などの条件を、専用の入力欄で記載。"
+      }
+    ],
+    "sources": {
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\trade--editor-390.png",
+        "sha256": "9fc09ac93cb8ab7205962d5f1e2e735b8a9581eec25ff487524032b85b0fb694"
+      }
+    }
+  },
+  {
+    "number": 34,
+    "slug": "trade--listing",
+    "page": "トレード・募集詳細",
+    "image": "images/34-trade--listing.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": true,
+    "historical": false,
+    "headline": "交換したい写真を、\n募集ページで確認。",
+    "points": [
+      {
+        "title": "募集の詳細ページを追加",
+        "description": "募集名・公開状態・交換方法を、ひとつの画面にまとめて表示。"
+      },
+      {
+        "title": "譲る写真と希望を確認",
+        "description": "提供写真と交換したい写真を、まとまりのあるカードで表示。"
+      },
+      {
+        "title": "条件も一緒に読む",
+        "description": "交換条件を上部に配置。募集・自分の募集・取引のナビも追加。"
+      }
+    ],
+    "sources": {
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\trade--listing-390.png",
+        "sha256": "65dd199ea8cf77e6aaefbdad455ad25b0520473a1a3bb078b0031d2ef733dce0"
+      }
+    }
+  },
+  {
+    "number": 35,
+    "slug": "trade--mine",
+    "page": "トレード・自分の募集",
+    "image": "images/35-trade--mine.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": true,
+    "historical": false,
+    "headline": "自分の交換募集を、\nひとつの画面で。",
+    "points": [
+      {
+        "title": "自分の募集一覧を追加",
+        "description": "自分が作った募集と公開状態を、カードにまとめて表示。"
+      },
+      {
+        "title": "状態を見分けやすく",
+        "description": "表示名・交換方法・更新日を、ラベルと余白で整理。"
+      },
+      {
+        "title": "募集作成への入口",
+        "description": "見出し横の作成ボタンと、募集・取引へのナビを配置。"
+      }
+    ],
+    "sources": {
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\trade--mine-390.png",
+        "sha256": "f34287d5349dc4e98a336431532d7c37deeb63e42d36bb7cbe34ad0cd5e217c0"
+      }
+    }
+  },
+  {
+    "number": 36,
+    "slug": "trade--search",
+    "page": "トレード・募集一覧",
+    "image": "images/36-trade--search.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": true,
+    "historical": false,
+    "headline": "次の交換相手を、\n募集から探す。",
+    "points": [
+      {
+        "title": "トレード募集一覧を追加",
+        "description": "募集の表示名・交換方法・写真を、カードにまとめて表示。"
+      },
+      {
+        "title": "絞り込みの入口",
+        "description": "メンバーや衣装の選択、マッチ候補の表示などを上部に配置。"
+      },
+      {
+        "title": "募集も取引もここから",
+        "description": "募集作成ボタンと、自分の募集・取引管理へのナビを追加。"
+      }
+    ],
+    "sources": {
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\trade--search-390.png",
+        "sha256": "246fdf707917ba30282c9a9e94e26f145b593a0250b6492d801e2d2815e98c30"
+      }
+    }
+  },
+  {
+    "number": 37,
+    "slug": "trade--transaction",
+    "page": "トレード・取引詳細",
+    "image": "images/37-trade--transaction.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": true,
+    "historical": false,
+    "headline": "交換内容と進み具合を、\n一緒に確認。",
+    "points": [
+      {
+        "title": "取引の詳細ページを追加",
+        "description": "取引状況・交換方法・相手を、上部にまとめて表示。"
+      },
+      {
+        "title": "双方の写真を見比べる",
+        "description": "募集者と応募者が渡す写真を、左右のカードで確認。"
+      },
+      {
+        "title": "次の操作をまとめる",
+        "description": "実物画像の共有・交換の確定・見送りのボタンを配置。"
+      }
+    ],
+    "sources": {
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\trade--transaction-390.png",
+        "sha256": "8f128a57fd64da603202738a43337b59ee6eccf5d011c61a6a660781ddf0026b"
+      }
+    }
+  },
+  {
+    "number": 38,
+    "slug": "trade--transactions",
+    "page": "トレード・取引一覧",
+    "image": "images/38-trade--transactions.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": true,
+    "historical": false,
+    "headline": "交換のやり取りを、\nひとつの一覧に。",
+    "points": [
+      {
+        "title": "取引一覧を追加",
+        "description": "進行中の取引を、募集名・相手・状態のカードで確認。"
+      },
+      {
+        "title": "状況を見分けやすく",
+        "description": "交渉中などの状態を、カード内のラベルで表示。"
+      },
+      {
+        "title": "募集と取引を行き来",
+        "description": "募集検索・自分の募集・取引管理の共通ナビを配置。"
+      }
+    ],
+    "sources": {
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\trade--transactions-390.png",
+        "sha256": "3bbe839acfc1583a7ca95011df8497254edd32bcb707dabc4c13e83a582b155d"
+      }
+    }
+  },
+  {
+    "number": 39,
+    "slug": "upgrade",
+    "page": "料金プラン",
+    "image": "images/39-upgrade.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": true,
+    "headline": "案内画面も、\n見やすいカードに。",
+    "points": [
+      {
+        "title": "見出しをコンパクトに",
+        "description": "大きなヘッダーと中央の余白を整理。説明とカードを上部へ。"
+      },
+      {
+        "title": "カードの文字を統一",
+        "description": "プランの項目を、共通の書体・枠線・余白で読みやすく表示。"
+      },
+      {
+        "title": "画面の色を整理",
+        "description": "青・黄などの色使いを見直し、落ち着いた緑と淡い背景へ。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\upgrade-390.png",
+        "sha256": "92d0ec797c0cb62caa595ff5ed1fc5d413f2cd0f8996cfdf02f68ece7e999eb5"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\upgrade-390.png",
+        "sha256": "2634bfc37a19f786588b1ba0db1864d665effe65c468d085aeb87db52a8eb19f"
+      }
+    }
+  },
+  {
+    "number": 40,
+    "slug": "want--add",
+    "page": "欲しい写真を追加",
+    "image": "images/40-want--add.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "欲しい一枚を、\n見やすくリストへ。",
+    "points": [
+      {
+        "title": "入力欄が上部に",
+        "description": "大きなヘッダーと見出しを整理。通常登録の選択欄がすぐ見える。"
+      },
+      {
+        "title": "登録項目をまとめる",
+        "description": "通常登録と無限回収登録を、統一した文字・カードで表示。"
+      },
+      {
+        "title": "よく使う機能へ",
+        "description": "見出し横の一覧ボタンと、スマホ下部の共通ナビを追加。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\want--add-390.png",
+        "sha256": "db324bbc468a1bfa73b6946a73b1a1928c836a978284a2e1a820b3fe4e37b165"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\want--add-390.png",
+        "sha256": "d4c7bf72d9bf76392d48ebe45f88b7b938d9d3e4527a8872f47d99b42be218e0"
+      }
+    }
+  },
+  {
+    "number": 41,
+    "slug": "want--index",
+    "page": "欲しい写真",
+    "image": "images/41-want--index.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "欲しい一枚を、\nすっきり一覧に。",
+    "points": [
+      {
+        "title": "一覧が上部に",
+        "description": "大きなヘッダーと見出しをコンパクトに。カードが上部から見える。"
+      },
+      {
+        "title": "カードを読みやすく",
+        "description": "衣装・メンバー・種類を、共通の書体と余白で整理。"
+      },
+      {
+        "title": "追加の入口を配置",
+        "description": "見出し横に追加ボタン。下部には共通ナビを追加。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\want--index-390.png",
+        "sha256": "5c819852c7008d129e19c245acd17a07c8c3102eb94750f994f6b854567046ba"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\want--index-390.png",
+        "sha256": "86414a3232b8b6fb3a1df8a031f2309523d77a2d9169df1357460736d9417d3f"
+      }
+    }
+  },
+  {
+    "number": 42,
+    "slug": "want--public_base",
+    "page": "公開の欲しい写真・マッチング",
+    "image": "images/42-want--public_base.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "欲しい写真の共有も、\nすっきり見やすく。",
+    "points": [
+      {
+        "title": "見出しを整理",
+        "description": "大きな中央タイトルから、左揃えの名前とグループ表示へ。"
+      },
+      {
+        "title": "希望カードを統一",
+        "description": "写真の情報と所持ラベルを、落ち着いた配色・文字で表示。"
+      },
+      {
+        "title": "交換チェックも見やすく",
+        "description": "交換チェックの操作を、共通の緑のボタンに統一。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\want--public_base-390.png",
+        "sha256": "44408c826a8c48c290e057bb1ea6d551b905ba6c1d17ff81d36cd5243fbb1fe6"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\want--public_base-390.png",
+        "sha256": "9a63e21a17d84d3fb4b2d92d269e0839b02b2e1645c48bc5df06de67d49169a7"
+      }
+    }
+  },
+  {
+    "number": 43,
+    "slug": "want--public_private",
+    "page": "欲しい写真・非公開",
+    "image": "images/43-want--public_private.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": false,
+    "historical": false,
+    "headline": "非公開の案内も、\nわかりやすく。",
+    "points": [
+      {
+        "title": "説明を上部に",
+        "description": "大きなヘッダーと余白を整理。非公開の案内カードがすぐ見える。"
+      },
+      {
+        "title": "文字と枠線を統一",
+        "description": "説明とトップへのボタンを、共通の書体・細い枠線で表示。"
+      },
+      {
+        "title": "画面全体を揃える",
+        "description": "SP Colleのロゴ・背景・フッターを採用。下部ナビも追加。"
+      }
+    ],
+    "sources": {
+      "before": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\before\\want--public_private-390.png",
+        "sha256": "d3ac502d6bd4c7ce0764e8d38387e5213b8cff42666b7129b4783e9edf8ac565"
+      },
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\want--public_private-390.png",
+        "sha256": "0b8ef6846f4527eb92d78201ed740223253611738f2dcf18104144a4022839be"
+      }
+    }
+  },
+  {
+    "number": 44,
+    "slug": "want--share_setting",
+    "page": "欲しい写真の公開設定",
+    "image": "images/44-want--share_setting.png",
+    "size": [
+      1600,
+      1200
+    ],
+    "new": true,
+    "historical": false,
+    "headline": "欲しい写真の公開を、\n設定画面で。",
+    "points": [
+      {
+        "title": "公開設定ページを追加",
+        "description": "欲しい写真の公開状態を確認できる、専用の画面を追加。"
+      },
+      {
+        "title": "今の状態がわかる",
+        "description": "見出しの下に「現在：非公開」など、現在の設定を表示。"
+      },
+      {
+        "title": "切替の操作を明確に",
+        "description": "公開するためのボタンと、公開範囲の説明をまとめて配置。"
+      }
+    ],
+    "sources": {
+      "after": {
+        "path": "C:\\Users\\Teikyo\\Desktop\\my-all-directory\\application-directory\\sakamichi_photo_app\\docs\\page-comparisons\\2026-10-12-page-comparisons\\2026-10-12\\after\\want--share_setting-390.png",
+        "sha256": "0f3c8133defa001e1f6eb5f69e0c274f84b3428014d6bfbd28cd6a9790988cdb"
+      }
+    }
+  }
+]

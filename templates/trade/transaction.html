@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% from 'trade/_photo.html' import photo_label %}
+{% block title %}交換内容と取引状況{% endblock %}
+{% block content %}
+<div class="page-heading"><div><h1 class="section-title">交換内容と取引状況</h1><p>{{ statuses[proposal.status] }} · {{ methods[proposal.method] }} · 相手：{{ proposal.alias if owner_side else proposal.listing.alias }}</p></div></div>
+{% include 'trade/_nav.html' %}
+<p class="small text-muted">このページは取引の当事者だけに表示されます。</p>
+<div class="trade-want-grid mb-3">
+{% for side,label in [('owner','募集者が渡す写真'),('applicant','応募者が渡す写真')] %}<section class="card"><div class="card-body"><h2 class="h6">{{ label }}</h2>{% for item in proposal.items if item.side == side %}<div class="trade-offer-row mb-3"><div class="trade-photo-label">{{ photo_label(item.photo) }}<small>{{ item.quantity }}枚</small></div>{% if trade_thumbnail(item) %}<img class="trade-detail-image" src="{{ trade_thumbnail(item) }}" alt="取引内で共有された実物画像" loading="lazy">{% endif %}</div>{% endfor %}</div></section>{% endfor %}
+</div>
+{% if proposal.status == 'pending' %}<div class="alert alert-light">まだ取り置きされていません。募集者の承認で交換内容が確定します。変更する場合は、この提案を取り消して新しい交換案を送ってください。</div>{% endif %}
+{% if proposal.status == 'accepted' %}
+<div class="card mb-3"><div class="card-body"><h2 class="h6">双方の進捗</h2><div class="trade-progress-grid">{% for side,label in [('owner','募集者'),('applicant','応募者')] %}<div><strong>{{ label }}</strong>{% if proposal.method == 'mail' %}<p class="mb-1">発送：{{ '連絡済み' if proposal[side ~ '_sent_at'] else '未発送' }}</p>{% endif %}<p class="mb-0">受取：{{ '確認済み' if proposal[side ~ '_received_at'] else '未確認' }}</p></div>{% endfor %}</div><p class="small text-muted mt-3 mb-0">双方の受取確認がそろうと、所持数と通常の希望リストを一度だけ更新します。</p></div></div>
+{% endif %}
+{% if proposal.status in ['pending','accepted'] %}
+<form method="post" class="d-flex flex-wrap gap-2 mb-4" data-trade-actions><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<button name="action" value="share_photos" class="btn btn-outline-primary" data-confirm="この交換案であなたが渡す写真の、登録済みの先頭画像を相手に共有しますか？取引の当事者だけに表示します。">実物画像を相手だけに共有</button>
+{% if proposal.status == 'pending' %}{% if owner_side %}<button name="action" value="accept" class="btn btn-primary" data-confirm="この写真・枚数・交換方法で確定し、双方の写真を取り置きしますか？">この内容で交換を確定</button><button name="action" value="reject" class="btn btn-outline-secondary">見送る</button>{% else %}<button name="action" value="cancel" class="btn btn-outline-secondary">提案を取り消す</button>{% endif %}
+{% else %}{% set own_side = 'owner' if owner_side else 'applicant' %}{% if proposal.method == 'mail' and not proposal[own_side ~ '_sent_at'] %}<button name="action" value="sent" class="btn btn-primary" data-confirm="実際に発送しましたか？相手に発送済みと表示されます。">発送を連絡</button>{% endif %}{% if not proposal[own_side ~ '_received_at'] %}<button name="action" value="received" class="btn btn-primary" data-confirm="写真と枚数・状態を確認し、受け取りましたか？双方の確認後に所持数を更新します。">受取を確認</button>{% endif %}{% if not proposal.owner_received_at and not proposal.applicant_received_at %}{% if cancellation_requested %}<button name="action" value="agree_cancel" class="btn btn-outline-danger" data-confirm="相手のキャンセル申請に合意し、取り置きを解除しますか？">キャンセルに合意</button>{% else %}<button name="action" value="request_cancel" class="btn btn-outline-secondary">キャンセルを相談</button>{% endif %}{% endif %}{% endif %}
+</form>
+{% endif %}
+<section class="card"><div class="card-body"><h2 class="h5">相談・履歴</h2><div class="trade-messages">{% for message in proposal.messages %}<article class="trade-message {% if not message.sender_id %}trade-system-message{% endif %}"><div class="small text-muted">{{ '取引状況' if not message.sender_id else ('あなた' if message.sender_id == current_user.id else '相手') }} · {{ message.created_at | trade_time }}</div><p class="trade-preserve mb-0">{% if message.body.startswith('キャンセル申請:') %}キャンセルの相談が届いています。双方の合意で取り置きを解除できます。{% else %}{{ message.body }}{% endif %}</p></article>{% endfor %}</div>
+{% if proposal.status in ['pending','accepted'] %}<form method="post" class="mt-3"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="message"><label for="trade-message" class="form-label">相手へのメッセージ</label><textarea name="body" id="trade-message" class="form-control mb-2" maxlength="2000" rows="3" required placeholder="現物確認、日程、発送方法などを相談"></textarea><button class="btn btn-primary">送信</button></form>{% endif %}
+</div></section>
+<script src="{{ url_for('static', filename='js/trade.js') }}" defer></script>
+{% endblock %}

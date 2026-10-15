@@ -31,17 +31,17 @@
 
         <div class="mb-3">
           <label class="form-label fw-bold">メンバー</label>
-          <select name="member" id="member"></select>
+          <select name="member" id="member" required></select>
         </div>
 
         <div class="mb-3">
           <label class="form-label fw-bold">衣装</label>
-          <select name="costume" id="costume"></select>
+          <select name="costume" id="costume" required></select>
         </div>
 
         <div class="mb-3">
           <label class="form-label fw-bold">種類</label>
-          <select name="photo_type" id="photo_type"></select>
+          <select name="photo_type" id="photo_type" required></select>
         </div>
 
         <!-- 無限回収はここでは使わせない -->
@@ -69,7 +69,7 @@
 
         <div class="mb-3">
           <label class="form-label fw-bold">メンバー</label>
-          <select name="member" id="infinite_member"></select>
+          <select name="member" id="infinite_member" required></select>
         </div>
 
         <!-- 無限回収は衣装・種類なし -->
@@ -94,10 +94,6 @@
 </div>
 
 <style>
-.section-title {
-  background-color: var(--bs-secondary-bg);
-  color: var(--bs-body-color);
-}
 </style>
 
 <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
@@ -108,26 +104,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const groupKey = document.getElementById('group_key').value;
 
-  const ANY_OPTION = { value: "", text: "指定しない（すべて）" };
+
 
   // 通常
   const memberTS = new TomSelect("#member", {
     create: false,
     maxItems: 1,
     maxOptions : null,
-    placeholder: "指定しない（すべて）"
+    placeholder: "メンバーを選択"
   });
 
   const costumeTS = new TomSelect("#costume", {
     create: false,
     maxItems: 1,
-    placeholder: "指定しない（すべて）"
+    placeholder: "衣装を選択"
   });
 
   const typeTS = new TomSelect("#photo_type", {
     create: false,
     maxItems: 1,
-    placeholder: "指定しない（すべて）"
+    placeholder: "種類を選択"
   });
 
   // 🔥 無限回収用
@@ -144,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .then(data => {
 
       memberTS.clearOptions();
-      memberTS.addOption(ANY_OPTION);
+
 
       infiniteMemberTS.clearOptions();
 
@@ -167,7 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
       .then(res => res.json())
       .then(data => {
 
-        costumeTS.addOption(ANY_OPTION);
+
 
         data.costumes.forEach(c => {
           costumeTS.addOption({ value: c, text: c });
@@ -193,7 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
           "06": "ヒキ"
         };
 
-        typeTS.addOption(ANY_OPTION);
+
 
         data.types.forEach(t => {
           typeTS.addOption({

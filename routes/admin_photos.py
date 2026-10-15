@@ -8,10 +8,7 @@ from flask import (
     abort
 )
 
-from flask_login import (
-    login_required,
-    current_user
-)
+from flask_login import current_user
 
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
@@ -51,7 +48,9 @@ NORMALIZED_TYPES = (
 # 管理者チェック
 #
 
+@admin_photos_bp.before_request
 def admin_required():
+    """Protect every admin page/API, including routes added in the future."""
 
     if not current_user.is_authenticated:
         abort(403)
@@ -66,10 +65,7 @@ def admin_required():
 #
 
 @admin_photos_bp.route("", methods=["GET"])
-@login_required
 def index():
-
-    admin_required()
 
     groups = (
         Group.query
@@ -132,10 +128,7 @@ def index():
 #
 
 @admin_photos_bp.route("/list", methods=["GET"])
-@login_required
 def photo_list():
-
-    admin_required()
 
     group_id = request.args.get(
         "group_id",
@@ -226,10 +219,7 @@ def photo_list():
     "/create_costume",
     methods=["POST"]
 )
-@login_required
 def create_costume():
-
-    admin_required()
 
     print("FORM =", request.form)
     print("NAME =", request.form.get("name"))
@@ -318,10 +308,7 @@ def create_costume():
     "/create_type",
     methods=["POST"]
 )
-@login_required
 def create_type():
-
-    admin_required()
 
     #
     # JSON / form の両方に対応
@@ -468,10 +455,7 @@ def create_type():
     "/type_normalizations/<int:costume_id>",
     methods=["GET"]
 )
-@login_required
 def get_type_normalizations(costume_id):
-
-    admin_required()
 
     costume = Costume.query.get_or_404(
         costume_id
@@ -521,10 +505,7 @@ def get_type_normalizations(costume_id):
     "/type_normalizations/<int:costume_id>",
     methods=["POST"]
 )
-@login_required
 def save_type_normalizations(costume_id):
-
-    admin_required()
 
     costume = Costume.query.get_or_404(
         costume_id
@@ -708,10 +689,7 @@ def save_type_normalizations(costume_id):
     "/bulk_create",
     methods=["POST"]
 )
-@login_required
 def bulk_create():
-
-    admin_required()
 
     data = request.get_json(
         silent=True
@@ -819,10 +797,7 @@ def bulk_create():
     "/<int:photo_id>",
     methods=["DELETE"]
 )
-@login_required
 def delete_photo(photo_id):
-
-    admin_required()
 
     photo = Photo.query.get_or_404(
         photo_id

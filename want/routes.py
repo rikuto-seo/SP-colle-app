@@ -4,7 +4,7 @@ import io, base64, qrcode
 from sqlalchemy import exists
 from extensions import db
 from models import (
-    User, WantPhoto, UserPhoto, WantShare,
+    User, WantPhoto, WantMember, UserPhoto, WantShare,
     Photo, Member, Costume, PhotoType, Group
 )
 from . import want_bp
@@ -40,7 +40,7 @@ def index(group_key):
     public_url = None
     qr_base64 = None
 
-    if share.is_public:
+    if share.want_public:
         public_url = url_for(
             'want.public_want',
             public_uuid=current_user.public_uuid,
@@ -53,6 +53,7 @@ def index(group_key):
         'want/index.html',
         group_key=group_key,
         wants=wants,
+        infinite_wants=WantMember.query.join(Member).filter(WantMember.user_id == current_user.id, Member.group_id == group.id).all() + [w for w in wants if w.is_infinite],
         public_url=public_url,
         qr_base64=qr_base64
     )
@@ -71,6 +72,17 @@ def add_want(group_key):
         costume_name = request.form.get('costume')
         type_name = request.form.get('photo_type')
         is_infinite = request.form.get('is_infinite') == '1'
+
+        if is_infinite:
+            member = Member.query.filter_by(name=member_name, group_id=group.id).first()
+            if not member:
+                flash('メンバーを選択してください。', 'error')
+                return redirect(url_for('want.add_want', group_key=group_key))
+            if not WantMember.query.filter_by(user_id=current_user.id, member_id=member.id).first():
+                db.session.add(WantMember(user_id=current_user.id, member_id=member.id))
+                db.session.commit()
+            flash('無限回収の希望を登録しました。', 'success')
+            return redirect(url_for('want.index', group_key=group_key))
 
         if not all([member_name, costume_name, type_name]):
             flash('すべての項目を選択してください', 'error')
@@ -238,6 +250,7 @@ def public_want(public_uuid, group_key):
         'want/public_base.html',
         owner=user,
         wants=result,
+        infinite_wants=[{'want': w, 'is_owned': False} for w in WantMember.query.join(Member).filter(WantMember.user_id == user.id, Member.group_id == group.id).all()] + [w for w in result if w['want'].is_infinite],
         group_key=group_key,
         uuid=public_uuid,
         is_check=(viewer_id is not None)
@@ -275,7 +288,7 @@ def share_setting(group_key):
     share = WantShare.get_or_create(current_user.id, group_key)
 
     if request.method == 'POST':
-        share.is_public = not share.is_public
+        share.want_public = not share.want_public
         db.session.commit()
         flash('公開設定を更新しました')
 
@@ -320,7 +333,17 @@ def want_qr_image(group_key):
 def toggle_want_share(group_key):
 
     share = WantShare.get_or_create(current_user.id, group_key)
-    share.is_public = not share.is_public
+    share.want_public = not share.want_public
     db.session.commit()
 
+    return redirect(url_for('want.index', group_key=group_key))
+
+
+@want_bp.route('/infinite/delete/<int:want_id>', methods=['POST'])
+@login_required
+def delete_infinite(want_id):
+    want = WantMember.query.filter_by(id=want_id, user_id=current_user.id).first_or_404()
+    group_key = want.member.group.key
+    db.session.delete(want)
+    db.session.commit()
     return redirect(url_for('want.index', group_key=group_key))

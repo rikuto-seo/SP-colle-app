@@ -16,6 +16,8 @@ from extensions import db
 from datetime import date
 from collections import defaultdict
 from routes.core import group_required
+from trade.service import lock_users, assert_stock_floor, TradeError
+from services.type_normalizer import normalize_type, get_type_order
 
 from sqlalchemy import func, case
 from sqlalchemy.orm import joinedload
@@ -50,17 +52,13 @@ GROUP_KEY_MAP = {
 
 
 # =========================================================
-# 画像容量チェック用ユーザーロック
+# 画像保存用ユーザーロック
 # =========================================================
 
 def _lock_current_user_for_image_storage():
     """
-    画像容量チェックとDB保存を同一トランザクション内で
-    直列化するため、現在のユーザー行をロックする。
-
-    PostgreSQLではSELECT FOR UPDATEにより、
-    同じユーザーに対する別の画像アップロード処理が
-    容量チェックを通過する前に待機する。
+    同じユーザーの画像保存とアカウント削除の競合を防ぐため、
+    現在のユーザー行を同一トランザクション内でロックする。
 
     Returns:
         User: 行ロック済みのUser
@@ -76,7 +74,7 @@ def _lock_current_user_for_image_storage():
 
     if locked_user is None:
         raise RuntimeError(
-            "画像容量チェック用のユーザー情報を取得できません。"
+            "画像保存用のユーザー情報を取得できません。"
         )
 
     return locked_user
@@ -159,6 +157,7 @@ def _photo_detail_payload(user_photo):
     return {
         "id": user_photo.id,
         "type": user_photo.photo.photo_type.name,
+        "type_order": _photo_type_order(user_photo.photo),
         "quantity": user_photo.quantity,
         "available": user_photo.available_quantity,
         "memo": user_photo.memo or "",
@@ -172,6 +171,12 @@ def _photo_detail_payload(user_photo):
         "image_count": len(images),
     }
 
+
+def _photo_type_order(photo):
+    """Use the existing classification for ordering while preserving the label."""
+    return get_type_order(normalize_type(
+        photo.member.name, photo.costume.name, photo.photo_type.name
+    ))
 
 
 # =========================================================
@@ -655,6 +660,9 @@ def index(group_key):
                     Photo.photo_type
                 ),
 
+                joinedload(UserPhoto.photo).joinedload(Photo.member),
+                joinedload(UserPhoto.photo).joinedload(Photo.costume),
+
                 joinedload(
                     UserPhoto.images
                 )
@@ -726,6 +734,9 @@ def index(group_key):
 
             "type":
                 up.photo.photo_type.name,
+
+            "type_order":
+                _photo_type_order(up.photo),
 
             "quantity":
                 up.quantity,
@@ -945,6 +956,8 @@ def index(group_key):
 @group_required
 def delete_user_photo(group_key, photo_id):
 
+    lock_users(current_user.id)
+
     group = Group.query.filter_by(
         key=group_key
     ).first_or_404()
@@ -996,6 +1009,13 @@ def delete_user_photo(group_key, photo_id):
         return _redirect_to_photo_index(
             group_key
         )
+
+    try:
+        assert_stock_floor(current_user.id, photo.photo_id, 0)
+    except TradeError as exc:
+        db.session.rollback()
+        flash(str(exc), 'error')
+        return _redirect_to_photo_index(group_key)
 
     # R2画像を先に削除
     try:
@@ -1352,9 +1372,7 @@ def upload_user_photo_image(group_key, photo_id):
     # =====================================================
     # WebP変換
     #
-    # ここで実際にR2へ保存されるサイズを計算する。
-    # 容量制限は「元画像」ではなく、
-    # display + thumbnail の合計サイズで判定。
+    # 表示用画像とサムネイルを生成する。
     # =====================================================
 
     try:
@@ -1391,58 +1409,7 @@ def upload_user_photo_image(group_key, photo_id):
 
     image_bytes = variants["image_bytes"]
     thumbnail_bytes = variants["thumbnail_bytes"]
-
-    additional_bytes = (
-        len(image_bytes)
-        +
-        len(thumbnail_bytes)
-    )
-
-    # =====================================================
-    # ユーザー容量チェック
-    # =====================================================
-
-    # 容量チェックとDB保存を同一トランザクション内で
-    # 直列化するため、ユーザー行をロックする。
-    locked_user = _lock_current_user_for_image_storage()
-
-    if not locked_user.can_upload_image():
-
-        flash(
-            '現在のプランでは実物画像をアップロードできません。',
-            'error'
-        )
-
-        return _redirect_to_photo_index(
-            group_key
-        )
-
-    if not locked_user.can_upload_image_bytes(
-        additional_bytes
-    ):
-
-        remaining_bytes = (
-            locked_user
-            .get_image_storage_remaining_bytes()
-        )
-
-        remaining_mb = max(
-            0,
-            round(
-                remaining_bytes / (1024 * 1024),
-                1
-            )
-        )
-
-        flash(
-            f'画像容量の上限を超えるためアップロードできません。'
-            f'残り容量は約{remaining_mb}MBです。',
-            'error'
-        )
-
-        return _redirect_to_photo_index(
-            group_key
-        )
+    _lock_current_user_for_image_storage()
 
     # =====================================================
     # R2オブジェクトキー作成
@@ -1786,81 +1753,13 @@ def add(group_key):
             image_bytes = variants["image_bytes"]
             thumbnail_bytes = variants["thumbnail_bytes"]
 
-            additional_bytes = (
-                len(image_bytes)
-                +
-                len(thumbnail_bytes)
-            )
-
-            # -------------------------------------------------
-            # アップロード可能か確認
-            # -------------------------------------------------
-
-            # 容量チェックとDB保存を同一トランザクション内で
-            # 直列化するため、ユーザー行をロックする。
-            locked_user = _lock_current_user_for_image_storage()
-
-            if not locked_user.can_upload_image():
-
-                flash(
-                    '現在のプランでは実物画像をアップロードできません。',
-                    'error'
-                )
-
-                return redirect(
-                    url_for(
-                        'photo.add',
-                        group_key=group_key,
-                        member=member,
-                        costume=costume
-                    )
-                )
-
-            # -------------------------------------------------
-            # 容量チェック
-            #
-            # DBを変更する前にチェックする。
-            # -------------------------------------------------
-
-            if not locked_user.can_upload_image_bytes(
-                additional_bytes
-            ):
-
-                remaining_bytes = (
-                    locked_user
-                    .get_image_storage_remaining_bytes()
-                )
-
-                remaining_mb = max(
-                    0,
-                    round(
-                        remaining_bytes
-                        /
-                        (1024 * 1024),
-                        1
-                    )
-                )
-
-                flash(
-                    f'画像容量の上限を超えるため'
-                    f'アップロードできません。'
-                    f'残り容量は約{remaining_mb}MBです。',
-                    'error'
-                )
-
-                return redirect(
-                    url_for(
-                        'photo.add',
-                        group_key=group_key,
-                        member=member,
-                        costume=costume
-                    )
-                )
+            _lock_current_user_for_image_storage()
 
         # =====================================================
         # 既存チェック
         # =====================================================
 
+        lock_users(current_user.id)
         existing = UserPhoto.query.filter_by(
             user_id=current_user.id,
             photo_id=photo.id
@@ -2188,6 +2087,8 @@ def give(group_key):
 
     if form.validate_on_submit():
 
+        lock_users(current_user.id)
+
         user_photo = (
             db.session.query(UserPhoto)
 
@@ -2245,6 +2146,13 @@ def give(group_key):
                     group_key=group_key
                 )
             )
+
+        try:
+            assert_stock_floor(current_user.id, user_photo.photo_id, user_photo.quantity - form.quantity.data)
+        except TradeError as exc:
+            db.session.rollback()
+            flash(str(exc), 'error')
+            return redirect(url_for('photo.give', group_key=group_key))
 
         user_photo.quantity -= (
             form.quantity.data
@@ -2595,7 +2503,8 @@ def get_user_photo_detail(group_key, photo_id):
             joinedload(UserPhoto.photo)
             .joinedload(Photo.photo_type),
             joinedload(UserPhoto.photo)
-            .joinedload(Photo.member)
+            .joinedload(Photo.member),
+            joinedload(UserPhoto.photo).joinedload(Photo.costume)
         )
         .filter_by(
             id=photo_id,
@@ -2624,6 +2533,8 @@ def get_user_photo_detail(group_key, photo_id):
 @login_required
 @group_required
 def update_user_photo(group_key, photo_id):
+
+    lock_users(current_user.id)
 
     photo = UserPhoto.query.filter_by(
         id=photo_id,
@@ -2713,6 +2624,7 @@ def update_user_photo(group_key, photo_id):
 
             available = quantity
 
+        assert_stock_floor(current_user.id, photo.photo_id, quantity)
         photo.quantity = quantity
         photo.available_quantity = available
         photo.memo = memo
@@ -2779,6 +2691,13 @@ def update_user_photo(group_key, photo_id):
             '更新しました',
             'success'
         )
+
+    except TradeError as exc:
+        db.session.rollback()
+        if _is_ajax_request():
+            return jsonify(success=False, message=str(exc)), 409
+        flash(str(exc), 'error')
+        return _redirect_to_photo_index(group_key)
 
     except Exception:
 

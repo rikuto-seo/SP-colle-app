@@ -21,20 +21,7 @@ GROUP_KEYS = [
 # User / Image Storage Settings
 # ============================================================
 
-# ユーザー画像の保存容量上限
-#
-# Free    : 1GB
-# Premium : 10GB
-#
-# 1GB = 1024^3 bytes として計算
-FREE_IMAGE_STORAGE_LIMIT_BYTES = (
-    1 * 1024 * 1024 * 1024
-)
-
-PREMIUM_IMAGE_STORAGE_LIMIT_BYTES = (
-    10 * 1024 * 1024 * 1024
-)
-
+# 保存容量・登録数・利用グループ数にプランによる上限は設けない。
 
 # アップロード時に受け付ける元画像の最大サイズ
 #
@@ -190,100 +177,36 @@ class User(UserMixin, db.Model):
 
     @property
     def effective_plan_type(self):
-        """
-        Ownerは実質Premiumとして扱う。
-        """
-        if self.is_owner_account():
-            return "premium"
-
-        return self.plan_type
+        # Legacy billing columns remain for existing records; they grant no privileges.
+        return "free"
 
     def is_free(self):
-        if self.is_owner_account():
-            return False
-
-        return self.plan_type == "free"
+        return True
 
     def is_lite(self):
-        if self.is_owner_account():
-            return False
-
-        return self.plan_type == "lite"
+        return False
 
     def is_standard(self):
-        if self.is_owner_account():
-            return False
-
-        return self.plan_type == "standard"
+        return False
 
     def is_premium(self):
-        if self.is_owner_account():
-            return True
-
-        return self.plan_type == "premium"
+        return False
 
     def is_active_paid(self):
-        if self.is_owner_account():
-            return True
-
-        return (
-            self.plan_type != "free"
-            and self.subscription_status == "active"
-        )
-
-    # --------------------------------------------------------
-    # User Image Storage
-    # --------------------------------------------------------
+        return False
 
     def can_upload_image(self):
-        """
-        Free / Lite / Standard / Premium
-        すべて画像アップロード可能。
-
-        実際の容量制限は、
-        can_upload_image_bytes() で確認する。
-        """
         return True
 
     def get_image_storage_limit_bytes(self):
-        """
-        プランごとのユーザー画像保存容量上限を返す。
-
-        Free:
-            1GB
-
-        Premium:
-            10GB
-
-        Owner:
-            Premium扱い
-
-        現在の設計では、
-        Lite / StandardもFree側の1GBを使用する。
-        """
-
-        if self.is_owner_account() or self.is_premium():
-            return PREMIUM_IMAGE_STORAGE_LIMIT_BYTES
-
-        return FREE_IMAGE_STORAGE_LIMIT_BYTES
+        """None denotes unlimited storage, rather than a zero-byte quota."""
+        return None
 
     def get_image_storage_limit_mb(self):
-        """
-        表示用の保存容量上限をMBで返す。
-        """
-        return (
-            self.get_image_storage_limit_bytes()
-            // (1024 * 1024)
-        )
+        return None
 
     def get_image_storage_limit_gb(self):
-        """
-        表示用の保存容量上限をGBで返す。
-        """
-        return (
-            self.get_image_storage_limit_bytes()
-            // (1024 * 1024 * 1024)
-        )
+        return None
 
     def get_image_storage_bytes(self):
         """
@@ -336,229 +259,65 @@ class User(UserMixin, db.Model):
         )
 
     def get_image_storage_remaining_bytes(self):
-        """
-        残りの画像保存容量をbytesで返す。
-        """
+        return None
 
-        remaining = (
-            self.get_image_storage_limit_bytes()
-            - self.get_image_storage_bytes()
-        )
-
-        return max(0, remaining)
-
-    def can_upload_image_bytes(
-        self,
-        additional_bytes=0
-    ):
-        """
-        指定容量の画像を追加保存できるか確認する。
-
-        additional_bytesには、
-        R2へ実際に保存する
-
-            表示用画像
-            +
-            サムネイル
-
-        の合計bytesを渡す。
-        """
-
-        if additional_bytes < 0:
-            return False
-
-        current_bytes = (
-            self.get_image_storage_bytes()
-        )
-
-        limit_bytes = (
-            self.get_image_storage_limit_bytes()
-        )
-
-        return (
-            current_bytes + additional_bytes
-            <= limit_bytes
-        )
+    def can_upload_image_bytes(self, additional_bytes=0):
+        return additional_bytes >= 0
 
     def get_image_storage_usage_ratio(self):
-        """
-        現在の画像ストレージ使用率を
-        0.0〜1.0で返す。
-        """
-
-        limit = (
-            self.get_image_storage_limit_bytes()
-        )
-
-        if limit <= 0:
-            return 1.0
-
-        used = (
-            self.get_image_storage_bytes()
-        )
-
-        return min(
-            1.0,
-            used / limit
-        )
+        return None
 
     def is_image_storage_full(self):
-        """
-        画像ストレージが上限に達しているか。
-        """
-
-        return (
-            self.get_image_storage_remaining_bytes()
-            <= 0
-        )
-
-    # --------------------------------------------------------
-    # Other Plan Features
-    # --------------------------------------------------------
+        return False
 
     def can_use_unlimited_photos(self):
-        return (
-            self.is_owner_account()
-            or self.plan_type != "free"
-        )
+        return True
 
     def can_use_stats_detail(self):
-        return (
-            self.is_owner_account()
-            or self.plan_type != "free"
-        )
+        return True
 
     def can_use_multiple_groups(self):
-        return (
-            self.is_owner_account()
-            or self.plan_type in [
-                "standard",
-                "premium"
-            ]
-        )
+        return True
 
     def can_use_all_groups(self):
-        return (
-            self.is_owner_account()
-            or self.plan_type == "premium"
-        )
-
-    # --------------------------------------------------------
-    # Groups
-    # --------------------------------------------------------
+        return True
 
     def get_accessible_group_keys(self):
-        if self.can_use_all_groups():
-            return GROUP_KEYS
-
-        return self.get_selected_groups()
+        return list(GROUP_KEYS)
 
     def get_selected_groups(self):
-        if not self.selected_groups:
-            return []
+        # Also unlock existing accounts without requiring a data migration or setup.
+        return list(GROUP_KEYS)
 
-        return [
-            group
-            for group in self.selected_groups.split(",")
-            if group
-        ]
-
-    def set_selected_groups(self, groups: list):
-        unique = list(
-            dict.fromkeys(groups)
-        )
-
-        self.selected_groups = ",".join(
-            unique
-        )
+    def set_selected_groups(self, groups):
+        self.selected_groups = ",".join(GROUP_KEYS)
 
     def get_allowed_group_count(self):
-        if self.is_owner_account():
-            return len(GROUP_KEYS)
+        return len(GROUP_KEYS)
 
-        if self.plan_type == "free":
-            return 1
+    def can_access_group(self, group_key):
+        return group_key in GROUP_KEYS
 
-        if self.plan_type == "lite":
-            return 1
-
-        if self.plan_type == "standard":
-            return 2
-
-        if self.plan_type == "premium":
-            return 3
-
-        return 1
-
-    def can_access_group(
-        self,
-        group_key: str
-    ) -> bool:
-
-        if not group_key:
-            return False
-
-        if (
-            self.is_owner_account()
-            or self.is_premium()
-        ):
-            return True
-
-        return (
-            group_key
-            in self.get_selected_groups()
-        )
+    def get_default_group_key(self):
+        if self.primary_group in GROUP_KEYS:
+            return self.primary_group
+        # Retain a legacy user's previously selected first group as their preference.
+        for key in (self.selected_groups or "").split(","):
+            if key in GROUP_KEYS:
+                return key
+        return GROUP_KEYS[0]
 
     def normalize_groups(self):
-        selected = (
-            self.get_selected_groups()
-        )
-
-        allowed = (
-            self.get_allowed_group_count()
-        )
-
-        # 上限カット
-        if len(selected) > allowed:
-            selected = selected[:allowed]
-
-        self.set_selected_groups(
-            selected
-        )
-
-        if selected:
-            if self.primary_group not in selected:
-                self.primary_group = selected[0]
-        else:
-            self.primary_group = None
+        self.primary_group = self.get_default_group_key()
+        self.selected_groups = ",".join(GROUP_KEYS)
 
     def can_add_group(self):
-        return (
-            len(self.get_selected_groups())
-            < self.get_allowed_group_count()
-        )
+        return False  # All supported groups are already enabled.
 
-    def add_group(
-        self,
-        group_key: str
-    ):
-        groups = (
-            self.get_selected_groups()
-        )
-
-        if group_key in groups:
-            return
-
-        if not self.can_add_group():
-            raise Exception(
-                "グループ上限です"
-            )
-
-        groups.append(group_key)
-
-        self.set_selected_groups(
-            groups
-        )
+    def add_group(self, group_key):
+        if group_key not in GROUP_KEYS:
+            raise ValueError("グループが見つかりません")
+        self.normalize_groups()
 
     # --------------------------------------------------------
     # Want Share
@@ -574,7 +333,7 @@ class User(UserMixin, db.Model):
             group_key
         )
 
-        return share.is_public
+        return share.want_public
 
     def toggle_want_share(
         self,
@@ -592,7 +351,7 @@ class User(UserMixin, db.Model):
                 is_public=False
             )
 
-        share.is_public = not share.is_public
+        share.want_public = not share.want_public
 
         db.session.add(share)
         db.session.commit()
@@ -714,6 +473,8 @@ class WantShare(db.Model):
         default=datetime.utcnow,
         onupdate=datetime.utcnow
     )
+
+    want_public = db.Column(db.Boolean, nullable=False, default=False)
 
     user = db.relationship(
         "User",
@@ -1382,3 +1143,14 @@ class Group(db.Model):
         db.String,
         nullable=False
     )
+
+
+class WantMember(db.Model):
+    """A member-wide wish, without a placeholder Photo."""
+    __tablename__ = 'want_members'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    member_id = db.Column(db.Integer, db.ForeignKey('members.id'), nullable=False)
+    member = db.relationship('Member')
+    is_infinite = True
+    __table_args__ = (db.UniqueConstraint('user_id', 'member_id'),)

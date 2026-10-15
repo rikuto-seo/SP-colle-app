@@ -7,7 +7,6 @@ from flask import (
     flash,
     current_app,
     abort,
-    make_response,
 )
 
 from flask_login import (
@@ -61,26 +60,6 @@ ALLOWED_GROUPS = [
 
 
 # ============================================================
-# プラン判定
-# ============================================================
-
-def is_free():
-    return current_user.is_free()
-
-
-def is_lite():
-    return current_user.is_lite()
-
-
-def is_standard():
-    return current_user.is_standard()
-
-
-def is_premium():
-    return current_user.is_premium()
-
-
-# ============================================================
 # マイページ
 # ============================================================
 
@@ -97,40 +76,10 @@ def mypage():
 
     selected_groups = current_user.get_accessible_group_keys()
 
-    if not selected_groups:
-        return redirect(
-            url_for("user.select_group")
-        )
-
-    if (
-        not current_user.is_owner_account()
-        and len(current_user.get_selected_groups())
-        > current_user.get_allowed_group_count()
-    ):
-        return redirect(
-            url_for("user.force_group_select")
-        )
-
     selected_group = request.args.get("group")
 
     if selected_group not in selected_groups:
         selected_group = selected_groups[0]
-
-    # ========================================================
-    # プラン情報
-    # ========================================================
-
-    next_billing = None
-
-    cancel_at_period_end = (
-        current_user.cancel_at_period_end
-    )
-
-    if current_user.current_period_end:
-        next_billing = (
-            current_user.current_period_end
-            .strftime("%Y-%m-%d")
-        )
 
     # ========================================================
     # 所持総数
@@ -243,20 +192,6 @@ def mypage():
         current_user.get_image_storage_bytes()
     )
 
-    image_storage_remaining_bytes = (
-        current_user.get_image_storage_remaining_bytes()
-    )
-
-    image_storage_usage_percent = min(
-        current_user.get_image_storage_usage_ratio()
-        * 100,
-        100.0
-    )
-
-    image_storage_limit_gb = (
-        current_user.get_image_storage_limit_gb()
-    )
-
     # --------------------------------------------------------
     # 表示用容量
     # --------------------------------------------------------
@@ -278,17 +213,6 @@ def mypage():
         format_storage_size(
             image_storage_used_bytes
         )
-    )
-
-    image_storage_remaining_display = (
-        format_storage_size(
-            image_storage_remaining_bytes
-        )
-    )
-
-    image_storage_usage_percent = round(
-        image_storage_usage_percent,
-        1
     )
 
     # ========================================================
@@ -416,18 +340,6 @@ def mypage():
         share_statuses=share_statuses,
 
         # ----------------------------------------------------
-        # プラン
-        # ----------------------------------------------------
-
-        next_billing=next_billing,
-        cancel_at_period_end=cancel_at_period_end,
-
-        is_free=is_free(),
-        is_lite=is_lite(),
-        is_standard=is_standard(),
-        is_premium=is_premium(),
-
-        # ----------------------------------------------------
         # 所持総数
         # ----------------------------------------------------
 
@@ -442,17 +354,6 @@ def mypage():
             image_storage_used_display
         ),
 
-        image_storage_limit_gb=(
-            image_storage_limit_gb
-        ),
-
-        image_storage_remaining_display=(
-            image_storage_remaining_display
-        ),
-
-        image_storage_usage_percent=(
-            image_storage_usage_percent
-        ),
     )
 
 
@@ -850,6 +751,18 @@ def confirm_delete_final():
 
     if request.method == "POST":
 
+        from trade.service import lock_users
+        from trade.models import TradeListing, TradeProposal
+        from sqlalchemy import or_
+        lock_users(current_user.id)
+        active_trade = TradeProposal.query.join(TradeListing).filter(
+            TradeProposal.status == 'accepted', or_(TradeListing.user_id == current_user.id,
+            TradeProposal.applicant_id == current_user.id)).first()
+        if active_trade:
+            db.session.rollback()
+            flash('交換確定中の取引があります。取引を完了するか、双方でキャンセルしてから削除してください。', 'warning')
+            return redirect(url_for('trade.transactions', group_key=active_trade.listing.group.key))
+
         user_folder = os.path.join(
             current_app.root_path,
             "static",
@@ -933,19 +846,6 @@ def toggle_share(group_key):
     if group_key not in ALLOWED_GROUPS:
         abort(404)
 
-    selected_groups = (
-        current_user.get_selected_groups()
-    )
-
-    if group_key not in selected_groups:
-        abort(403)
-
-    if (
-        len(selected_groups)
-        > current_user.get_allowed_group_count()
-    ):
-        abort(403)
-
     share = WantShare.query.filter_by(
         user_id=current_user.id,
         group_key=group_key
@@ -996,184 +896,26 @@ def toggle_dark_mode():
 
 
 # ============================================================
-# プラン変更
+# Retired billing/setup URLs keep old bookmarks functional.
 # ============================================================
 
 @user_bp.route("/upgrade")
 @login_required
 def upgrade():
+    return redirect(url_for("user.mypage"))
 
-    next_billing = None
-
-    if current_user.current_period_end:
-
-        next_billing = (
-            current_user.current_period_end
-            .strftime("%Y-%m-%d")
-        )
-
-    return render_template(
-        "upgrade.html",
-        current_plan=(
-            current_user.effective_plan_type
-        ),
-        next_billing=next_billing,
-        cancel_at_period_end=(
-            current_user.cancel_at_period_end
-        )
-    )
-
-
-# ============================================================
-# 決済成功
-# ============================================================
 
 @user_bp.route("/payment-success")
+@login_required
 def payment_success():
-
-    if not current_user.is_authenticated:
-
-        return redirect(
-            url_for("auth.login")
-        )
-
-    res = make_response(
-        render_template(
-            "payment_success.html"
-        )
-    )
-
-    res.headers["Cache-Control"] = (
-        "no-store, no-cache, "
-        "must-revalidate, max-age=0"
-    )
-
-    res.headers["Pragma"] = "no-cache"
-    res.headers["Expires"] = "0"
-
-    return res
+    return redirect(url_for("user.mypage"))
 
 
-# ============================================================
-# グループ選択
-# ============================================================
-
-@user_bp.route(
-    "/select-group",
-    methods=["GET", "POST"]
-)
+@user_bp.route("/select-group", methods=["GET", "POST"])
+@user_bp.route("/force-select-group", methods=["GET", "POST"], endpoint="force_group_select")
 @login_required
 def select_group():
-
-    if current_user.primary_group:
-
-        return redirect(
-            url_for(
-                "photo.index",
-                group_key=current_user.primary_group
-            )
-        )
-
-    if request.method == "POST":
-
-        group = request.form.get(
-            "group"
-        )
-
-        if group not in ALLOWED_GROUPS:
-            abort(400)
-
-        current_user.set_selected_groups(
-            [group]
-        )
-
-        current_user.normalize_groups()
-
-        db.session.commit()
-
-        return redirect(
-            url_for(
-                "photo.index",
-                group_key=group
-            )
-        )
-
-    return render_template(
-        "select_group.html",
-        force_select_mode=True
-    )
-
-
-# ============================================================
-# グループ強制選択
-# ============================================================
-
-@user_bp.route(
-    "/force-select-group",
-    methods=["GET", "POST"]
-)
-@login_required
-def force_group_select():
-
-    allowed = (
-        current_user.get_allowed_group_count()
-    )
-
-    current_selected = (
-        current_user.get_selected_groups()
-    )
-
-    if len(current_selected) == allowed:
-
-        return redirect(
-            url_for("user.mypage")
-        )
-
-    if request.method == "POST":
-
-        selected = request.form.getlist(
-            "groups"
-        )
-
-        if not all(
-            g in ALLOWED_GROUPS
-            for g in selected
-        ):
-            abort(400)
-
-        if len(selected) != allowed:
-
-            flash(
-                f"{allowed}グループ必ず選択してください",
-                "danger"
-            )
-
-            return redirect(
-                url_for(
-                    "user.force_group_select"
-                )
-            )
-
-        current_user.set_selected_groups(
-            selected
-        )
-
-        current_user.normalize_groups()
-
-        db.session.commit()
-
-        return redirect(
-            url_for(
-                "photo.index",
-                group_key=selected[0]
-            )
-        )
-
-    return render_template(
-        "force_select_group.html",
-        allowed=allowed,
-        current_selected=current_selected
-    )
+    return redirect(url_for("auth.home"))
 
 
 # ============================================================

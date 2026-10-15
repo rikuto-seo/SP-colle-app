@@ -1,65 +1,10 @@
-{% extends "base.html" %}
-{% block title %}ダッシュボード{% endblock %}
-
+﻿{% extends "base.html" %}
+{% block title %}{{ group_name }} | SP Colle{% endblock %}
 {% block content %}
-<h1>ダッシュボード</h1>
-
-<div class="mb-4">
-  <label for="groupSelect" class="form-label">グループを選択</label>
-  <select class="form-select" id="groupSelect">
-    <option value="hinatazaka46">日向坂46</option>
-    <option value="nogizaka46">乃木坂46</option>
-    <option value="sakurazaka46">櫻坂46</option>
-  </select>
+<div class="page-heading"><div><span class="eyebrow">COLLECTION HOME</span><h1 class="section-title">{{ group_name }}のコレクション</h1><p>所持の記録から、次のトレードまで。</p></div></div>
+<div class="row g-3">
+  {% for endpoint, icon, title, description in [('photo.index','layer-group','生写真一覧','集めた写真とコンプ状況を確認。'),('photo.add','plus','新規追加','新しく入手した一枚を記録。'),('photo.give','minus','へらす','手放した写真の所持数を更新。'),('stats.stats','chart-simple','統計を見る','メンバーごとの所持数やコンプ数を確認。'),('stats.missing','list-check','未所持リスト','まだ持っていない写真を確認。'),('want.index','heart','欲しい生写真','欲しい写真をまとめて、交換相手へ共有。')] %}
+  <div class="col-md-6 col-lg-4"><div class="card h-100"><div class="card-body"><i class="fa-solid fa-{{ icon }} text-primary mb-3" aria-hidden="true"></i><h2 class="fs-5">{{ title }}</h2><p class="small text-muted">{{ description }}</p><a href="{{ url_for(endpoint, group_key=group_key) }}" class="btn btn-outline-primary btn-sm">開く<i class="fa-solid fa-arrow-right ms-2" aria-hidden="true"></i></a></div></div></div>
+  {% endfor %}
 </div>
-
-<div class="row">
-  <div class="col-md-6">
-    <div class="card text-bg-light mb-3">
-      <div class="card-header">生写真の管理</div>
-      <div class="card-body">
-        <h5 class="card-title">所持リストを確認</h5>
-        <p class="card-text">あなたが所持している生写真を一覧で確認できます。</p>
-        <a href="{{ url_for('list_photos') }}" class="btn btn-primary">一覧を見る</a>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-6">
-    <div class="card text-bg-light mb-3">
-      <div class="card-header">生写真を追加</div>
-      <div class="card-body">
-        <h5 class="card-title">新しい生写真を登録</h5>
-        <p class="card-text">所持している生写真をアプリに追加登録できます。</p>
-        <a href="{{ url_for('photo.add') }}" class="btn btn-success">追加する</a>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="row">
-  <div class="col-md-6">
-    <div class="card text-bg-light mb-3">
-      <div class="card-header">統計を見る</div>
-      <div class="card-body">
-        <h5 class="card-title">所持率などの統計情報</h5>
-        <p class="card-text">あなたの生写真コレクションの達成率や統計を確認できます。</p>
-        <a href="{{ url_for('stats.stats') }}" class="btn btn-info">統計を見る</a>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-  const groupSelect = document.getElementById('groupSelect');
-  const savedGroup = localStorage.getItem('selectedGroup');
-
-  if (savedGroup) {
-    groupSelect.value = savedGroup;
-  }
-
-  groupSelect.addEventListener('change', function () {
-    localStorage.setItem('selectedGroup', this.value);
-  });
-</script>
 {% endblock %}

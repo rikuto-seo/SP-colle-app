@@ -86,80 +86,7 @@
           </div>
 
 
-          <!-- プラン情報 -->
-
-          <div class="d-flex align-items-center gap-3 flex-wrap">
-
-            <div>
-
-              <span class="text-muted small">
-                プラン：
-              </span>
-
-              <span class="fw-bold">
-
-                {% if current_user.is_premium() %}
-
-                  SUPPORTER
-
-                {% elif current_user.is_standard() %}
-
-                  スタンダード
-
-                {% elif current_user.is_lite() %}
-
-                  ライト
-
-                {% else %}
-
-                  無料
-
-                {% endif %}
-
-              </span>
-
-            </div>
-
-
-            <div class="text-muted small">
-
-              {% if cancel_at_period_end %}
-
-                {% if next_billing %}
-
-                  {{ next_billing }}で終了
-
-                {% else %}
-
-                  終了日取得中
-
-                {% endif %}
-
-              {% else %}
-
-                {% if next_billing %}
-
-                  次回：{{ next_billing }}
-
-                {% else %}
-
-                  次回未設定
-
-                {% endif %}
-
-              {% endif %}
-
-            </div>
-
-
-            <a
-              href="{{ url_for('user.upgrade') }}"
-              class="btn btn-warning btn-sm"
-            >
-              プラン変更
-            </a>
-
-          </div>
+          <p class="small text-muted mb-0">すべての機能・3グループを無料で利用できます。</p>
 
         </div>
 
@@ -267,73 +194,8 @@
       </h5>
 
 
-      <!-- 使用量・上限 -->
-
-      <div class="d-flex justify-content-between align-items-end mb-2">
-
-        <div>
-
-          <span class="fs-5 fw-bold">
-            {{ image_storage_used_display }}
-          </span>
-
-          <span class="text-muted">
-            / {{ image_storage_limit_gb }} GB
-          </span>
-
-        </div>
-
-
-        <span class="small text-muted">
-          {{ image_storage_usage_percent }}%
-        </span>
-
-      </div>
-
-
-      <!-- プログレスバー -->
-
-      <div
-        class="progress"
-        role="progressbar"
-        aria-label="画像保存容量の使用率"
-        aria-valuenow="{{ image_storage_usage_percent }}"
-        aria-valuemin="0"
-        aria-valuemax="100"
-        style="height:10px;"
-      >
-
-        <div
-          class="
-            progress-bar
-            {% if image_storage_usage_percent >= 90 %}
-              bg-danger
-            {% elif image_storage_usage_percent >= 70 %}
-              bg-warning
-            {% endif %}
-          "
-          style="
-            width: {{ image_storage_usage_percent }}%;
-          "
-        ></div>
-
-      </div>
-
-
-      <!-- 残り容量 -->
-
-      <div class="d-flex justify-content-between mt-2 small text-muted">
-
-        <span>
-          残り {{ image_storage_remaining_display }}
-        </span>
-
-        <span>
-          上限 {{ image_storage_limit_gb }} GB
-        </span>
-
-      </div>
-
+      <p class="fs-5 fw-bold mb-2">{{ image_storage_used_display }}</p>
+      <p class="text-muted small">画像保存容量の上限はありません。</p>
 
       <!-- 注意事項 -->
 
@@ -346,30 +208,6 @@
 
       </div>
 
-
-      <!-- 容量警告 -->
-
-      {% if image_storage_usage_percent >= 90 and image_storage_usage_percent < 100 %}
-
-      <div class="alert alert-warning mt-3 mb-0 py-2 small">
-
-        <i class="fa-solid fa-triangle-exclamation me-1"></i>
-
-        画像保存容量の残りが少なくなっています。
-
-      </div>
-
-      {% elif image_storage_usage_percent >= 100 %}
-
-      <div class="alert alert-danger mt-3 mb-0 py-2 small">
-
-        <i class="fa-solid fa-circle-exclamation me-1"></i>
-
-        画像保存容量が上限に達しています。
-
-      </div>
-
-      {% endif %}
 
     </div>
 
@@ -401,7 +239,7 @@
 
         <!-- グループ選択 -->
 
-        <div class="d-flex flex-md-column gap-2 me-md-4 mb-3 mb-md-0">
+        <div class="d-flex flex-wrap flex-md-column gap-2 me-md-4 mb-3 mb-md-0">
 
           {% for key, name in group_names.items() %}
 
@@ -523,7 +361,7 @@
             <div class="text-muted mt-4">
 
               <i class="fa-solid fa-lock me-1"></i>
-              QR機能は有料プランで利用できます
+              すべてのグループでQRコードを共有できます
 
             </div>
 

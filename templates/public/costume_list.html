@@ -13,12 +13,13 @@
     </ol>
 </nav>
 
-<h1 class="fw-bold mb-4">{{ group.name }} 衣装一覧</h1>
+<div class="page-heading"><div><h1 class="section-title">{{ group.name }} 衣装一覧</h1><p>衣装を選んで、参加メンバーと写真の種類を確認。</p></div></div>
 
 <form method="GET" class="mb-4">
     <div class="input-group">
         <input
             type="text"
+            aria-label="衣装名で検索"
             name="q"
             value="{{ keyword }}"
             class="form-control"

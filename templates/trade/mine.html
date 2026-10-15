@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block title %}自分のトレード募集{% endblock %}
+{% block content %}
+<div class="page-heading"><h1 class="section-title">自分の募集</h1><a class="btn btn-primary" href="{{ url_for('trade.new_listing', group_key=group_key) }}">募集を作る</a></div>
+{% include 'trade/_nav.html' %}
+{% for listing in listings %}<a class="card trade-listing-card mb-2" href="{{ url_for('trade.listing_detail', public_id=listing.public_id) }}"><div class="d-flex justify-content-between"><strong>{{ listing.alias }}</strong><span class="badge {{ 'bg-success' if listing.status == 'open' else 'bg-secondary' }}">{{ statuses[listing.status] }}</span></div><span>{{ listing.offers|length }}種類 · {{ methods[listing.method] }}</span><small class="text-muted">{{ listing.updated_at | trade_time }} 更新</small></a>{% else %}<div class="empty-state"><h2>募集を作りましょう</h2><p>公開する写真と、その写真で欲しい写真を選べます。</p></div>{% endfor %}
+{% include 'trade/_pagination.html' %}
+{% endblock %}

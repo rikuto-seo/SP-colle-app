@@ -1,0 +1,5 @@
+{% if pagination.pages > 1 %}
+<nav class="mt-4" aria-label="募集・取引のページ"><ul class="pagination justify-content-center">
+  {% for p in pagination.iter_pages() %}<li class="page-item {% if p == pagination.page %}active{% endif %} {% if not p %}disabled{% endif %}">{% if p %}<a class="page-link" href="{{ url_for(request.endpoint, group_key=group_key, **dict(args, page=p)) }}">{{ p }}</a>{% else %}<span class="page-link">…</span>{% endif %}</li>{% endfor %}
+</ul></nav>
+{% endif %}

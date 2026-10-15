@@ -1,6 +1,8 @@
 from collections import defaultdict
+import re
 from sqlalchemy import exists
 from models import db, Member, Costume, PhotoType, Photo, UserPhoto, Group
+from services.type_normalizer import normalize_type, get_type_order
 
 
 def get_required_dict(group_id):
@@ -63,7 +65,16 @@ def get_types(group_id, member_name, costume_name):
         .all()
     )
 
-    return sorted({t for (t,) in rows})
+    def type_sort_key(photo_type):
+        # Use the collection's classification without changing option labels/values.
+        category_order = get_type_order(normalize_type(member_name, costume_name, photo_type))
+        natural_name = tuple(
+            (1, int(part)) if part.isdigit() else (0, part)
+            for part in re.split(r'(\d+)', photo_type)
+        )
+        return category_order, natural_name, photo_type
+
+    return sorted({t for (t,) in rows}, key=type_sort_key)
 
 
 def get_owned_members(user_id, group_id):

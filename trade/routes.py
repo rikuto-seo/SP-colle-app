@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, abort
 from flask_login import login_required, current_user
-from models import User, WantPhoto, UserPhoto, Group, Photo, Member
+from models import User, WantPhoto, UserPhoto, Group, Photo, Member, WantMember
 from extensions import db
 
 trade_bp = Blueprint('trade', __name__, url_prefix='/trade')
@@ -62,6 +62,11 @@ def match_trade(public_uuid, group_key):
     # =========================
     target_want_ids = {w.photo_id for w in target_wants}
     my_want_ids = {w.photo_id for w in my_wants}
+    for user_id, ids in [(target_user.id, target_want_ids), (current_user.id, my_want_ids)]:
+        member_ids = db.session.query(WantMember.member_id).filter(WantMember.user_id == user_id).subquery()
+        ids.update(pid for (pid,) in db.session.query(Photo.id).join(Member).filter(
+            Member.group_id == group.id, Photo.member_id.in_(db.select(member_ids))).all())
+
 
     my_available_map = {p.photo_id: p for p in my_photos}
     target_available_map = {p.photo_id: p for p in target_photos}
@@ -117,6 +122,8 @@ def match_trade(public_uuid, group_key):
                 continue
 
             if (my_p.available_quantity or 0) > 0 and (their_p.available_quantity or 0) > 0:
+                if len(mutual_matches) >= 100:
+                    continue
                 mutual_matches.append({
                     "give": to_dict(my_p),
                     "receive": to_dict(their_p)
@@ -127,3 +134,7 @@ def match_trade(public_uuid, group_key):
         "they_can_give": they_can_give,
         "mutual": mutual_matches
     })
+
+
+# Register the listing/search/transaction screens on the existing blueprint.
+from . import marketplace  # noqa: E402,F401

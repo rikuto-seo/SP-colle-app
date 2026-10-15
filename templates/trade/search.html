@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% from 'trade/_market_photo.html' import market_photo %}
+{% block title %}トレード | SP Colle{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static',filename='css/trade-market.css') }}">{% endblock %}
+{% block content %}
+<div class="trade-market">
+  <div class="trade-market-heading">
+    <h1>トレード</h1>
+    <a class="btn btn-primary btn-sm" href="{{ url_for('trade.new_listing', group_key=group_key) }}"><i class="fa-solid fa-plus" aria-hidden="true"></i> 募集する</a>
+  </div>
+  {% if current_user.is_authenticated %}{% include 'trade/_nav.html' %}{% endif %}
+
+  <form method="get" id="trade-search-form" class="trade-market-search">
+    <div class="trade-search-bar">
+      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+      <label for="trade-q" class="visually-hidden">メンバー・衣装・カットを検索</label>
+      <input name="q" id="trade-q" type="search" value="{{ keyword }}" placeholder="メンバー・衣装で探す" maxlength="100">
+      <button type="submit" aria-label="キーワードで検索"><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+    </div>
+    <details class="trade-market-filters" id="trade-filters">
+      <summary><i class="fa-solid fa-sliders" aria-hidden="true"></i> 絞り込み{% if filter_tags %}<span class="trade-filter-count">{{ filter_tags|length }}</span>{% endif %}<i class="fa-solid fa-chevron-down" aria-hidden="true"></i></summary>
+      <div class="trade-filter-fields">
+        <div class="trade-filter-field trade-filter-wide"><label for="trade-side">探す写真</label><select name="side" id="trade-side" class="form-select"><option value="offer" {% if side == 'offer' %}selected{% endif %}>譲：欲しい写真を探す</option><option value="want" {% if side == 'want' %}selected{% endif %}>求：自分が渡せる写真を探す</option></select></div>
+        {% for key, label, values in [('member','メンバー',members),('costume','衣装・シリーズ',costumes),('type','カット',types)] %}
+        <div class="trade-filter-field"><label for="trade-{{ key }}">{{ label }}</label><select name="{{ key }}" id="trade-{{ key }}" class="form-select"><option value="">すべて</option>{% for value in values %}<option value="{{ value.id }}" {% if args.get(key) == value.id|string %}selected{% endif %}>{{ value.name }}</option>{% endfor %}</select></div>
+        {% endfor %}
+        <div class="trade-filter-field"><label for="trade-method">交換方法</label><select name="method" id="trade-method" class="form-select"><option value="">すべて</option>{% for key in ['mail','meet'] %}<option value="{{ key }}" {% if args.get('method') == key %}selected{% endif %}>{{ methods[key] }}</option>{% endfor %}</select></div>
+        {% if args.get('photo_id') %}<input type="hidden" name="photo_id" value="{{ args['photo_id'] }}">{% endif %}
+        {% if bundle %}<input type="hidden" name="bundle" value="1">{% endif %}
+        <div class="trade-filter-actions"><button class="btn btn-primary btn-sm" type="submit">この条件で見る</button><a href="{{ browse_links.new }}" class="btn btn-outline-secondary btn-sm">リセット</a></div>
+      </div>
+    </details>
+  </form>
+
+  <nav class="trade-browse-tabs" aria-label="募集の見方">
+    {% for key,label,active in [('new','新着',not args),('mail','郵送',args.get('method')=='mail' and not bundle),('meet','現地',args.get('method')=='meet' and not bundle),('bundle','セット',bundle)] %}
+    <a href="{{ browse_links[key] }}" {% if active %}aria-current="page"{% endif %}>{{ label }}</a>
+    {% endfor %}
+  </nav>
+  <nav class="trade-member-chips" aria-label="メンバーから見る">
+    {% for link in member_links %}<a href="{{ link.url }}" {% if link.active %}aria-current="true"{% endif %}>{{ link.label }}</a>{% endfor %}
+  </nav>
+  {% if filter_tags %}<div class="trade-active-filters" aria-label="選択中の条件">{% for tag in filter_tags %}<a href="{{ tag.url }}" aria-label="{{ tag.label }}の条件を解除"><span>{{ tag.label }}</span><i class="fa-solid fa-xmark" aria-hidden="true"></i></a>{% endfor %}</div>{% endif %}
+
+  <div class="trade-feed-heading"><h2>{{ '検索結果' if args else '募集中' }}</h2><span>{{ pagination.total }}件</span></div>
+  <div class="trade-listing-grid" id="trade-feed">
+    {% for listing in listings if previews[listing.id] %}
+    {% set preview = previews[listing.id] %}
+    <a class="card trade-listing-card" href="{{ url_for('trade.listing_detail', public_id=listing.public_id) }}" aria-label="{{ listing.alias }}の募集。譲：{{ preview.offer.photo.member.name }} {{ preview.offer.photo.costume.name }} {{ preview.offer.photo.photo_type.name }}。求：{% if preview.want %}{{ preview.want.photo.member.name }} {{ preview.want.photo.costume.name }} {{ preview.want.photo.photo_type.name }}{% endif %}。詳細を見る">
+      <div class="trade-pair">
+        {{ market_photo(preview.offer.photo, '譲', preview.image_url, preview.offer_more, preview.offer.quantity if listing.bundle else 1) }}
+        <span class="trade-pair-arrow" aria-label="交換">⇄</span>
+        {% if preview.want %}{{ market_photo(preview.want.photo, '求', none, preview.want_more, preview.want.quantity, '候補' if preview.offer.want_mode == 'any' and not listing.bundle else '種類') }}{% endif %}
+      </div>
+      <div class="trade-card-footer"><span class="trade-card-method">{% if listing.bundle %}<i class="fa-solid fa-layer-group" aria-hidden="true"></i> セット{% elif preview.offer.want_mode == 'all' %}<i class="fa-solid fa-layer-group" aria-hidden="true"></i> 複数枚{% else %}<i class="fa-solid {{ 'fa-envelope' if listing.method=='mail' else 'fa-location-dot' if listing.method=='meet' else 'fa-arrows-rotate' }}" aria-hidden="true"></i> {{ '郵送' if listing.method=='mail' else '現地' if listing.method=='meet' else '郵送・現地' }}{% endif %}</span><span class="trade-card-alias">{{ listing.alias }}</span></div>
+    </a>
+    {% else %}
+    <div class="empty-state trade-market-empty"><h2>{{ '条件に合う募集はありません' if args else 'まだ募集がありません' }}</h2><a class="btn btn-outline-primary btn-sm" href="{{ browse_links.new if args else url_for('trade.new_listing',group_key=group_key) }}">{{ 'すべて見る' if args else '募集する' }}</a></div>
+    {% endfor %}
+  </div>
+  <div class="trade-load-more" id="trade-feed-more" data-next-url="{{ next_url or '' }}">
+    {% if next_url %}<a href="{{ next_url }}" class="btn btn-outline-primary" data-trade-more>もっと見る <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></a>{% endif %}
+    <p class="small text-muted mb-0" id="trade-feed-status" role="status" aria-live="polite"></p>
+  </div>
+  <noscript>{% include 'trade/_pagination.html' %}</noscript>
+</div>
+{% include 'trade/_select_assets.html' %}
+<script src="{{ url_for('static', filename='js/trade.js') }}" defer></script>
+{% endblock %}

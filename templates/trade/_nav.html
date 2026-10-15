@@ -1,0 +1,7 @@
+<nav class="trade-nav" aria-label="トレードメニュー">
+  <a href="{{ url_for('trade.search', group_key=group_key) }}" {% if request.endpoint == 'trade.search' %}aria-current="page"{% endif %}>募集を探す</a>
+  {% if current_user.is_authenticated %}
+  <a href="{{ url_for('trade.mine', group_key=group_key) }}" {% if request.endpoint == 'trade.mine' %}aria-current="page"{% endif %}>自分の募集</a>
+  <a href="{{ url_for('trade.transactions', group_key=group_key) }}" {% if request.endpoint in ['trade.transactions','trade.transaction'] %}aria-current="page"{% endif %}>取引管理</a>
+  {% endif %}
+</nav>

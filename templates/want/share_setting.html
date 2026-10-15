@@ -1,0 +1,3 @@
+{% extends 'base.html' %}
+{% block title %}欲しい写真の公開設定{% endblock %}
+{% block content %}<div class="card"><div class="card-body"><h1 class="section-title">欲しい写真の公開設定</h1><p>現在：{{ '公開中' if share.want_public else '非公開' }}</p><p class="text-muted">コレクション全体やトレード募集の公開設定とは独立しています。</p><form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-primary">{{ '公開を停止' if share.want_public else '欲しい写真リストを公開' }}</button></form></div></div>{% endblock %}
