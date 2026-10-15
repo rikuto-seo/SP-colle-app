@@ -12,17 +12,14 @@
   <div class="col-12"><label for="listing-location" class="form-label">交換場所・イベント（任意）</label><input id="listing-location" class="form-control" maxlength="100" value="{{ initial.location }}" placeholder="会場名など。住所は入力しないでください"></div>
   <div class="col-12"><label for="listing-notes" class="form-label">交換条件（任意）</label><textarea id="listing-notes" class="form-control" maxlength="1000" rows="3" placeholder="同種優先、コンプ崩し不可、写真の状態など">{{ initial.notes }}</textarea></div>
 </div></div>
-<h2 class="h5 mb-2">提供写真と、その写真の希望条件</h2>
+<h2 class="h5 mb-2">譲る写真と、欲しい写真</h2>
 <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="listing-bundle" {% if initial.bundle %}checked{% endif %}><label class="form-check-label" for="listing-bundle">提供写真を一式でセット交換する（コンプ崩し不可など）</label></div>
-<p class="form-text mb-3">セット交換では、提供写真すべてと、登録した希望写真すべてが必要です。希望は一つの欄にまとめて追加できます。同じ希望写真を複数の欄に追加した場合、最大の指定枚数をセット全体の希望枚数とします。</p>
+<details class="small text-muted mb-3"><summary>セット交換について</summary><p class="mt-2 mb-0">提供写真すべてと、登録した希望写真すべてを交換します。希望は一つの欄にまとめられます。同じ希望写真を複数の欄に追加した場合は、最大の指定枚数を使います。</p></details>
 <div id="editor-offers" class="mb-3"></div>
-<div class="card mb-3"><div class="card-body">
-<label for="picker-target" class="form-label">追加する写真</label><select id="picker-target" class="form-select mb-3"><option value="offer">譲：自分の所持写真から追加</option></select>
-{% include 'trade/_picker.html' %}
-</div></div>
 <p id="editor-error" class="text-danger" role="alert"></p>
 <div class="trade-sticky-actions"><button type="submit" class="btn btn-primary">下書きを保存して公開内容を確認</button><a class="btn btn-outline-secondary" href="{{ url_for('trade.mine', group_key=group_key) }}">戻る</a></div>
 </form>
+{% include 'trade/_picker_dialog.html' %}
 <script type="application/json" id="trade-initial">{{ initial | tojson }}</script>
 {% include 'trade/_select_assets.html' %}
 <script src="{{ url_for('static', filename='js/trade.js') }}" defer></script>

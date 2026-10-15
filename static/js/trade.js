@@ -131,8 +131,9 @@ document.addEventListener("DOMContentLoaded", () => {
             create: false,
             maxItems: 1,
             closeAfterSelect: true,
-            maxOptions: 100,
+            maxOptions: null,
             allowEmptyOption: true,
+            sortField: [{ field: "$order", direction: "asc" }],
           });
       });
     });
@@ -145,126 +146,165 @@ document.addEventListener("DOMContentLoaded", () => {
     : {};
   let offers = Array.isArray(initial.offers) ? initial.offers : [];
   let items = [];
-  const target = document.getElementById("picker-target");
+  let pickerTarget = "offer";
+  const dialog = document.getElementById("trade-photo-dialog");
+  const pickerError = document.getElementById("picker-error");
+  const feedback = document.getElementById("trade-feedback");
+  let feedbackTimer;
   const error = document.getElementById("editor-error");
   const offerContainer = document.getElementById("editor-offers");
   const itemContainer = document.getElementById("proposal-items");
 
-  function renderOffers() {
-    const previous = target.value;
-    target.replaceChildren(option("offer", "譲：自分の所持写真から追加"));
-    offerContainer.replaceChildren();
-    offers.forEach((offer, index) => {
-      target.append(
-        option(String(index), `求：${offer.label}と交換したい写真`),
-      );
-      const card = node("section", "card mb-2");
-      const body = node("div", "card-body");
-      const header = node("div", "trade-editor-row");
-      header.append(
-        node("strong", "trade-item-label", `譲：${offer.label}`),
-        quantity(offer),
-        remove(() => {
-          offers.splice(index, 1);
-          renderOffers();
-          loadPhotos(false);
-        }),
-      );
-      body.append(header);
-      const modeLabel = node(
-        "label",
-        "form-label mt-3",
-        "この提供写真1枚と交換したい内容",
-      );
-      const mode = node("select", "form-select mb-2");
-      mode.id = `offer-mode-${index}`;
-      modeLabel.htmlFor = mode.id;
-      mode.append(
-        option("any", "下の希望写真のいずれか一つ"),
-        option("all", "下の希望写真すべて（複数枚・コンプなど）"),
-      );
-      mode.value = offer.want_mode || "any";
-      mode.addEventListener("change", () => {
-        offer.want_mode = mode.value;
-      });
-      mode.disabled = document.getElementById("listing-bundle").checked;
-      if (mode.disabled)
-        modeLabel.textContent = "セット全体の希望（登録した写真すべて必要）";
-      body.append(modeLabel, mode);
-      if (!Array.isArray(offer.wants)) offer.wants = [];
-      offer.wants.forEach((want, wi) => {
-        const row = node("div", "trade-editor-row trade-wanted-row");
-        const priority = node("select", "form-select trade-priority");
-        priority.setAttribute("aria-label", `${want.label}の希望度`);
-        priority.append(
-          option("high", "熱望"),
-          option("normal", "希望"),
-          option("low", "緩く希望"),
-        );
-        priority.value = want.priority || "normal";
-        priority.addEventListener("change", () => {
-          want.priority = priority.value;
-        });
-        row.append(
-          node("span", "trade-item-label", `求：${want.label}`),
-          quantity(want),
-          priority,
-          remove(() => {
-            offer.wants.splice(wi, 1);
-            renderOffers();
-          }),
-        );
-        body.append(row);
-      });
-      const addWant = node(
-        "button",
-        "btn btn-outline-primary btn-sm mt-2",
-        "この写真の希望を追加",
-      );
-      addWant.type = "button";
-      addWant.addEventListener("click", () => {
-        target.value = String(index);
-        loadPhotos(false);
-        target.scrollIntoView({ block: "center", behavior: "smooth" });
-      });
-      body.append(addWant);
-      const imageLabel = node("label", "form-check mt-3");
-      const imageCheck = node("input", "form-check-input");
-      imageCheck.type = "checkbox";
-      imageCheck.checked = offer.share_image === true;
-      imageCheck.addEventListener("change", () => {
-        offer.share_image = imageCheck.checked;
-      });
-      imageLabel.append(
-        imageCheck,
-        node(
-          "span",
-          "form-check-label",
-          "登録済みの先頭の実物画像をこの募集に公開する（任意）",
-        ),
-      );
-      body.append(imageLabel);
-      card.append(body);
-      offerContainer.append(card);
+  const pickerSelects = Object.fromEntries(
+    ["member", "costume", "type"].map((key) => [key, document.getElementById(`picker-${key}`)]),
+  );
+  const setChoices = (select, values, value = "") => {
+    if (select.tomselect) {
+      const control = select.tomselect;
+      control.clear(true);
+      control.clearOptions();
+      control.addOption([{ value: "", text: "すべて" }, ...values.map((item) => ({ value: String(item.id), text: item.name }))]);
+      control.setValue(value, true);
+      control.refreshOptions(false);
+    } else {
+      select.replaceChildren(option("", "すべて"), ...values.map((item) => option(item.id, item.name)));
+      select.value = value;
+    }
+  };
+
+  function openPicker(value) {
+    pickerTarget = value;
+    pickerError.textContent = "";
+    error.textContent = "";
+    document.getElementById("picker-q").value = "";
+    Object.values(pickerSelects).forEach((select) => setChoices(select, []));
+    document.getElementById("trade-picker-title").textContent =
+      !editor ? "渡す写真を追加" : value === "offer" ? "譲る写真を追加" : "欲しい写真を追加";
+    dialog.showModal();
+    loadPhotos(false);
+  }
+  dialog.querySelector(".trade-dialog-close").addEventListener("click", () => dialog.close());
+  dialog.addEventListener("click", (event) => {
+    if (event.target !== dialog) return;
+    const box = dialog.getBoundingClientRect();
+    if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom)
+      dialog.close();
+  });
+  function added(row) {
+    dialog.close();
+    clearTimeout(feedbackTimer);
+    feedback.hidden = false;
+    feedbackTimer = setTimeout(() => { feedback.hidden = true; }, 1500);
+    row?.focus({ preventScroll: true });
+    row?.scrollIntoView({ block: "center", behavior: "auto" });
+  }
+  function addButton(label, action) {
+    const button = node("button", "trade-add-photo");
+    button.type = "button";
+    button.setAttribute("aria-label", label);
+    const plus = node("span", "trade-add-symbol", "＋");
+    plus.setAttribute("aria-hidden", "true");
+    button.append(plus, node("span", "", label));
+    button.addEventListener("click", action);
+    return button;
+  }
+  function columns(wanted = false) {
+    const header = node("div", `trade-row-head ${wanted ? "trade-photo-want" : "trade-photo-offer"}`);
+    header.setAttribute("aria-hidden", "true");
+    ["名前", "衣装", "種類", "枚数", ...(wanted ? ["希望"] : []), ""].forEach((text) => header.append(node("span", "", text)));
+    return header;
+  }
+  function photoRow(item, id, onRemove, wanted = false) {
+    const row = node("div", `trade-photo-row ${wanted ? "trade-photo-want" : "trade-photo-offer"}`);
+    row.id = id;
+    row.tabIndex = -1;
+    const fallback = (item.label || "").split(" / ");
+    [["member", "名前", fallback[0]], ["costume", "衣装", fallback[1]], ["type", "種類", fallback[2]]].forEach(([key, label, old]) => {
+      const cell = node("span", `trade-cell trade-cell-${key}`, item[key] || old || "—");
+      cell.dataset.label = label;
+      row.append(cell);
     });
-    if ([...target.options].some((entry) => entry.value === previous))
-      target.value = previous;
+    const amount = node("span", "trade-quantity-field");
+    const unit = node("span", "trade-quantity-unit", "枚");
+    unit.setAttribute("aria-hidden", "true");
+    amount.append(quantity(item), unit);
+    row.append(amount);
+    if (wanted) {
+      const priority = node("select", "form-select trade-priority");
+      priority.setAttribute("aria-label", `${item.label}の希望度`);
+      priority.append(option("high", "熱望"), option("normal", "希望"), option("low", "緩く希望"));
+      priority.value = item.priority || "normal";
+      priority.addEventListener("change", () => { item.priority = priority.value; });
+      row.append(priority);
+    }
+    const del = remove(onRemove);
+    del.className = "trade-remove-photo";
+    del.textContent = "×";
+    del.setAttribute("aria-label", `${item.label || "この写真"}を削除`);
+    row.append(del);
+    return row;
+  }
+  function sideHeading(side) {
+    const heading = node("h3", "trade-side-heading");
+    heading.append(node("span", `trade-side-tag ${side === "求" ? "trade-side-want" : ""}`, side));
+    return heading;
+  }
+  function renderOffers() {
+    offerContainer.replaceChildren();
+    const bundle = document.getElementById("listing-bundle").checked;
+    const display = offers.length ? offers : [null];
+    display.forEach((offer, index) => {
+      const pair = node("section", "trade-edit-pair");
+      const give = node("div", "trade-edit-side");
+      give.append(sideHeading("譲"), columns());
+      if (offer) {
+        give.append(photoRow(offer, `trade-offer-${index}`, () => { offers.splice(index, 1); renderOffers(); }));
+        const imageLabel = node("label", "form-check trade-image-share");
+        const check = node("input", "form-check-input");
+        check.type = "checkbox";
+        check.checked = offer.share_image === true;
+        check.addEventListener("change", () => { offer.share_image = check.checked; });
+        imageLabel.append(check, node("span", "form-check-label", "実物画像も公開する（先頭の1枚）"));
+        give.append(imageLabel);
+      }
+      if (index === display.length - 1)
+        give.append(addButton("譲る写真を追加", () => openPicker("offer")));
+      const connection = node("div", "trade-edit-connector");
+      const arrow = node("span", "trade-swap-arrow", "⇅");
+      arrow.setAttribute("aria-label", "交換希望");
+      connection.append(arrow);
+      if (offer && !bundle) {
+        const mode = node("select", "form-select trade-want-mode");
+        mode.id = `offer-mode-${index}`;
+        mode.setAttribute("aria-label", "譲る写真1枚あたりの希望条件");
+        mode.append(option("any", "希望のいずれか1つ"), option("all", "希望のすべて"));
+        mode.value = offer.want_mode || "any";
+        mode.addEventListener("change", () => { offer.want_mode = mode.value; });
+        connection.append(mode);
+      } else if (bundle) connection.append(node("span", "small text-muted", "セット全体の希望"));
+      const want = node("div", "trade-edit-side");
+      want.append(sideHeading("求"), columns(true));
+      if (offer) {
+        if (!Array.isArray(offer.wants)) offer.wants = [];
+        offer.wants.forEach((item, wi) => want.append(photoRow(item, `trade-want-${index}-${wi}`, () => {
+          offer.wants.splice(wi, 1); renderOffers();
+        }, true)));
+      }
+      const addWant = addButton("欲しい写真を追加", () => openPicker(index));
+      addWant.disabled = !offer;
+      if (!offer) addWant.title = "先に譲る写真を追加してください";
+      want.append(addWant);
+      pair.append(give, connection, want);
+      offerContainer.append(pair);
+    });
   }
 
   function renderItems() {
     itemContainer.replaceChildren();
-    items.forEach((item, index) => {
-      const row = node("div", "trade-editor-row");
-      row.append(
-        node("span", "trade-item-label", item.label),
-        quantity(item),
-        remove(() => {
-          items.splice(index, 1);
-          renderItems();
-        }),
-      );
-      itemContainer.append(row);
-    });
+    if (items.length) itemContainer.append(columns());
+    items.forEach((item, index) => itemContainer.append(photoRow(item, `trade-provide-${index}`, () => {
+      items.splice(index, 1); renderItems();
+    })));
   }
 
   let page = 1;
@@ -274,28 +314,32 @@ document.addEventListener("DOMContentLoaded", () => {
   const more = document.getElementById("picker-more");
   function addPhoto(photo) {
     error.textContent = "";
-    if (editor && target.value !== "offer") {
-      const offer = offers[Number(target.value)];
-      if (!offer) return;
+    pickerError.textContent = "";
+    const fields = { member: photo.member, costume: photo.costume, type: photo.type };
+    if (editor && pickerTarget !== "offer") {
+      const offer = offers[pickerTarget];
+      if (!offer) return null;
       if (
         offer.photo_id === photo.id ||
         offer.wants.some((want) => want.photo_id === photo.id)
       ) {
-        error.textContent = "提供写真と同じ写真、または登録済みの希望です。";
-        return;
+        pickerError.textContent = "提供写真と同じ写真、または登録済みの希望です。";
+        return null;
       }
       offer.wants.push({
         photo_id: photo.id,
         label: photo.label,
         quantity: 1,
         priority: "normal",
+        ...fields,
       });
       renderOffers();
+      return document.getElementById(`trade-want-${pickerTarget}-${offer.wants.length - 1}`);
     } else {
       const list = editor ? offers : items;
       if (list.some((entry) => entry.photo_id === photo.id)) {
-        error.textContent = "登録済みです。枚数を調整してください。";
-        return;
+        pickerError.textContent = "登録済みです。枚数を調整してください。";
+        return null;
       }
       list.push({
         photo_id: photo.id,
@@ -304,20 +348,23 @@ document.addEventListener("DOMContentLoaded", () => {
         want_mode: "any",
         wants: [],
         share_image: false,
+        ...fields,
       });
       if (editor) renderOffers();
       else renderItems();
+      return document.getElementById(editor ? `trade-offer-${list.length - 1}` : `trade-provide-${list.length - 1}`);
     }
   }
 
   async function loadPhotos(append) {
     const id = ++requestId;
-    const owned = !editor || target.value === "offer";
+    const owned = !editor || pickerTarget === "offer";
     if (!append) {
       page = 1;
       results.replaceChildren();
     }
     status.textContent = "写真を読み込み中…";
+    results.setAttribute("aria-busy", "true");
     more.hidden = true;
     const url = new URL(form.dataset.pickerUrl, window.location.origin);
     url.searchParams.set("owned", owned ? "1" : "0");
@@ -334,17 +381,22 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error();
       const data = await response.json();
       if (id !== requestId) return;
+      if (data.options) Object.entries(pickerSelects).forEach(([key, select]) => {
+        setChoices(select, data.options[key], data.filters[key]);
+      });
       data.items.forEach((photo) => {
         const button = node("button", "trade-picker-photo");
         button.type = "button";
-        button.append(node("span", "", photo.label));
+        const label = node("span", "trade-picker-label", photo.label);
+        button.append(label, node("span", "trade-picker-add", "追加"));
         if (owned)
-          button.append(
+          label.append(
             node("small", "text-muted", `取り置き以外 ${photo.available}枚`),
           );
         button.disabled = owned && photo.available < 1;
         button.addEventListener("click", () => {
-          addPhoto(photo);
+          const row = addPhoto(photo);
+          if (row) added(row);
         });
         results.append(button);
       });
@@ -358,6 +410,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (id === requestId)
         status.textContent =
           "写真を読み込めませんでした。写真を探すボタンで再試行してください。";
+    } finally {
+      if (id === requestId) results.removeAttribute("aria-busy");
     }
   }
   document.getElementById("picker-search").addEventListener("click", () => {
@@ -369,6 +423,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   ["member", "costume", "type"].forEach((key) => {
     document.getElementById(`picker-${key}`).addEventListener("change", () => {
+      if (key === "member") setChoices(pickerSelects.costume, []);
+      if (key !== "type") setChoices(pickerSelects.type, []);
       loadPhotos(false);
     });
   });
@@ -383,11 +439,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document
       .getElementById("listing-bundle")
       .addEventListener("change", renderOffers);
-    target.addEventListener("change", () => {
-      loadPhotos(false);
-    });
-  }
-  loadPhotos(false);
+  } else document.getElementById("proposal-add-photo").addEventListener("click", () => openPicker("proposal"));
 
   form.addEventListener("submit", (event) => {
     error.textContent = "";

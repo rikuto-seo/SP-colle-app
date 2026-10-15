@@ -32,12 +32,12 @@
 <h3 class="h6">あなたが受け取る写真</h3>
 {% if listing.bundle %}<p class="small text-muted">提供一式を選択しています。部分的な交換はできません。</p>{% endif %}
 {% for offer in listing.offers if available[offer.photo_id] > 0 %}<div class="trade-proposal-choice"><label for="request-{{ offer.photo_id }}">{{ offer.photo.member.name }} / {{ offer.photo.costume.name }} / {{ offer.photo.photo_type.name }}</label><input type="number" class="form-control" id="request-{{ offer.photo_id }}" data-request-photo="{{ offer.photo_id }}" min="0" max="{{ available[offer.photo_id] }}" value="{{ offer.quantity if listing.bundle else 0 }}" {% if listing.bundle %}readonly{% endif %} aria-label="この写真を希望する枚数"></div>{% endfor %}
-<h3 class="h6 mt-4">あなたが渡す写真</h3><div id="proposal-items" class="mb-3"></div>{% include 'trade/_picker.html' %}
+<h3 class="h6 mt-4">あなたが渡す写真</h3><div id="proposal-items" class="mb-3"></div><button type="button" id="proposal-add-photo" class="trade-add-photo" aria-label="渡す写真を追加"><span aria-hidden="true">＋</span><span>写真を追加</span></button>
 <label for="proposal-note" class="form-label mt-3">相談内容（任意・相手だけに公開）</label><textarea id="proposal-note" class="form-control" maxlength="2000" rows="3" placeholder="写真の状態や日程など"></textarea>
 <p id="editor-error" class="text-danger mt-2" role="alert"></p><button type="submit" class="btn btn-primary mt-2">選んだ交換案を送る</button>
 </form></div></section>
 {% else %}<div class="text-center"><a class="btn btn-primary" href="{{ url_for('auth.login', next=url_for('trade.listing_detail', public_id=listing.public_id)) }}">ログインして交換案を送る</a></div>{% endif %}
 {% endif %}
-{% if current_user.is_authenticated and not is_owner %}{% include 'trade/_select_assets.html' %}{% endif %}
+{% if current_user.is_authenticated and not is_owner and listing.status == 'open' %}{% include 'trade/_picker_dialog.html' %}{% include 'trade/_select_assets.html' %}{% endif %}
 <script src="{{ url_for('static', filename='js/trade.js') }}" defer></script>
 {% endblock %}

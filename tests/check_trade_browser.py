@@ -21,7 +21,7 @@ with sync_playwright() as p:
         url=route.request.url
         if urlparse(url).hostname in ('cdn.jsdelivr.net','cdnjs.cloudflare.com'):
             if url not in cache:
-                with urlopen(url,timeout=30) as response: cache[url]=(response.read(),response.headers.get('Content-Type'))
+                with urlopen(Request(url,headers={'User-Agent':'Mozilla/5.0'}),timeout=30) as response: cache[url]=(response.read(),response.headers.get('Content-Type'))
             body,typ=cache[url]; route.fulfill(body=body,content_type=typ)
         else: route.abort()
     context.route('https://**/*',external)
@@ -38,9 +38,10 @@ with sync_playwright() as p:
     goto('/fixture/login/100')
     goto('/trade/hinatazaka/new')
     assert not errors, errors
+    page.get_by_role('button',name='譲る写真を追加',exact=True).click()
     page.locator('.trade-picker-photo').first.wait_for()
     page.locator('.trade-picker-photo').first.click()
-    page.get_by_role('button',name='この写真の希望を追加').click()
+    page.get_by_role('button',name='欲しい写真を追加',exact=True).click()
     page.locator('#picker-q').fill('メンバーB 春')
     page.locator('#picker-search').click()
     page.locator('.trade-picker-photo').filter(has_text='チュウ').first.click()
@@ -70,6 +71,7 @@ with sync_playwright() as p:
     goto('/fixture/login/200')
     goto(listing_path)
     page.locator('#request-1001').fill('1')
+    page.get_by_role('button',name='渡す写真を追加',exact=True).click()
     page.locator('.trade-picker-photo').filter(has_text='チュウ').first.click()
     page.locator('#proposal-note').fill('写真の状態を確認して郵送交換を希望します。')
     shot('proposal-390')

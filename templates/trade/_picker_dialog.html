@@ -1,0 +1,8 @@
+<dialog id="trade-photo-dialog" class="trade-photo-dialog" aria-labelledby="trade-picker-title">
+  <div class="trade-dialog-heading"><h2 id="trade-picker-title">写真を追加</h2><button type="button" class="trade-dialog-close" aria-label="写真の選択を閉じる">×</button></div>
+  <div class="trade-dialog-body">
+    {% include 'trade/_picker.html' %}
+    <p id="picker-error" class="text-danger mb-0" role="alert"></p>
+  </div>
+</dialog>
+<div id="trade-feedback" class="trade-feedback" role="status" aria-live="polite" hidden>追加しました</div>

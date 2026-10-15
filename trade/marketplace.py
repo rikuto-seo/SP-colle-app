@@ -139,7 +139,7 @@ def search(group_key):
         page=request.args.get('page', 1, type=int), per_page=20, error_out=False)
     listings = pagination.items
     availability = available_for_listings(listings)
-    members = Member.query.filter_by(group_id=group.id).order_by(Member.display_order).all()
+    members = Member.query.filter_by(group_id=group.id).order_by(Member.generation, Member.display_order, Member.id).all()
     costumes = Costume.query.filter_by(group_id=group.id).order_by(Costume.name).all()
     types = PhotoType.query.join(Photo).join(Member).filter(Member.group_id == group.id).distinct().all()
     args = {key:str(value) for key in ('member','costume','type','photo_id')
@@ -197,45 +197,71 @@ def private_cache(response):
 @login_required
 def photos(group_key):
     group = group_or_404(group_key)
-    q = Photo.query.join(Member).join(Costume).join(PhotoType).filter(Member.group_id == group.id)
+    q = Photo.query.join(Member).join(Costume).join(PhotoType).filter(
+        Member.group_id == group.id, Costume.group_id == group.id)
     owned = request.args.get('owned') == '1'
     stock = stock_map(current_user.id) if owned else {}
     reserved = reserved_counts(current_user.id) if owned else {}
     if owned:
         q = q.join(UserPhoto, UserPhoto.photo_id == Photo.id).filter(UserPhoto.user_id == current_user.id, UserPhoto.quantity > 0)
-    for param, column in [('member', Member.id), ('costume', Costume.id), ('type', PhotoType.id)]:
-        value = request.args.get(param, type=int)
-        if value:
-            q = q.filter(column == value)
+    # Only offer combinations that actually exist in Photo, within the current scope.
+    members = q.with_entities(Member.id, Member.name, Member.generation, Member.display_order).distinct().order_by(
+        Member.generation, Member.display_order, Member.id).all()
+    member = request.args.get('member', type=int)
+    if member not in {row.id for row in members}:
+        member = None
+    if member:
+        q = q.filter(Member.id == member)
+    costumes = q.with_entities(Costume.id, Costume.name).distinct().order_by(Costume.name, Costume.id).all()
+    costume = request.args.get('costume', type=int)
+    if costume not in {row.id for row in costumes}:
+        costume = None
+    if costume:
+        q = q.filter(Costume.id == costume)
+    types = q.with_entities(PhotoType.id, PhotoType.name).distinct().order_by(PhotoType.name, PhotoType.id).all()
+    photo_type = request.args.get('type', type=int)
+    if photo_type not in {row.id for row in types}:
+        photo_type = None
+    if photo_type:
+        q = q.filter(PhotoType.id == photo_type)
     for word in request.args.get('q', '').strip()[:100].split()[:5]:
         pattern = '%' + word.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_') + '%'
         q = q.filter(or_(Member.name.ilike(pattern, escape='\\'), Costume.name.ilike(pattern, escape='\\'), PhotoType.name.ilike(pattern, escape='\\')))
     pag = q.options(joinedload(Photo.member), joinedload(Photo.costume), joinedload(Photo.photo_type)).order_by(
-        Member.display_order, Costume.name, Photo.id).paginate(page=request.args.get('page', 1, type=int), per_page=40, error_out=False)
+        Member.generation, Member.display_order, Member.id, Costume.name, Photo.id).paginate(
+            page=request.args.get('page', 1, type=int), per_page=40, error_out=False)
     items = []
     for ph in pag.items:
         available = max(0, stock[ph.id].quantity - reserved.get(ph.id, 0)) if owned else None
-        items.append(dict(id=ph.id, label=f'{ph.member.name} / {ph.costume.name} / {ph.photo_type.name}',
+        items.append(dict(id=ph.id, **photo_fields(ph),
                           available=available, has_image=bool(stock[ph.id].images) if owned else False))
-    return jsonify(items=items, has_next=pag.has_next, page=pag.page)
+    return jsonify(items=items, has_next=pag.has_next, page=pag.page,
+        options={key:[dict(id=row.id, name=row.name) for row in values]
+                 for key, values in [('member',members), ('costume',costumes), ('type',types)]},
+        filters=dict(member=str(member or ''), costume=str(costume or ''), type=str(photo_type or '')))
 
 
 def choices(group):
-    return dict(members=Member.query.filter_by(group_id=group.id).order_by(Member.display_order).all(),
+    return dict(members=Member.query.filter_by(group_id=group.id).order_by(Member.generation, Member.display_order, Member.id).all(),
         costumes=Costume.query.filter_by(group_id=group.id).order_by(Costume.name).all(),
         types=PhotoType.query.join(Photo).join(Member).filter(Member.group_id == group.id).distinct().all())
 
 
 def editor_data(listing):
     return dict(alias=listing.alias, method=listing.method, location=listing.location, notes=listing.notes, bundle=listing.bundle,
-        offers=[dict(photo_id=o.photo_id, label=photo_label(o.photo), quantity=o.quantity,
+        offers=[dict(photo_id=o.photo_id, **photo_fields(o.photo), quantity=o.quantity,
                      want_mode=o.want_mode, share_image=bool(o.image_id),
-                     wants=[dict(photo_id=w.photo_id, label=photo_label(w.photo), quantity=w.quantity, priority=w.priority) for w in o.wants])
+                     wants=[dict(photo_id=w.photo_id, **photo_fields(w.photo), quantity=w.quantity, priority=w.priority) for w in o.wants])
                 for o in listing.offers if o.quantity > 0])
 
 
 def photo_label(photo):
     return f'{photo.member.name} / {photo.costume.name} / {photo.photo_type.name}'
+
+
+def photo_fields(photo):
+    return dict(label=photo_label(photo), member=photo.member.name,
+                costume=photo.costume.name, type=photo.photo_type.name)
 
 
 @trade_bp.route('/<group_key>/new', methods=['GET', 'POST'])
