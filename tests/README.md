@@ -41,3 +41,7 @@ JavaScript errors, page overflow, navigation, keyboard access, detail modals,
 search suggestions, and the public DB filter. Auth and analytics requests are
 blocked; all fixture API calls are local. Real login, uploads, billing, and data
 updates need a separate integration check in a test environment.
+
+Photo-type and trade-picker browser checks also save their images under `%TEMP%`
+(`spcolle-photo-type-order-review` and `spcolle-trade-picker-review`). Generated
+screenshots, comparison exports and promotional images are not kept in the repo.

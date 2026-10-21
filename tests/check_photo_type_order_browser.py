@@ -1,6 +1,7 @@
 """Exercise real collection data and AJAX refresh in the browser, without accounts."""
 import argparse
 import logging
+import tempfile
 from pathlib import Path
 from threading import Thread
 from urllib.parse import urlparse
@@ -16,7 +17,7 @@ from test_photo_type_order import ROOT, PhotoTypeOrderTest, CardParser, MAPPED_C
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--browser',default='C:/Program Files/Google/Chrome/Application/chrome.exe')
-    parser.add_argument('--output',type=Path,default=ROOT/'docs/photo-type-order-review')
+    parser.add_argument('--output',type=Path,default=Path(tempfile.gettempdir())/'spcolle-photo-type-order-review')
     args=parser.parse_args();args.output.mkdir(parents=True,exist_ok=True)
     fixture=PhotoTypeOrderTest();fixture.setUp()
     try:

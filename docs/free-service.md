@@ -35,9 +35,9 @@ LPとメニュー・マイページから料金プランや容量上限の表示
 
 ```powershell
 & myenv/Scripts/python.exe -X utf8 -m unittest discover -s tests -p 'test_*.py'
-& myenv/Scripts/python.exe -X utf8 tests/check_design_browser.py --browser 'C:/Program Files/Google/Chrome/Application/chrome.exe' --output docs/free-service-review --only collection,mypage,lp,login,register,setup,terms,privacy,legal
+& myenv/Scripts/python.exe -X utf8 tests/check_design_browser.py --browser 'C:/Program Files/Google/Chrome/Application/chrome.exe' --only collection,mypage,lp,login,register,setup,terms,privacy,legal
 ```
 
 テストはメモリ内SQLite、認証・画像保存のモック、画面用サンプルデータを使用します。本番DB・本番Stripe・Firebaseには接続しません。
 
-確認結果：テスト35件成功。主要9ページをスマホ・PC・ダークモードで確認し、JavaScriptエラーと横方向のはみ出しはありませんでした。確認用の画像は`docs/free-service-review/`に保存しています。
+確認結果：テスト35件成功。主要9ページをスマホ・PC・ダークモードで確認し、JavaScriptエラーと横方向のはみ出しはありませんでした。確認用の画像は保管せず、再実行時は一時フォルダに出力します。

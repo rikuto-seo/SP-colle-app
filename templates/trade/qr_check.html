@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}QR交換チェック | SP Colle{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/qr-check.css') }}">{% endblock %}
+{% block content %}
+<div class="page-heading"><div><h1 class="section-title">QR交換チェック</h1><p>相手のQRコードから、お互いに交換できる写真を確認。</p></div></div>
+<div id="qr-check" class="qr-check" data-check-url="{{ url_for('trade.check_qr', group_key=group_key) }}" data-login-url="{{ url_for('auth.login', next=url_for('trade.qr_check', group_key=group_key)) }}">
+  <section class="card qr-input-card">
+    <div class="qr-read-mark" aria-hidden="true"><i class="fa-solid fa-qrcode"></i></div>
+    <h2>相手のQRコードを読み取る</h2>
+    <p class="text-muted small">欲しい写真リスト・所持一覧の共有QRコードに対応しています。</p>
+    <div class="qr-input-actions">
+      <button id="qr-start" type="button" class="btn btn-primary" disabled><i class="fa-solid fa-camera me-2" aria-hidden="true"></i>カメラで読み取る</button>
+      <button id="qr-file-button" type="button" class="btn btn-outline-primary" disabled><i class="fa-regular fa-image me-2" aria-hidden="true"></i>QR画像を選ぶ</button>
+      <input id="qr-file" type="file" accept="image/*" class="visually-hidden" tabindex="-1" aria-label="QRコードの画像">
+    </div>
+    <div id="qr-camera" class="qr-camera" hidden><video id="qr-video" autoplay muted playsinline aria-label="QRコード読み取り用カメラ"></video><button id="qr-stop" type="button" class="btn btn-light btn-sm">カメラを終了</button></div>
+    <p id="qr-status" class="qr-status" role="status" aria-live="polite">読み取り機能を準備しています…</p>
+    <p id="qr-error" class="text-danger mb-0" role="alert"></p>
+    <a id="qr-login" class="btn btn-outline-primary mt-2" href="{{ url_for('auth.login', next=url_for('trade.qr_check', group_key=group_key)) }}" hidden>ログインし直す</a>
+    <details class="qr-url-input"><summary>共有URLを入力して判定する</summary><form id="qr-url-form" class="mt-3"><label for="qr-url" class="form-label">相手の共有URL</label><div class="qr-url-fields"><input id="qr-url" type="url" class="form-control" maxlength="2000" placeholder="https://spcolle.com/want/share/…" required><button class="btn btn-primary" type="submit">判定する</button></div></form></details>
+  </section>
+  <div class="qr-preparation"><p>判定には「欲しい写真」と「提供可能な枚数」を使います。相手の欲しい写真リストは公開が必要です。</p><div><a href="{{ url_for('want.index', group_key=group_key) }}">欲しい写真・自分のQRコード</a><a href="{{ url_for('photo.index', group_key=group_key) }}">提供可能な枚数を設定</a></div></div>
+  <section id="qr-results" class="qr-results" aria-labelledby="qr-result-title" tabindex="-1" hidden><div class="qr-result-heading"><h2 id="qr-result-title">判定結果</h2><span id="qr-result-group" class="badge bg-secondary"></span></div><p id="qr-result-summary"></p><div id="qr-result-lists" class="qr-result-lists"></div><h3 class="h5 mt-4">交換候補</h3><p id="qr-pair-count" class="small text-muted"></p><div id="qr-pairs" class="qr-pairs"></div></section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/vendor/jsQR-1.4.0.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/qr-check.js') }}" defer></script>
+{% endblock %}

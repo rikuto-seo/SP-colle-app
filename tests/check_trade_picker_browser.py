@@ -1,6 +1,7 @@
 """Exercise the plus/arrow editor, linked choices and centered feedback in Chromium."""
 import argparse
 import logging
+import tempfile
 from pathlib import Path
 from threading import Thread
 from urllib.parse import urlparse
@@ -17,7 +18,7 @@ from models import User
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--browser',default='C:/Users/Teikyo/AppData/Local/ms-playwright/chromium-1208/chrome-win64/chrome.exe')
-    parser.add_argument('--output',type=Path,default=ROOT/'docs/trade-picker-review')
+    parser.add_argument('--output',type=Path,default=Path(tempfile.gettempdir())/'spcolle-trade-picker-review')
     args=parser.parse_args(); args.output.mkdir(parents=True,exist_ok=True)
     fixture=TradePickerTest(); fixture.setUp()
     app=fixture.app

@@ -12,7 +12,7 @@
       {% if current_user.is_authenticated and group_key and surface == 'app' %}
       <a href="{{ url_for('photo.index', group_key=group_key) }}" {% if request.endpoint == 'photo.index' %}aria-current="page"{% endif %}>コレクション</a>
       <a href="{{ url_for('want.index', group_key=group_key) }}" {% if request.endpoint == 'want.index' %}aria-current="page"{% endif %}>欲しい写真</a>
-      <a href="{{ url_for('trade.search', group_key=group_key) }}" {% if request.endpoint and request.endpoint.startswith('trade.') %}aria-current="page"{% endif %}>トレード</a>
+      <a href="{{ url_for('trade.search', group_key=group_key) }}" {% if request.endpoint and request.endpoint.startswith('trade.') and request.endpoint != 'trade.qr_check' %}aria-current="page"{% endif %}>トレード</a>
       {% endif %}
       <a href="{{ url_for('public_catalog.index') }}" {% if surface == 'catalog' %}aria-current="page"{% endif %}>生写真DB</a>
       {% if surface == 'landing' %}<a href="#features">機能</a>{% endif %}
@@ -35,8 +35,8 @@
   <div class="sidebar-main">
     <div class="sidebar-heading"><h2 id="sidebar-title">メニュー</h2><button type="button" id="menu-close" class="icon-button" aria-label="メニューを閉じる"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>
     {% if group_key %}
-    {% for endpoint, icon, label in [('photo.index', 'layer-group', '生写真一覧'), ('photo.add', 'plus', '新規追加'), ('photo.give', 'minus', 'へらす'), ('stats.stats', 'chart-simple', '統計を見る'), ('stats.missing', 'list-check', '未所持リスト'), ('want.index', 'heart', '欲しい生写真'), ('trade.search', 'arrows-rotate', 'トレード募集・取引')] %}
-    <a href="{{ url_for(endpoint, group_key=group_key) }}" {% if request.endpoint == endpoint or (endpoint == 'trade.search' and request.endpoint and request.endpoint.startswith('trade.')) %}aria-current="page"{% endif %}><i class="fa-solid fa-{{ icon }}" aria-hidden="true"></i>{{ label }}</a>
+    {% for endpoint, icon, label in [('photo.index', 'layer-group', '生写真一覧'), ('photo.add', 'plus', '新規追加'), ('photo.give', 'minus', 'へらす'), ('stats.stats', 'chart-simple', '統計を見る'), ('stats.missing', 'list-check', '未所持リスト'), ('want.index', 'heart', '欲しい生写真'), ('trade.search', 'arrows-rotate', 'トレード募集・取引'), ('trade.qr_check', 'qrcode', 'QR交換チェック')] %}
+    <a href="{{ url_for(endpoint, group_key=group_key) }}" {% if request.endpoint == endpoint or (endpoint == 'trade.search' and request.endpoint and request.endpoint.startswith('trade.') and request.endpoint != 'trade.qr_check') %}aria-current="page"{% endif %}><i class="fa-solid fa-{{ icon }}" aria-hidden="true"></i>{{ label }}</a>
     {% endfor %}
     {% endif %}
     <a href="{{ url_for('public_catalog.index') }}"><i class="fa-solid fa-book-open" aria-hidden="true"></i>生写真データベース</a>
@@ -58,7 +58,7 @@
 {% if current_user.is_authenticated and group_key and surface == 'app' and not force_select_mode %}
 <nav class="mobile-nav" aria-label="よく使う機能">
   {% for endpoint, icon, label in [('photo.index', 'layer-group', '一覧'), ('photo.add', 'plus', '追加'), ('trade.search', 'arrows-rotate', 'トレード'), ('user.mypage', 'user', 'マイページ')] %}
-  <a href="{{ url_for(endpoint) if endpoint == 'user.mypage' else url_for(endpoint, group_key=group_key) }}" {% if request.endpoint == endpoint or (endpoint == 'trade.search' and request.endpoint and request.endpoint.startswith('trade.')) %}aria-current="page"{% endif %}><i class="fa-solid fa-{{ icon }}" aria-hidden="true"></i><span>{{ label }}</span></a>
+  <a href="{{ url_for(endpoint) if endpoint == 'user.mypage' else url_for(endpoint, group_key=group_key) }}" {% if request.endpoint == endpoint or (endpoint == 'trade.search' and request.endpoint and request.endpoint.startswith('trade.') and request.endpoint != 'trade.qr_check') %}aria-current="page"{% endif %}><i class="fa-solid fa-{{ icon }}" aria-hidden="true"></i><span>{{ label }}</span></a>
   {% endfor %}
 </nav>
 {% endif %}

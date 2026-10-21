@@ -229,12 +229,13 @@ def load_user(user_id):
 def unauthorized():
 
     # データ取得APIはJSON、募集・取引の画面はログインへ戻す。
-    if request.endpoint in ("trade.match_trade", "trade.photos"):
+    if request.endpoint in ("trade.match_trade", "trade.photos", "trade.check_qr"):
         return jsonify({
             "error": "login_required",
             "redirect": url_for(
                 "auth.login",
-                next=request.url
+                next=(url_for('trade.qr_check', group_key=request.view_args['group_key'])
+                      if request.endpoint == 'trade.check_qr' else request.url)
             )
         }), 401
 

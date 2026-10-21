@@ -39,3 +39,12 @@ static/uploads/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Local screenshots, comparison boards and promotional exports
+/docs/free-service-review/
+/docs/page-comparisons/
+/docs/photo-type-order-review/
+/docs/trade-guide/
+/docs/trade-picker-review/
+/docs/ui-comparisons/
+/docs/x-promo/
