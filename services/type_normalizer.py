@@ -11,13 +11,62 @@ photo_type 正規化ユーティリティ
     ヨリ → チュウ → ヒキ → 座り
 
 注意:
-- 数字などの衣装固有タイプは TYPE_NORMALIZATION_MAP に手動定義する
+- DBの衣装ID・PhotoType ID別設定を優先し、固定マップはフォールバックに使う
 - 「ヨリ（制服）」「チュウ（衣装）」など、photo_type 自体に
   正規化後の種類名が含まれるものはマッピング不要
 """
 
 
 from typing import Dict, Iterable, List
+import logging
+
+
+logger = logging.getLogger(__name__)
+
+
+class TypeNormalizationResolver:
+    """Resolve a batch using exact DB identities, without modifying display labels."""
+
+    def __init__(self, group_id):
+        from models import Costume, CostumeTypeNormalization
+
+        self.group_id = group_id
+        self.mapping = {
+            (row.costume_id, row.photo_type_id): row.normalized_type
+            for row in CostumeTypeNormalization.query.join(Costume).filter(
+                Costume.group_id == group_id
+            ).all()
+        }
+        self.unresolved = set()
+
+    def resolve(self, costume_id, photo_type_id, costume_name, photo_type):
+        normalized = self.mapping.get((costume_id, photo_type_id))
+        if normalized in NORMALIZED_TYPES:
+            return normalized
+
+        normalized = normalize_type('', costume_name, photo_type)
+        if normalized not in NORMALIZED_TYPES and photo_type.isdigit():
+            key = (costume_id, photo_type_id)
+            if key not in self.unresolved:
+                self.unresolved.add(key)
+                logger.warning(
+                    'Unresolved numeric photo type: group_id=%s costume_id=%s '
+                    'photo_type_id=%s value=%r',
+                    self.group_id, costume_id, photo_type_id, photo_type
+                )
+        return normalized
+
+
+def get_type_resolver(group_id):
+    """Load once per group/request; never retain DB settings across requests."""
+    from flask import request, has_request_context
+
+    if not has_request_context():
+        return TypeNormalizationResolver(group_id)
+    resolvers = request.environ.setdefault('spcolle.type_normalization_resolvers', {})
+    if group_id not in resolvers:
+        resolvers[group_id] = TypeNormalizationResolver(group_id)
+    return resolvers[group_id]
 
 
 # ============================================================

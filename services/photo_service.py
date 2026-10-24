@@ -2,7 +2,7 @@ from collections import defaultdict
 import re
 from sqlalchemy import exists
 from models import db, Member, Costume, PhotoType, Photo, UserPhoto, Group
-from services.type_normalizer import normalize_type, get_type_order
+from services.type_normalizer import get_type_resolver, get_type_order
 
 
 def get_required_dict(group_id):
@@ -53,10 +53,11 @@ def get_costumes(group_id, member_name=None):
 
 def get_types(group_id, member_name, costume_name):
     rows = (
-        db.session.query(PhotoType.name)
-        .join(Photo)
-        .join(Member)
-        .join(Costume)
+        db.session.query(Costume.id, PhotoType.id, PhotoType.name)
+        .select_from(Photo)
+        .join(PhotoType, PhotoType.id == Photo.type_id)
+        .join(Member, Member.id == Photo.member_id)
+        .join(Costume, Costume.id == Photo.costume_id)
         .filter(
             Member.group_id == group_id,
             Member.name == member_name,
@@ -65,16 +66,19 @@ def get_types(group_id, member_name, costume_name):
         .all()
     )
 
-    def type_sort_key(photo_type):
+    resolver = get_type_resolver(group_id)
+
+    def type_sort_key(row):
+        costume_id, photo_type_id, photo_type = row
         # Use the collection's classification without changing option labels/values.
-        category_order = get_type_order(normalize_type(member_name, costume_name, photo_type))
+        category_order = get_type_order(resolver.resolve(costume_id, photo_type_id, costume_name, photo_type))
         natural_name = tuple(
             (1, int(part)) if part.isdigit() else (0, part)
             for part in re.split(r'(\d+)', photo_type)
         )
         return category_order, natural_name, photo_type
 
-    return sorted({t for (t,) in rows}, key=type_sort_key)
+    return list(dict.fromkeys(row[2] for row in sorted(rows, key=type_sort_key)))
 
 
 def get_owned_members(user_id, group_id):

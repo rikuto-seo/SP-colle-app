@@ -17,7 +17,7 @@ from datetime import date
 from collections import defaultdict
 from routes.core import group_required
 from trade.service import lock_users, assert_stock_floor, TradeError
-from services.type_normalizer import normalize_type, get_type_order
+from services.type_normalizer import get_type_resolver, get_type_order
 
 from sqlalchemy import func, case
 from sqlalchemy.orm import joinedload
@@ -174,8 +174,8 @@ def _photo_detail_payload(user_photo):
 
 def _photo_type_order(photo):
     """Use the existing classification for ordering while preserving the label."""
-    return get_type_order(normalize_type(
-        photo.member.name, photo.costume.name, photo.photo_type.name
+    return get_type_order(get_type_resolver(photo.costume.group_id).resolve(
+        photo.costume_id, photo.type_id, photo.costume.name, photo.photo_type.name
     ))
 
 

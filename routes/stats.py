@@ -8,7 +8,7 @@ from services.stats_service import (
     build_member_comp_data
 )
 from services.type_normalizer import (
-    normalize_type,
+    get_type_resolver,
     get_type_order
 )
 
@@ -179,6 +179,8 @@ def missing(group_key):
         db.session.query(
             Member.name,
             Costume.name,
+            Costume.id,
+            PhotoType.id,
             PhotoType.name
         )
         .join(
@@ -209,18 +211,16 @@ def missing(group_key):
     # =========================
     # グルーピング
     #
-    # ここでも必ず normalize_type()
+    # ここでも共通の正規化処理
     # を通す。
     # =========================
     grouped = {}
 
-    for m, c, t in missing_rows:
+    resolver = get_type_resolver(group.id)
 
-        normalized = normalize_type(
-            m,
-            c,
-            t
-        )
+    for m, c, costume_id, photo_type_id, t in missing_rows:
+
+        normalized = resolver.resolve(costume_id, photo_type_id, c, t)
 
         grouped.setdefault(
             m,

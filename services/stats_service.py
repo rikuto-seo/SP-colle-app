@@ -2,12 +2,13 @@ from collections import defaultdict
 from sqlalchemy import func
 
 from models import db, Group, Member, Costume, PhotoType, Photo, UserPhoto
-from services.type_normalizer import normalize_type, get_type_order
+from services.type_normalizer import get_type_resolver, get_type_order
 
 
 def build_member_comp_data(user_id, group_key, member_name):
 
     group = Group.query.filter_by(key=group_key).first_or_404()
+    resolver = get_type_resolver(group.id)
 
     # =========================
     # 所持済み
@@ -15,6 +16,8 @@ def build_member_comp_data(user_id, group_key, member_name):
     owned_rows = (
         db.session.query(
             Costume.name,
+            Costume.id.label("costume_id"),
+            PhotoType.id.label("photo_type_id"),
             PhotoType.name
         )
         .select_from(UserPhoto)
@@ -32,12 +35,8 @@ def build_member_comp_data(user_id, group_key, member_name):
 
     owned_dict = defaultdict(set)
 
-    for costume, photo_type in owned_rows:
-        normalized = normalize_type(
-            member_name,
-            costume,
-            photo_type
-        )
+    for costume, costume_id, photo_type_id, photo_type in owned_rows:
+        normalized = resolver.resolve(costume_id, photo_type_id, costume, photo_type)
         owned_dict[costume].add(normalized)
 
     # =========================
@@ -46,6 +45,8 @@ def build_member_comp_data(user_id, group_key, member_name):
     required_rows = (
         db.session.query(
             Costume.name,
+            Costume.id.label("costume_id"),
+            PhotoType.id.label("photo_type_id"),
             PhotoType.name
         )
         .select_from(Photo)
@@ -61,12 +62,8 @@ def build_member_comp_data(user_id, group_key, member_name):
 
     required_dict = defaultdict(set)
 
-    for costume, photo_type in required_rows:
-        normalized = normalize_type(
-            member_name,
-            costume,
-            photo_type
-        )
+    for costume, costume_id, photo_type_id, photo_type in required_rows:
+        normalized = resolver.resolve(costume_id, photo_type_id, costume, photo_type)
         required_dict[costume].add(normalized)
 
     # =========================
@@ -102,6 +99,7 @@ def build_member_comp_data(user_id, group_key, member_name):
 def build_stats_data(user_id, group_key):
 
     group = Group.query.filter_by(key=group_key).first_or_404()
+    resolver = get_type_resolver(group.id)
 
     # =========================
     # メンバー順
@@ -135,6 +133,8 @@ def build_stats_data(user_id, group_key):
         db.session.query(
             Member.name,
             Costume.name,
+            Costume.id.label("costume_id"),
+            PhotoType.id.label("photo_type_id"),
             PhotoType.name,
             func.sum(UserPhoto.quantity).label("qty")
         )
@@ -149,6 +149,8 @@ def build_stats_data(user_id, group_key):
         .group_by(
             Member.name,
             Costume.name,
+            Costume.id,
+            PhotoType.id,
             PhotoType.name
         )
         .all()
@@ -158,13 +160,9 @@ def build_stats_data(user_id, group_key):
     type_stats = defaultdict(int)
     owned_dict = defaultdict(lambda: defaultdict(set))
 
-    for m, c, t, qty in rows:
+    for m, c, costume_id, photo_type_id, t, qty in rows:
 
-        normalized = normalize_type(
-            m,
-            c,
-            t
-        )
+        normalized = resolver.resolve(costume_id, photo_type_id, c, t)
 
         member_stats[m] += qty
         type_stats[normalized] += qty
@@ -189,6 +187,8 @@ def build_stats_data(user_id, group_key):
         db.session.query(
             Member.name,
             Costume.name,
+            Costume.id.label("costume_id"),
+            PhotoType.id.label("photo_type_id"),
             PhotoType.name
         )
         .join(Photo, Photo.member_id == Member.id)
@@ -204,13 +204,9 @@ def build_stats_data(user_id, group_key):
         lambda: defaultdict(set)
     )
 
-    for m, c, t in required_rows:
+    for m, c, costume_id, photo_type_id, t in required_rows:
 
-        normalized = normalize_type(
-            m,
-            c,
-            t
-        )
+        normalized = resolver.resolve(costume_id, photo_type_id, c, t)
 
         required_dict[m][c].add(normalized)
 
