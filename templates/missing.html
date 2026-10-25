@@ -66,9 +66,13 @@
 
           <div class="d-flex flex-wrap gap-2">
             {% for photo in photos %}
-            <div class="missing-item">
+            <div class="missing-item" data-photo-id="{{ photo.photo_id }}" data-costume-id="{{ photo.costume_id }}">
               <span class="costume">{{ photo.costume }}</span>
               <span class="type">{{ photo.type }}</span>
+              {% if photo.normalized_type and photo.normalized_type != photo.type %}
+              <span class="text-secondary small">（{{ photo.normalized_type }}）</span>
+              {% endif %}
+              <span class="text-secondary small">写真ID: {{ photo.photo_id }} / 衣装ID: {{ photo.costume_id }}</span>
             </div>
             {% endfor %}
           </div>

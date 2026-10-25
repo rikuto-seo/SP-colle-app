@@ -126,6 +126,8 @@ def stats(group_key):
         member_stats_sorted=member_stats_sorted,
 
         type_stats=type_stats,
+        unclassified_stats=data["unclassified_stats"],
+        unclassified_quantity=data["unclassified_quantity"],
 
         progress_list=data["progress_list"],
 
@@ -177,16 +179,15 @@ def missing(group_key):
     # =========================
     missing_rows = (
         db.session.query(
+            Photo.id,
             Member.name,
             Costume.name,
             Costume.id,
             PhotoType.id,
             PhotoType.name
         )
-        .join(
-            Photo,
-            Photo.member_id == Member.id
-        )
+        .select_from(Photo)
+        .join(Member, Member.id == Photo.member_id)
         .join(
             Costume,
             Costume.id == Photo.costume_id
@@ -203,6 +204,7 @@ def missing(group_key):
                 (UserPhoto.user_id == current_user.id)
                 &
                 (UserPhoto.photo_id == Photo.id)
+                & (UserPhoto.quantity > 0)
             )
         )
         .all()
@@ -218,7 +220,7 @@ def missing(group_key):
 
     resolver = get_type_resolver(group.id)
 
-    for m, c, costume_id, photo_type_id, t in missing_rows:
+    for photo_id, m, c, costume_id, photo_type_id, t in missing_rows:
 
         normalized = resolver.resolve(costume_id, photo_type_id, c, t)
 
@@ -226,8 +228,11 @@ def missing(group_key):
             m,
             []
         ).append({
+            "photo_id": photo_id,
+            "costume_id": costume_id,
             "costume": c,
-            "type": normalized
+            "type": t,
+            "normalized_type": normalized,
         })
 
     # =========================
@@ -239,8 +244,8 @@ def missing(group_key):
 
         grouped[member_name].sort(
             key=lambda x: (
-                get_type_order(x["type"]),
-                x["costume"]
+                get_type_order(x["normalized_type"]),
+                x["costume"], x["costume_id"], x["photo_id"]
             )
         )
 

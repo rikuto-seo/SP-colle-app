@@ -278,7 +278,7 @@ def index(group_key):
             case(
                 (
                     UserPhoto.quantity > 0,
-                    Photo.type_id
+                    Photo.id
                 )
             )
         )
@@ -785,6 +785,9 @@ def index(group_key):
         )
 
         cards.append({
+
+            "member_id": row.member_id,
+            "costume_id": row.costume_id,
 
             "member":
                 row.member_name,
