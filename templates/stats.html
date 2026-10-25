@@ -84,7 +84,7 @@
 
       {% for entry in comp_ranking %}
 
-      <li class="list-group-item d-flex justify-content-between align-items-center">
+      <li class="list-group-item d-flex justify-content-between align-items-center" data-member-id="{{ entry.member_id }}">
 
         {{ entry.member }}
 
@@ -256,33 +256,7 @@
 
   <div class="accordion-body">
 
-    {% if type_stats %}
-
-    <ul class="list-group list-group-flush">
-
-      {% for type, count in type_stats %}
-
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-
-        {{ type }}
-
-        <span class="badge bg-success rounded-pill">
-          {{ count }}枚
-        </span>
-
-      </li>
-
-      {% endfor %}
-
-    </ul>
-
-    {% else %}
-
-    <p class="text-muted">
-      データがありません。
-    </p>
-
-    {% endif %}
+    {% include '_type_stats.html' %}
 
   </div>
 
@@ -334,16 +308,17 @@
             class="accordion-button collapsed member-button"
             type="button"
             data-bs-toggle="collapse"
-            data-bs-target="#member-{{ loop.index }}"
-            data-member="{{ member }}"
+            data-bs-target="#member-{{ member.id }}"
+            data-member-id="{{ member.id }}"
+            data-member-url="{{ url_for('stats.member_detail_by_id', group_key=group_key, member_id=member.id) }}"
           >
-            {{ member }}
+            {{ member.name }}
           </button>
 
         </h2>
 
         <div
-          id="member-{{ loop.index }}"
+          id="member-{{ member.id }}"
           class="accordion-collapse collapse"
         >
 
@@ -517,7 +492,7 @@
         }
 
 
-        const member = this.dataset.member;
+        const memberUrl = this.dataset.memberUrl;
 
 
         const body = this
@@ -537,7 +512,7 @@
         try {
 
           const res = await fetch(
-            `/stats/member/{{ group_key }}/${encodeURIComponent(member)}`
+            memberUrl
           );
 
 
@@ -570,6 +545,12 @@
             html = '<ul class="list-group">';
 
 
+            function escapeHtml(value) {
+              const element = document.createElement('span');
+              element.textContent = value;
+              return element.innerHTML;
+            }
+
             data.forEach(item => {
 
               const badge = item.is_complete
@@ -586,7 +567,7 @@
 
                 <li class="list-group-item d-flex justify-content-between align-items-center">
 
-                  ${item.costume}
+                  ${escapeHtml(item.costume_label || item.costume)}
 
                   <span>
 

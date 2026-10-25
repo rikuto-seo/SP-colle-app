@@ -1,8 +1,8 @@
-from flask import Blueprint, render_template, abort, jsonify
+from flask import Blueprint, render_template, abort, jsonify, request
 from flask_login import login_required, current_user
 from sqlalchemy import exists
 
-from models import db, Member, Costume, PhotoType, Photo, UserPhoto
+from models import db, Group, Member, Costume, PhotoType, Photo, UserPhoto
 from services.stats_service import (
     build_stats_data,
     build_member_comp_data
@@ -78,8 +78,8 @@ def stats(group_key):
     # =========================
     member_stats_ordered = [
         (
-            m,
-            data["member_stats"].get(m, 0)
+            m["name"],
+            data["member_stats"].get(m["id"], 0)
         )
         for m in data["ordered_members"]
     ]
@@ -88,7 +88,7 @@ def stats(group_key):
     # メンバー別所持数ランキング
     # =========================
     member_stats_sorted = sorted(
-        data["member_stats"].items(),
+        [(m["name"], data["member_stats"].get(m["id"], 0)) for m in data["ordered_members"]],
         key=lambda x: x[1],
         reverse=True
     )
@@ -126,6 +126,8 @@ def stats(group_key):
         member_stats_sorted=member_stats_sorted,
 
         type_stats=type_stats,
+        unclassified_stats=data["unclassified_stats"],
+        unclassified_quantity=data["unclassified_quantity"],
 
         progress_list=data["progress_list"],
 
@@ -156,126 +158,52 @@ def member_detail(group_key, member):
     return jsonify(data)
 
 
-# =========================
-# missing
-# =========================
+@stats_bp.route('/stats/member/<group_key>/id/<int:member_id>')
+@login_required
+def member_detail_by_id(group_key, member_id):
+    return jsonify(build_member_comp_data(current_user.id, group_key, member_id=member_id))
+
+
+# Missing rows retain Photo identity and are grouped by member ID.
 @stats_bp.route('/missing/<group_key>')
 @login_required
 def missing(group_key):
-
     conf = get_group_conf(group_key)
-
-    data = build_stats_data(
-        current_user.id,
-        group_key
+    group = Group.query.filter_by(key=group_key).first_or_404()
+    members = sorted(Member.query.filter_by(group_id=group.id).all(),
+                     key=lambda m: (m.generation or 0, m.display_order or 0, m.id))
+    costumes = Costume.query.filter_by(group_id=group.id).order_by(Costume.name, Costume.id).all()
+    member_id = request.args.get('member_id', type=int)
+    costume_id = request.args.get('costume_id', type=int)
+    if member_id is not None and member_id not in {m.id for m in members}:
+        abort(404)
+    if costume_id is not None and costume_id not in {c.id for c in costumes}:
+        abort(404)
+    query = (
+        db.session.query(Photo.id, Member.id, Costume.name, Costume.id, PhotoType.id, PhotoType.name)
+        .select_from(Photo)
+        .join(Member, Member.id == Photo.member_id)
+        .join(Costume, Costume.id == Photo.costume_id)
+        .join(PhotoType, PhotoType.id == Photo.type_id)
+        .filter(Member.group_id == group.id)
+        .filter(~exists().where((UserPhoto.user_id == current_user.id)
+                               & (UserPhoto.photo_id == Photo.id) & (UserPhoto.quantity > 0)))
     )
-
-    group = data["group"]
-
-    # =========================
-    # 未所持
-    # =========================
-    missing_rows = (
-        db.session.query(
-            Member.name,
-            Costume.name,
-            Costume.id,
-            PhotoType.id,
-            PhotoType.name
-        )
-        .join(
-            Photo,
-            Photo.member_id == Member.id
-        )
-        .join(
-            Costume,
-            Costume.id == Photo.costume_id
-        )
-        .join(
-            PhotoType,
-            PhotoType.id == Photo.type_id
-        )
-        .filter(
-            Member.group_id == group.id
-        )
-        .filter(
-            ~exists().where(
-                (UserPhoto.user_id == current_user.id)
-                &
-                (UserPhoto.photo_id == Photo.id)
-            )
-        )
-        .all()
-    )
-
-    # =========================
-    # グルーピング
-    #
-    # ここでも共通の正規化処理
-    # を通す。
-    # =========================
-    grouped = {}
-
+    if member_id is not None:
+        query = query.filter(Photo.member_id == member_id)
+    if costume_id is not None:
+        query = query.filter(Photo.costume_id == costume_id)
     resolver = get_type_resolver(group.id)
-
-    for m, c, costume_id, photo_type_id, t in missing_rows:
-
-        normalized = resolver.resolve(costume_id, photo_type_id, c, t)
-
-        grouped.setdefault(
-            m,
-            []
-        ).append({
-            "costume": c,
-            "type": normalized
-        })
-
-    # =========================
-    # 種類順
-    #
-    # ヨリ → チュウ → ヒキ → 座り
-    # =========================
-    for member_name in grouped:
-
-        grouped[member_name].sort(
-            key=lambda x: (
-                get_type_order(x["type"]),
-                x["costume"]
-            )
-        )
-
-    # =========================
-    # メンバー順
-    # =========================
-    ordered_grouped = {
-        m: grouped.get(m, [])
-        for m in data["ordered_members"]
-        if m in grouped
-    }
-
-    # =========================
-    # 衣装一覧
-    # =========================
-    costume_list = [
-        c.name
-        for c in (
-            Costume.query
-            .filter_by(group_id=group.id)
-            .order_by(Costume.name)
-            .all()
-        )
-    ]
-
-    return render_template(
-        'missing.html',
-
-        grouped_missing=ordered_grouped,
-
-        member_list=data["ordered_members"],
-
-        group_key=group_key,
-
-        costume_list=costume_list,
-
-        group_color=conf['color']
-    )
+    grouped = {}
+    for photo_id, mid, costume, cid, tid, raw_type in query.all():
+        grouped.setdefault(mid, []).append(dict(photo_id=photo_id, member_id=mid, costume_id=cid,
+            costume=costume, type=raw_type, normalized_type=resolver.resolve(cid, tid, costume, raw_type)))
+    for photos in grouped.values():
+        photos.sort(key=lambda p: (get_type_order(p['normalized_type']), p['costume'], p['costume_id'], p['photo_id']))
+    return render_template('missing.html',
+        grouped_missing={m.id: grouped[m.id] for m in members if m.id in grouped},
+        member_names={m.id: m.name for m in members},
+        member_options=[dict(id=m.id, name=m.name) for m in members],
+        costume_options=[dict(id=c.id, name=c.name) for c in costumes],
+        selected_member_id=member_id, selected_costume_id=costume_id,
+        group_key=group_key, group_color=conf['color'])

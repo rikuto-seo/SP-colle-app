@@ -278,7 +278,7 @@ def index(group_key):
             case(
                 (
                     UserPhoto.quantity > 0,
-                    Photo.type_id
+                    Photo.id
                 )
             )
         )
@@ -785,6 +785,9 @@ def index(group_key):
         )
 
         cards.append({
+
+            "member_id": row.member_id,
+            "costume_id": row.costume_id,
 
             "member":
                 row.member_name,
@@ -1603,7 +1606,7 @@ def add(group_key):
             )
 
         # 対象photo取得
-        photo = (
+        photo_query = (
             db.session.query(Photo)
 
             .join(Member)
@@ -1619,8 +1622,20 @@ def add(group_key):
                 Member.group_id == group.id
             )
 
-            .first()
         )
+
+        # Legacy forms send labels. Never silently choose a different Photo
+        # when a name is duplicated; ID-aware callers can disambiguate.
+        for field, column in (("member_id", Member.id), ("costume_id", Costume.id)):
+            if request.form.get(field):
+                selected_id = request.form.get(field, type=int)
+                if selected_id is None:
+                    abort(400)
+                photo_query = photo_query.filter(column == selected_id)
+        candidates = photo_query.limit(2).all()
+        if len(candidates) > 1:
+            abort(409, description="Photo selection is ambiguous; specify member_id and costume_id.")
+        photo = candidates[0] if candidates else None
 
         if not photo:
 

@@ -10,19 +10,30 @@
 
   <div class="card shadow-sm bg-body text-body mb-3">
     <div class="card-body text-center small">
-      所持数: {{ stats.owned_count }} / {{ stats.total_count }}
-      ({{ stats.percent }}%)
+      <div>総所持枚数: {{ stats.quantity|default(0) }}枚</div>
+      <div>所持済み写真: {{ stats.owned_count }} / {{ stats.total_count }}
+      ({{ stats.percent|round(1) }}%)</div>
+      <div>コンプ数: {{ stats.complete_count|default(0) }}</div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <h2 class="h6">種類別所持数</h2>
+      {% include '_type_stats.html' %}
     </div>
   </div>
 
   <div class="row row-cols-2 row-cols-md-3 g-2">
     {% for photo in all_photos %}
       <div class="col">
-        <div class="card shadow-sm p-2 h-100 bg-body text-body
+        <div data-photo-id="{{ photo.id }}" data-costume-id="{{ photo.costume_id }}"
+          class="card shadow-sm p-2 h-100 bg-body text-body
           {% if photo.id not in owned_photo_ids %}opacity-50{% endif %}">
 
           <div class="fw-bold text-truncate small">{{ photo.member }}</div>
           <div class="text-secondary text-truncate small">{{ photo.costume }}</div>
+          <div class="text-secondary small">写真ID: {{ photo.id }} / 衣装ID: {{ photo.costume_id }}</div>
 
           <div class="d-flex justify-content-between small mt-1">
             <span>{{ photo.photo_type }}</span>
@@ -35,6 +46,18 @@
       </div>
     {% endfor %}
   </div>
+
+  {% if pagination and pagination.pages > 1 %}
+  <nav aria-label="写真一覧のページ" class="d-flex justify-content-between my-3">
+    {% if pagination.has_prev %}
+    <a href="{{ url_for('share.shared_stats', group_key=group_key, public_uuid=share_uuid, page=pagination.prev_num) }}">前のページ</a>
+    {% else %}<span></span>{% endif %}
+    <span>{{ pagination.page }} / {{ pagination.pages }}</span>
+    {% if pagination.has_next %}
+    <a href="{{ url_for('share.shared_stats', group_key=group_key, public_uuid=share_uuid, page=pagination.next_num) }}">次のページ</a>
+    {% endif %}
+  </nav>
+  {% endif %}
 
 </div>
 {% endblock %}

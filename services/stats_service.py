@@ -1,337 +1,142 @@
-from collections import defaultdict
+from collections import Counter
+
+from flask import abort
 from sqlalchemy import func
 
 from models import db, Group, Member, Costume, PhotoType, Photo, UserPhoto
-from services.type_normalizer import get_type_resolver, get_type_order
+from services.type_normalizer import NORMALIZED_TYPES, get_type_resolver
 
 
-def build_member_comp_data(user_id, group_key, member_name):
+def _owned_join(user_id):
+    return ((UserPhoto.photo_id == Photo.id) & (UserPhoto.user_id == user_id)
+            & (UserPhoto.quantity > 0))
 
-    group = Group.query.filter_by(key=group_key).first_or_404()
-    resolver = get_type_resolver(group.id)
 
-    # =========================
-    # 所持済み
-    # =========================
-    owned_rows = (
+def get_photo_inventory(user_id, group_id):
+    """Paginate this query before materializing photos for display."""
+    return (
         db.session.query(
-            Costume.name,
-            Costume.id.label("costume_id"),
-            PhotoType.id.label("photo_type_id"),
-            PhotoType.name
-        )
-        .select_from(UserPhoto)
-        .join(Photo, Photo.id == UserPhoto.photo_id)
-        .join(Member, Member.id == Photo.member_id)
-        .join(Costume, Costume.id == Photo.costume_id)
-        .join(PhotoType, PhotoType.id == Photo.type_id)
-        .filter(
-            UserPhoto.user_id == user_id,
-            Member.group_id == group.id,
-            Member.name == member_name
-        )
-        .all()
-    )
-
-    owned_dict = defaultdict(set)
-
-    for costume, costume_id, photo_type_id, photo_type in owned_rows:
-        normalized = resolver.resolve(costume_id, photo_type_id, costume, photo_type)
-        owned_dict[costume].add(normalized)
-
-    # =========================
-    # 必要種類
-    # =========================
-    required_rows = (
-        db.session.query(
-            Costume.name,
-            Costume.id.label("costume_id"),
-            PhotoType.id.label("photo_type_id"),
-            PhotoType.name
+            Photo.id.label('photo_id'), Member.id.label('member_id'), Member.name.label('member'),
+            Costume.id.label('costume_id'), Costume.name.label('costume'),
+            PhotoType.id.label('photo_type_id'), PhotoType.name.label('type'),
+            UserPhoto.quantity.label('quantity'),
         )
         .select_from(Photo)
         .join(Member, Member.id == Photo.member_id)
         .join(Costume, Costume.id == Photo.costume_id)
         .join(PhotoType, PhotoType.id == Photo.type_id)
-        .filter(
-            Member.group_id == group.id,
-            Member.name == member_name
-        )
-        .all()
+        .outerjoin(UserPhoto, _owned_join(user_id))
+        .filter(Member.group_id == group_id)
     )
 
-    required_dict = defaultdict(set)
 
-    for costume, costume_id, photo_type_id, photo_type in required_rows:
-        normalized = resolver.resolve(costume_id, photo_type_id, costume, photo_type)
-        required_dict[costume].add(normalized)
+def _costume_labels(group_id):
+    costumes = Costume.query.filter_by(group_id=group_id).all()
+    names = Counter(c.name for c in costumes)
+    return {c.id: f'{c.name}（衣装ID: {c.id}）' if names[c.name] > 1 else c.name for c in costumes}
 
-    # =========================
-    # コンプ計算
-    # =========================
-    result = []
 
-    for costume, required_types in required_dict.items():
-
-        owned_types = owned_dict[costume]
-
-        owned_count = len(
-            required_types & owned_types
+def _completion_query(user_id, group_id):
+    # UserPhoto is unique per (user_id, photo_id), so each joined row is one
+    # distinct Photo. Classification is deliberately absent from this query.
+    return (
+        db.session.query(
+            Photo.member_id.label('member_id'), Photo.costume_id.label('costume_id'),
+            Costume.name.label('costume'), func.count(Photo.id).label('total'),
+            func.count(UserPhoto.photo_id).label('owned'),
+            func.coalesce(func.sum(UserPhoto.quantity), 0).label('quantity'),
         )
-
-        total = len(required_types)
-
-        result.append({
-            "costume": costume,
-            "owned": owned_count,
-            "total": total,
-            "is_complete": (
-                total > 0 and owned_count == total
-            )
-        })
-
-    return sorted(
-        result,
-        key=lambda x: x["costume"]
+        .select_from(Photo)
+        .join(Member, Member.id == Photo.member_id)
+        .join(Costume, Costume.id == Photo.costume_id)
+        .outerjoin(UserPhoto, _owned_join(user_id))
+        .filter(Member.group_id == group_id)
+        .group_by(Photo.member_id, Photo.costume_id, Costume.name)
     )
+
+
+def _completion_entry(row, labels):
+    return {
+        'member_id': row.member_id, 'costume_id': row.costume_id, 'costume': row.costume,
+        'costume_label': labels.get(row.costume_id, row.costume),
+        'owned': row.owned, 'total': row.total, 'is_complete': row.total > 0 and row.owned == row.total,
+    }
+
+
+def build_member_comp_data(user_id, group_key, member_name=None, *, member_id=None):
+    group = Group.query.filter_by(key=group_key).first_or_404()
+    members = Member.query.filter_by(group_id=group.id)
+    if member_id is None:
+        matches = members.filter_by(name=member_name).all()
+        if not matches:
+            abort(404)
+        if len(matches) != 1:
+            abort(409, description='Member name is ambiguous; use member ID.')
+        member_id = matches[0].id
+    else:
+        members.filter_by(id=member_id).first_or_404()
+    rows = _completion_query(user_id, group.id).filter(Photo.member_id == member_id).all()
+    labels = _costume_labels(group.id)
+    return sorted((_completion_entry(row, labels) for row in rows),
+                  key=lambda item: (item['costume'], item['costume_id']))
 
 
 def build_stats_data(user_id, group_key):
-
     group = Group.query.filter_by(key=group_key).first_or_404()
-    resolver = get_type_resolver(group.id)
+    members = sorted(Member.query.filter_by(group_id=group.id).all(),
+                     key=lambda m: (m.generation or 0, m.display_order or 0, m.id))
+    labels = _costume_labels(group.id)
+    rows = _completion_query(user_id, group.id).all()
+    member_stats = dict.fromkeys((m.id for m in members), 0)
+    comp_stats = {m.id: [] for m in members}
+    progress = {}
+    for row in rows:
+        member_stats[row.member_id] += row.quantity
+        comp_stats[row.member_id].append(_completion_entry(row, labels))
+        item = progress.setdefault(row.costume_id, {
+            'costume_id': row.costume_id, 'costume': row.costume,
+            'costume_label': labels.get(row.costume_id, row.costume), 'owned': 0, 'total': 0,
+        })
+        item['owned'] += row.owned
+        item['total'] += row.total
+    for entries in comp_stats.values():
+        entries.sort(key=lambda item: (item['costume'], item['costume_id']))
+    for item in progress.values():
+        item['rate'] = item['owned'] / item['total'] * 100
+    comp_ranking = [dict(member_id=m.id, member=m.name,
+                        complete_count=sum(item['is_complete'] for item in comp_stats[m.id])) for m in members]
+    comp_ranking.sort(key=lambda item: item['complete_count'], reverse=True)
 
-    # =========================
-    # メンバー順
-    # =========================
-    members = Member.query.filter_by(group_id=group.id).all()
-
-    ordered_members = [
-        m.name for m in sorted(
-            members,
-            key=lambda x: (
-                x.generation or 0,
-                x.display_order or 0
-            )
-        )
-    ]
-
-    members = (
-        Member.query
-        .filter_by(group_id=group.id)
-        .order_by(
-            Member.generation,
-            Member.display_order
-        )
-        .all()
-    )
-
-    # =========================
-    # ユーザー所持
-    # =========================
-    rows = (
-        db.session.query(
-            Member.name,
-            Costume.name,
-            Costume.id.label("costume_id"),
-            PhotoType.id.label("photo_type_id"),
-            PhotoType.name,
-            func.sum(UserPhoto.quantity).label("qty")
-        )
+    # Sum by costume/type in SQL, resolving a classification once per pair
+    # instead of allocating all member/costume/type Photos in Python.
+    type_rows = (
+        db.session.query(Photo.costume_id.label('costume_id'), Costume.name.label('costume'),
+            Photo.type_id.label('photo_type_id'), PhotoType.name.label('type'),
+            func.sum(UserPhoto.quantity).label('quantity'), func.count(Photo.id).label('photo_count'))
+        .select_from(UserPhoto)
         .join(Photo, Photo.id == UserPhoto.photo_id)
         .join(Member, Member.id == Photo.member_id)
         .join(Costume, Costume.id == Photo.costume_id)
         .join(PhotoType, PhotoType.id == Photo.type_id)
-        .filter(
-            UserPhoto.user_id == user_id,
-            Member.group_id == group.id
-        )
-        .group_by(
-            Member.name,
-            Costume.name,
-            Costume.id,
-            PhotoType.id,
-            PhotoType.name
-        )
+        .filter(UserPhoto.user_id == user_id, UserPhoto.quantity > 0, Member.group_id == group.id)
+        .group_by(Photo.costume_id, Costume.name, Photo.type_id, PhotoType.name)
         .all()
     )
-
-    member_stats = defaultdict(int)
-    type_stats = defaultdict(int)
-    owned_dict = defaultdict(lambda: defaultdict(set))
-
-    for m, c, costume_id, photo_type_id, t, qty in rows:
-
-        normalized = resolver.resolve(costume_id, photo_type_id, c, t)
-
-        member_stats[m] += qty
-        type_stats[normalized] += qty
-        owned_dict[m][c].add(normalized)
-
-    # =========================
-    # 種類別統計の順序
-    #
-    # ヨリ → チュウ → ヒキ → 座り
-    # =========================
-    type_stats_ordered = dict(
-        sorted(
-            type_stats.items(),
-            key=lambda x: get_type_order(x[0])
-        )
-    )
-
-    # =========================
-    # required（Photoそのもの）
-    # =========================
-    required_rows = (
-        db.session.query(
-            Member.name,
-            Costume.name,
-            Costume.id.label("costume_id"),
-            PhotoType.id.label("photo_type_id"),
-            PhotoType.name
-        )
-        .join(Photo, Photo.member_id == Member.id)
-        .join(Costume, Costume.id == Photo.costume_id)
-        .join(PhotoType, PhotoType.id == Photo.type_id)
-        .filter(
-            Member.group_id == group.id
-        )
-        .all()
-    )
-
-    required_dict = defaultdict(
-        lambda: defaultdict(set)
-    )
-
-    for m, c, costume_id, photo_type_id, t in required_rows:
-
-        normalized = resolver.resolve(costume_id, photo_type_id, c, t)
-
-        required_dict[m][c].add(normalized)
-
-    # =========================
-    # コンプ
-    # =========================
-    comp_stats = {}
-    comp_ranking = []
-
-    for m in ordered_members:
-
-        member_data = []
-        comp_count = 0
-
-        for c, req_types in required_dict.get(m, {}).items():
-
-            owned = owned_dict[m][c]
-
-            owned_count = len(
-                req_types & owned
-            )
-
-            total = len(req_types)
-
-            is_complete = (
-                owned_count == total
-                and total > 0
-            )
-
-            if is_complete:
-                comp_count += 1
-
-            member_data.append({
-                "costume": c,
-                "owned": owned_count,
-                "total": total,
-                "is_complete": is_complete
-            })
-
-        comp_stats[m] = member_data
-
-        comp_ranking.append({
-            "member": m,
-            "complete_count": comp_count
-        })
-
-    comp_ranking.sort(
-        key=lambda x: x["complete_count"],
-        reverse=True
-    )
-
-    # =========================
-    # 衣装進捗（quantity対応版）
-    # =========================
-    total_rows = (
-        db.session.query(
-            Costume.name,
-            func.count(Photo.id)
-        )
-        .join(Photo)
-        .join(Member)
-        .filter(
-            Member.group_id == group.id
-        )
-        .group_by(Costume.name)
-        .all()
-    )
-
-    owned_rows = (
-        db.session.query(
-            Costume.name,
-            func.sum(UserPhoto.quantity)
-        )
-        .join(
-            Photo,
-            Photo.id == UserPhoto.photo_id
-        )
-        .join(
-            Costume,
-            Costume.id == Photo.costume_id
-        )
-        .join(
-            Member,
-            Member.id == Photo.member_id
-        )
-        .filter(
-            UserPhoto.user_id == user_id,
-            Member.group_id == group.id
-        )
-        .group_by(Costume.name)
-        .all()
-    )
-
-    total_map = dict(total_rows)
-    owned_map = dict(owned_rows)
-
-    progress_list = []
-
-    for c, total in total_map.items():
-
-        owned = owned_map.get(c, 0) or 0
-
-        progress_list.append({
-            "costume": c,
-            "owned": owned,
-            "total": total,
-            "rate": (
-                owned / total * 100
-            ) if total else 0
-        })
-
+    resolver = get_type_resolver(group.id)
+    type_stats = dict.fromkeys(NORMALIZED_TYPES, 0)
+    unclassified = []
+    for row in type_rows:
+        normalized = resolver.resolve(row.costume_id, row.photo_type_id, row.costume, row.type)
+        if normalized in type_stats:
+            type_stats[normalized] += row.quantity
+        else:
+            unclassified.append(dict(row._mapping, costume_label=labels.get(row.costume_id, row.costume)))
     return {
-        "group": group,
-        "member_stats": member_stats,
-
-        # ヨリ → チュウ → ヒキ → 座り
-        "type_stats": type_stats_ordered,
-
-        "comp_stats": comp_stats,
-        "comp_ranking": comp_ranking,
-
-        "progress_list": sorted(
-            progress_list,
-            key=lambda x: x["costume"]
-        ),
-
-        "ordered_members": ordered_members
+        'group': group, 'member_stats': member_stats, 'type_stats': type_stats,
+        'unclassified_stats': sorted(unclassified, key=lambda r: (r['costume'], r['costume_id'], r['type'])),
+        'unclassified_quantity': sum(item['quantity'] for item in unclassified),
+        'comp_stats': comp_stats, 'comp_ranking': comp_ranking,
+        'progress_list': sorted(progress.values(), key=lambda r: (r['costume'], r['costume_id'])),
+        'ordered_members': [dict(id=m.id, name=m.name) for m in members],
+        'member_names': {m.id: m.name for m in members},
     }

@@ -1,8 +1,6 @@
 # sakamichi_photo_app/routes/share.py
 
-from flask import Blueprint, render_template, abort
-from flask_login import current_user
-from sqlalchemy import func
+from flask import Blueprint, render_template, abort, request
 
 from models import (
     User,
@@ -16,6 +14,7 @@ from models import (
 )
 from routes.core import group_required
 from extensions import db
+from services.stats_service import build_stats_data, get_photo_inventory
 
 share_bp = Blueprint('share', __name__)
 
@@ -41,62 +40,31 @@ def shared_stats(group_key, public_uuid):
         return render_template("shared_collection/not_shared.html")
 
     user = User.query.get_or_404(share.user_id)
-    group = Group.query.filter_by(key=group_key).first_or_404()
-
-    # =========================
-    # 全体母数（分母）
-    # =========================
-    total_photos = (
-        db.session.query(func.count(Photo.id))
-        .join(Member)
-        .filter(Member.group_id == group.id)
-        .scalar()
-    )
-
-    # =========================
-    # 所持数（分子）
-    # =========================
-    owned_photos = (
-        db.session.query(func.sum(UserPhoto.quantity))
-        .join(Photo)
-        .join(Member)
-        .filter(
-            UserPhoto.user_id == user.id,
-            Member.group_id == group.id
-        )
-        .scalar()
-    ) or 0
-
-    # =========================
-    # メンバー別集計
-    # =========================
-    member_stats = (
-        db.session.query(
-            Member.name,
-            func.coalesce(func.sum(UserPhoto.quantity), 0)
-        )
-        .join(Photo, Photo.member_id == Member.id)
-        .outerjoin(
-            UserPhoto,
-            (UserPhoto.photo_id == Photo.id) &
-            (UserPhoto.user_id == user.id)
-        )
-        .filter(Member.group_id == group.id)
-        .group_by(Member.name)
-        .all()
-    )
-
+    data = build_stats_data(user.id, group_key)
+    page = get_photo_inventory(user.id, data['group'].id).order_by(Photo.id).paginate(
+        page=request.args.get('page', 1, type=int), per_page=100, error_out=False)
+    inventory = page.items
+    owned_photo_ids = {row.photo_id for row in inventory if row.quantity and row.quantity > 0}
+    all_photos = [dict(id=row.photo_id, member_id=row.member_id, member=row.member, costume=row.costume,
+                       costume_id=row.costume_id, photo_type=row.type) for row in inventory]
+    total = sum(row['total'] for row in data['progress_list'])
+    owned = sum(row['owned'] for row in data['progress_list'])
     stats = {
-        "total": total_photos,
-        "owned": owned_photos,
-        "rate": (owned_photos / total_photos * 100) if total_photos else 0,
-        "member_stats": member_stats
+        'total_count': total,
+        'owned_count': owned,
+        'percent': owned / total * 100 if total else 0,
+        'quantity': sum(data['member_stats'].values()),
+        'complete_count': sum(item['complete_count'] for item in data['comp_ranking']),
     }
 
     return render_template(
         'shared_stats.html',
         user=user,
         stats=stats,
+        all_photos=all_photos, owned_photo_ids=owned_photo_ids, pagination=page, share_uuid=public_uuid,
+        type_stats=list(data['type_stats'].items()),
+        unclassified_stats=data['unclassified_stats'],
+        unclassified_quantity=data['unclassified_quantity'],
         group_key=group_key
     )
 
@@ -138,6 +106,7 @@ def shared_collection(group_key, public_uuid):
         .join(PhotoType, PhotoType.id == Photo.type_id)
         .filter(
             UserPhoto.user_id == user.id,
+            UserPhoto.quantity > 0,
             Member.group_id == group.id
         )
         .all()
