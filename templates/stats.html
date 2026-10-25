@@ -84,7 +84,7 @@
 
       {% for entry in comp_ranking %}
 
-      <li class="list-group-item d-flex justify-content-between align-items-center">
+      <li class="list-group-item d-flex justify-content-between align-items-center" data-member-id="{{ entry.member_id }}">
 
         {{ entry.member }}
 
@@ -308,16 +308,17 @@
             class="accordion-button collapsed member-button"
             type="button"
             data-bs-toggle="collapse"
-            data-bs-target="#member-{{ loop.index }}"
-            data-member="{{ member }}"
+            data-bs-target="#member-{{ member.id }}"
+            data-member-id="{{ member.id }}"
+            data-member-url="{{ url_for('stats.member_detail_by_id', group_key=group_key, member_id=member.id) }}"
           >
-            {{ member }}
+            {{ member.name }}
           </button>
 
         </h2>
 
         <div
-          id="member-{{ loop.index }}"
+          id="member-{{ member.id }}"
           class="accordion-collapse collapse"
         >
 
@@ -491,7 +492,7 @@
         }
 
 
-        const member = this.dataset.member;
+        const memberUrl = this.dataset.memberUrl;
 
 
         const body = this
@@ -511,7 +512,7 @@
         try {
 
           const res = await fetch(
-            `/stats/member/{{ group_key }}/${encodeURIComponent(member)}`
+            memberUrl
           );
 
 

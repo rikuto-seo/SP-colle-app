@@ -1,6 +1,6 @@
 # sakamichi_photo_app/routes/share.py
 
-from flask import Blueprint, render_template, abort
+from flask import Blueprint, render_template, abort, request
 
 from models import (
     User,
@@ -41,15 +41,18 @@ def shared_stats(group_key, public_uuid):
 
     user = User.query.get_or_404(share.user_id)
     data = build_stats_data(user.id, group_key)
-    inventory = get_photo_inventory(user.id, data['group'].id)
+    page = get_photo_inventory(user.id, data['group'].id).order_by(Photo.id).paginate(
+        page=request.args.get('page', 1, type=int), per_page=100, error_out=False)
+    inventory = page.items
     owned_photo_ids = {row.photo_id for row in inventory if row.quantity and row.quantity > 0}
-    all_photos = [dict(id=row.photo_id, member=row.member, costume=row.costume,
+    all_photos = [dict(id=row.photo_id, member_id=row.member_id, member=row.member, costume=row.costume,
                        costume_id=row.costume_id, photo_type=row.type) for row in inventory]
-    total = len(inventory)
+    total = sum(row['total'] for row in data['progress_list'])
+    owned = sum(row['owned'] for row in data['progress_list'])
     stats = {
         'total_count': total,
-        'owned_count': len(owned_photo_ids),
-        'percent': len(owned_photo_ids) / total * 100 if total else 0,
+        'owned_count': owned,
+        'percent': owned / total * 100 if total else 0,
         'quantity': sum(data['member_stats'].values()),
         'complete_count': sum(item['complete_count'] for item in data['comp_ranking']),
     }
@@ -58,7 +61,7 @@ def shared_stats(group_key, public_uuid):
         'shared_stats.html',
         user=user,
         stats=stats,
-        all_photos=all_photos, owned_photo_ids=owned_photo_ids,
+        all_photos=all_photos, owned_photo_ids=owned_photo_ids, pagination=page, share_uuid=public_uuid,
         type_stats=list(data['type_stats'].items()),
         unclassified_stats=data['unclassified_stats'],
         unclassified_quantity=data['unclassified_quantity'],

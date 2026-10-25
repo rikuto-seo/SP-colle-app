@@ -12,7 +12,7 @@ from flask import g, template_rendered
 from sqlalchemy import event, text
 
 from extensions import db
-from models import Costume, CostumeTypeNormalization, Photo, PhotoType, UserPhoto, WantShare
+from models import Member, Costume, CostumeTypeNormalization, Photo, PhotoType, UserPhoto, WantShare
 from routes.share import share_bp
 from routes.stats import stats_bp
 from services.stats_service import build_stats_data, build_member_comp_data
@@ -86,7 +86,7 @@ class TypeNormalizationTest(unittest.TestCase):
         self.assertEqual(data['unclassified_quantity'], 5)
         self.assertEqual(sum(data['type_stats'].values()) + data['unclassified_quantity'],
                          sum(data['member_stats'].values()))
-        costume = next(c for c in data['comp_stats']['メンバーA'] if c['costume'] == MAPPED_COSTUME)
+        costume = next(c for c in data['comp_stats'][1] if c['costume'] == MAPPED_COSTUME)
         # 01, 03 and canonical ヨリ are independent Photos even with one classification.
         self.assertEqual((costume['owned'], costume['total'], costume['is_complete']), (3, 5, False))
         detail = build_member_comp_data(100, 'hinatazaka', 'メンバーA')
@@ -124,7 +124,7 @@ class TypeNormalizationTest(unittest.TestCase):
             contexts.append(context)
         with template_rendered.connected_to(capture, self.app):
             self.assertEqual(self.client.get('/missing/hinatazaka').status_code, 200)
-        rows = contexts[-1]['grouped_missing']['メンバーA']
+        rows = contexts[-1]['grouped_missing'][1]
         row = next(row for row in rows if row['photo_id'] == 2003)
         self.assertEqual((row['costume_id'], row['type'], row['normalized_type']), (10, '03', '座り'))
 
@@ -163,10 +163,10 @@ class TypeNormalizationTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         cards = CardParser(response.get_data(as_text=True)).cards
         stats = build_stats_data(100, 'hinatazaka')
-        expected = {(member, item['costume_id']): item
-                    for member, items in stats['comp_stats'].items() for item in items}
+        expected = {(member_id, item['costume_id']): item
+                    for member_id, items in stats['comp_stats'].items() for item in items}
         for card in cards:
-            item = expected[(card['member'], card['costume_id'])]
+            item = expected[(card['member_id'], card['costume_id'])]
             self.assertEqual(tuple(card[k] for k in ('owned', 'total', 'is_complete')),
                              tuple(item[k] for k in ('owned', 'total', 'is_complete')))
         self.assertEqual(sum(card['is_complete'] for card in cards),
@@ -177,24 +177,24 @@ class TypeNormalizationTest(unittest.TestCase):
         data = self.assert_collection_matches_stats()
         response = self.client.get('/stats/member/hinatazaka/メンバーA')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json, data['comp_stats']['メンバーA'])
+        self.assertEqual(response.json, data['comp_stats'][1])
         progress = next(row for row in data['progress_list'] if row['costume_id'] == 10)
         self.assertEqual((progress['owned'], progress['total'], progress['rate']), (3, 5, 60))
 
     def test_missing_each_photo_then_complete_only_after_every_photo_is_owned(self):
         _, context = self.render_context('/missing/hinatazaka')
-        rows = [row for row in context['grouped_missing']['メンバーA'] if row['costume_id'] == 10]
+        rows = [row for row in context['grouped_missing'][1] if row['costume_id'] == 10]
         self.assertEqual({(row['photo_id'], row['type']) for row in rows}, {(2003, '03'), (2007, 'ヨリ')})
         self.assertEqual({row['normalized_type'] for row in rows}, {'ヨリ'})
         db.session.add(UserPhoto(user_id=100, photo_id=2003, quantity=1))
         db.session.commit()
         data = self.assert_collection_matches_stats()
-        item = next(row for row in data['comp_stats']['メンバーA'] if row['costume_id'] == 10)
+        item = next(row for row in data['comp_stats'][1] if row['costume_id'] == 10)
         self.assertEqual((item['owned'], item['total'], item['is_complete']), (4, 5, False))
         db.session.add(UserPhoto(user_id=100, photo_id=2007, quantity=1))
         db.session.commit()
         data = self.assert_collection_matches_stats()
-        item = next(row for row in data['comp_stats']['メンバーA'] if row['costume_id'] == 10)
+        item = next(row for row in data['comp_stats'][1] if row['costume_id'] == 10)
         self.assertEqual((item['owned'], item['total'], item['is_complete']), (5, 5, True))
         self.assertEqual(next(row['rate'] for row in data['progress_list'] if row['costume_id'] == 10), 100)
 
@@ -203,7 +203,7 @@ class TypeNormalizationTest(unittest.TestCase):
         db.session.add(UserPhoto(user_id=100, photo_id=2003, quantity=0))
         db.session.commit()
         data = self.assert_collection_matches_stats()
-        item = next(row for row in data['comp_stats']['メンバーA'] if row['costume_id'] == 10)
+        item = next(row for row in data['comp_stats'][1] if row['costume_id'] == 10)
         self.assertEqual((item['owned'], item['total'], item['is_complete']), (2, 5, False))
         response, context = self.render_context('/missing/hinatazaka')
         missing_ids = {row['photo_id'] for rows in context['grouped_missing'].values() for row in rows}
@@ -260,7 +260,7 @@ class TypeNormalizationTest(unittest.TestCase):
         db.session.add(UserPhoto(user_id=100, photo_id=2012, quantity=8))
         db.session.commit()
         data = self.assert_collection_matches_stats()
-        items = {row['costume_id']: row for row in data['comp_stats']['メンバーA']}
+        items = {row['costume_id']: row for row in data['comp_stats'][1]}
         self.assertEqual((items[10]['owned'], items[10]['total']), (3, 5))
         self.assertEqual((items[12]['owned'], items[12]['total']), (1, 2))
         self.assertNotEqual(items[10]['costume_label'], items[12]['costume_label'])
@@ -331,11 +331,11 @@ class TypeNormalizationTest(unittest.TestCase):
             UserPhoto.query.filter_by(user_id=100, photo_id=2001).one().quantity = -3
             db.session.commit()
             data = self.assert_collection_matches_stats()
-            item = next(row for row in data['comp_stats']['メンバーA'] if row['costume_id'] == 10)
+            item = next(row for row in data['comp_stats'][1] if row['costume_id'] == 10)
             self.assertEqual(item['owned'], 2)
             self.assertEqual(sum(data['member_stats'].values()), 21)
             _, context = self.render_context('/missing/hinatazaka')
-            self.assertIn(2001, {r['photo_id'] for r in context['grouped_missing']['メンバーA']})
+            self.assertIn(2001, {r['photo_id'] for r in context['grouped_missing'][1]})
         finally:
             db.session.execute(text('PRAGMA ignore_check_constraints = OFF'))
 
@@ -353,7 +353,7 @@ class TypeNormalizationTest(unittest.TestCase):
         data = self.assert_collection_matches_stats()
         self.assertEqual(data['type_stats']['ヨリ'], 9)
         self.assertEqual(data['unclassified_quantity'], 5)
-        item = next(row for row in data['comp_stats']['メンバーA'] if row['costume_id'] == 10)
+        item = next(row for row in data['comp_stats'][1] if row['costume_id'] == 10)
         self.assertEqual((item['owned'], item['total'], item['is_complete']), (4, 6, False))
         owned = UserPhoto.query.filter_by(user_id=100, photo_id=2014).one()
         detail = self.client.get(f'/get_user_photo_detail/hinatazaka/{owned.id}').json['detail']
@@ -361,6 +361,102 @@ class TypeNormalizationTest(unittest.TestCase):
         query = urlencode(dict(group='hinatazaka', member='メンバーA', costume=MAPPED_COSTUME))
         self.assertIn(name, self.client.get('/get_types?' + query).json['types'])
         self.assertEqual(db.session.get(PhotoType, 14).name, name)
+
+    def test_same_named_members_have_separate_totals_ranking_details_and_missing_rows(self):
+        db.session.get(Member, 2).name = db.session.get(Member, 1).name
+        db.session.add(UserPhoto(user_id=100, photo_id=1002, quantity=4))
+        db.session.commit()
+        data = self.assert_collection_matches_stats()
+        self.assertEqual(data['member_stats'], {1: 23, 2: 4})
+        self.assertEqual({r['member_id']: r['complete_count'] for r in data['comp_ranking']}, {1: 1, 2: 1})
+        self.assertEqual(data['member_names'][1], data['member_names'][2])
+        self.assertEqual({m['id'] for m in data['ordered_members']}, {1, 2})
+        self.assertEqual({r['costume_id'] for r in data['comp_stats'][1]}, {1, 10})
+        self.assertEqual({r['costume_id'] for r in data['comp_stats'][2]}, {1, 2})
+        for member_id in (1, 2):
+            response = self.client.get(f'/stats/member/hinatazaka/id/{member_id}')
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json, data['comp_stats'][member_id])
+            self.assertTrue(all(row['member_id'] == member_id for row in response.json))
+        self.assertEqual(self.client.get('/stats/member/hinatazaka/メンバーA').status_code, 409)
+        self.assertEqual(self.client.get('/stats/member/hinatazaka/id/3').status_code, 404)
+        self.assertEqual(self.client.get('/stats/member/hinatazaka/id/999').status_code, 404)
+        response, context = self.render_context('/stats/hinatazaka')
+        self.assertEqual(context['stats_owned'], 27)
+        self.assertEqual(sorted(q for _, q in context['member_stats']), [4, 23])
+        html = response.get_data(as_text=True)
+        self.assertIn('data-member-url="/stats/member/hinatazaka/id/1"', html)
+        self.assertIn('data-member-url="/stats/member/hinatazaka/id/2"', html)
+        _, context = self.render_context('/missing/hinatazaka')
+        self.assertEqual(set(context['grouped_missing']), {1, 2})
+        self.assertEqual({r['photo_id'] for r in context['grouped_missing'][1]}, {2003, 2007})
+        self.assertEqual({r['photo_id'] for r in context['grouped_missing'][2]}, {1003})
+        _, context = self.render_context('/missing/hinatazaka?member_id=2&costume_id=2')
+        self.assertEqual(set(context['grouped_missing']), {2})
+        self.assertEqual(context['grouped_missing'][2][0]['photo_id'], 1003)
+        self.assertEqual(self.client.get('/missing/hinatazaka?member_id=3').status_code, 404)
+        self.assertEqual(self.client.get('/missing/hinatazaka?costume_id=11').status_code, 404)
+
+    def test_shared_pagination_bounds_photos_but_keeps_full_catalog_statistics(self):
+        db.session.add_all([Costume(id=1000+i, name=f'Bulk {i}', group_id=1) for i in range(120)])
+        db.session.flush()
+        db.session.add_all([Photo(id=3000+i, member_id=1, costume_id=1000+i, type_id=1) for i in range(120)])
+        db.session.add(WantShare(user_id=100, group_key='hinatazaka', public_uuid='pages', is_public=True))
+        db.session.commit()
+        first, a = self.render_context('/shared/hinatazaka/pages?per_page=100000')
+        _, b = self.render_context('/shared/hinatazaka/pages?page=2')
+        self.assertEqual((len(a['all_photos']), len(b['all_photos'])), (100, 29))
+        first_ids = {row['id'] for row in a['all_photos']}
+        second_ids = {row['id'] for row in b['all_photos']}
+        self.assertFalse(first_ids & second_ids)
+        self.assertEqual(len(first_ids | second_ids), 129)
+        self.assertEqual(a['stats'], b['stats'])
+        self.assertEqual((a['stats']['quantity'], a['stats']['total_count']), (23, 129))
+        self.assertEqual(a['stats']['owned_count'], 5)
+        self.assertEqual(a['type_stats'], b['type_stats'])
+        self.assertEqual(a['unclassified_quantity'], b['unclassified_quantity'])
+        self.assertIn('page=2', first.get_data(as_text=True))
+        # Neither pagination nor a request for a large page size bypasses privacy.
+        share = WantShare.query.filter_by(public_uuid='pages').one()
+        share.is_public = False
+        db.session.commit()
+        _, private = self.render_context('/shared/hinatazaka/pages?page=2')
+        self.assertNotIn('all_photos', private)
+
+    def test_statistics_queries_do_not_grow_per_member_or_costume(self):
+        statements = []
+        def capture(conn, cursor, statement, parameters, context, executemany):
+            statements.append(statement)
+        event.listen(db.engine, 'before_cursor_execute', capture)
+        try:
+            self.client.get('/stats/hinatazaka')
+            first_count = len(statements)
+            db.session.add_all([Costume(id=1000+i, name=f'Extra {i}', group_id=1) for i in range(30)])
+            db.session.flush()
+            db.session.add_all([Photo(id=3000+i, member_id=1, costume_id=1000+i, type_id=1) for i in range(30)])
+            db.session.commit()
+            statements.clear()
+            self.client.get('/stats/hinatazaka')
+            self.assertEqual(len(statements), first_count)
+            self.assertLessEqual(first_count, 8)
+        finally:
+            event.remove(db.engine, 'before_cursor_execute', capture)
+
+    def test_ambiguous_add_does_not_update_an_arbitrary_same_named_member(self):
+        db.session.get(Member, 2).name = db.session.get(Member, 1).name
+        db.session.add(Photo(id=2015, member_id=2, costume_id=1, type_id=1))
+        db.session.commit()
+        payload = dict(member='メンバーA', costume='2026年 春の制服', photo_type='ヨリ', quantity=1)
+        before = UserPhoto.query.filter_by(user_id=100, photo_id=1001).one().quantity
+        self.assertEqual(self.client.post('/add/hinatazaka', data=payload).status_code, 409)
+        self.assertEqual(UserPhoto.query.filter_by(user_id=100, photo_id=1001).one().quantity, before)
+        self.assertIsNone(UserPhoto.query.filter_by(user_id=100, photo_id=2015).first())
+        payload.update(member_id=2, costume_id=1)
+        self.assertEqual(self.client.post('/add/hinatazaka', data=payload).status_code, 302)
+        self.assertEqual(UserPhoto.query.filter_by(user_id=100, photo_id=2015).one().quantity, 1)
+        self.assertEqual(UserPhoto.query.filter_by(user_id=100, photo_id=1001).one().quantity, before)
+        payload['member_id'] = 'invalid'
+        self.assertEqual(self.client.post('/add/hinatazaka', data=payload).status_code, 400)
 
 
 if __name__ == '__main__':

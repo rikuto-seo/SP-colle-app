@@ -30,6 +30,9 @@ No new number inference, master-data rewrite or bulk mapping migration is added.
   and PhotoType ID, preserving the original type and costume labels.
 - `comp_stats` and `progress_list`: photo-based counts, with `costume_id` and
   `costume_label`. Same-name costumes get an ID suffix for disambiguation.
+- `member_stats` and `comp_stats` are keyed by member ID, not name.
+  `ordered_members` contains `{id, name}` records; `member_names` supplies labels.
+  Rankings also include `member_id` so equal display names remain independent.
 
 The invariant is:
 
@@ -47,6 +50,26 @@ original `PhotoType.name`. Missing rows now include `photo_id`, `costume_id`,
 the original `type` and `normalized_type` separately; the page shows identifiers
 so different photos remain distinguishable even if their classifications match.
 
+## Member identity and bounded responses
+
+The stats UI loads details through `/stats/member/<group>/id/<member_id>`.
+The old name URL remains valid only for a unique name in that group; ambiguous
+names return 409, missing/out-of-group IDs return 404. Missing-photo grouping and
+filters use member/costume IDs (`member_id` and `costume_id` query parameters).
+
+Completion and quantity calculations now aggregate in SQL instead of loading
+every Photo into Python. Counts still represent distinct Photo identity because
+the user/photo join is unique, never normalized classifications. The shared
+stats catalog renders 100 photos per page in Photo ID order; summary counts and
+quantities always cover the entire group, independent of the current page.
+No cross-request cache is introduced.
+
+Legacy add forms send names. An ambiguous Photo match now returns 409 instead
+of updating the first row. Callers can provide `member_id` and `costume_id` to
+disambiguate while keeping the original label fields. The existing add dropdown
+UI has not been converted to ID values; selecting duplicate-name alternatives
+through that UI remains a later enhancement, with ambiguous writes blocked now.
+
 ## Validation
 
 Run the isolated SQLite tests without importing `app.py` or production services:
@@ -62,10 +85,18 @@ same-name costumes, empty catalogs, and public-share privacy/group boundaries.
 The negative-quantity case temporarily disables checks only in memory-only
 SQLite to emulate invalid legacy data; production constraints are unchanged.
 
+Synthetic performance results and methods are in `stats-performance.md` and
+`stats-performance-results.json`. Run the optional browser regression with:
+
+```text
+python tests/check_photo_type_order_browser.py --browser PATH_TO_CHROME
+python tests/check_stats_browser.py --browser PATH_TO_CHROME
+```
+
 ## Remaining scope
 
 No model or migration changes are needed. Production DB access, migrations,
 deployment and mapping backfill are outside this change. Real DB mapping coverage
-and large-catalog performance still need staging verification. A persistent
+and PostgreSQL/concurrent-load performance still need staging verification. A persistent
 administrator review queue, import-time coverage checks and ambiguous-label
 handling remain later work; unclassified owned quantities are visible now.

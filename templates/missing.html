@@ -14,12 +14,12 @@
 
           <div class="col-md-6">
             <label for="member" class="form-label text-black">メンバー</label>
-            <select id="member" name="member"></select>
+            <select id="member" name="member_id"></select>
           </div>
 
           <div class="col-md-6">
             <label for="costume" class="form-label text-black">衣装</label>
-            <select id="costume" name="costume"></select>
+            <select id="costume" name="costume_id"></select>
           </div>
 
         </div>
@@ -38,16 +38,16 @@
   </div>
   {% else %}
   <div class="accordion custom-accordion" id="accordionMissingList">
-    {% for member, photos in grouped_missing.items() %}
+    {% for member_id, photos in grouped_missing.items() %}
     {% if photos %}
     <div class="accordion-item mb-3 shadow-sm rounded-4 border-0">
 
       <h2 class="accordion-header">
         <button class="accordion-button collapsed d-flex align-items-center" type="button" data-bs-toggle="collapse"
-          data-bs-target="#collapse-{{ loop.index }}">
+          data-bs-target="#collapse-{{ member_id }}" data-member-id="{{ member_id }}">
 
           <div class="d-flex align-items-center gap-2">
-            <span class="fw-bold">{{ member }}</span>
+            <span class="fw-bold">{{ member_names[member_id] }}</span>
 
             <span class="badge
                     {% if photos|length > 10 %}bg-danger
@@ -60,7 +60,7 @@
         </button>
       </h2>
 
-      <div id="collapse-{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#accordionMissingList">
+      <div id="collapse-{{ member_id }}" class="accordion-collapse collapse" data-bs-parent="#accordionMissingList">
 
         <div class="accordion-body bg-light rounded-bottom-4 p-3">
 
@@ -91,83 +91,22 @@
 <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-
-    const memberEl = document.getElementById("member");
-    const costumeEl = document.getElementById("costume");
-
-    const members = {{ member_list | tojson
-  }};
-  const initialCostumes = {{ costume_list | tojson }};
-
-  const selectedMember = "{{ search_member or '' }}";
-  const selectedCostume = "{{ search_costume or '' }}";
-
-  const memberTS = new TomSelect(memberEl, {
-    create: false,
-    maxItems: 1,
-    placeholder: "メンバーを選択",
+  document.addEventListener('DOMContentLoaded', function () {
+    const members = {{ member_options | tojson }};
+    const costumes = {{ costume_options | tojson }};
+    const memberTS = new TomSelect('#member', {
+      create: false, maxItems: 1, valueField: 'id', labelField: 'name', searchField: 'name',
+      options: members, placeholder: 'メンバーを選択',
+    });
+    const costumeTS = new TomSelect('#costume', {
+      create: false, maxItems: 1, valueField: 'id', labelField: 'name', searchField: 'name',
+      options: costumes, placeholder: '衣装を選択',
+    });
+    const memberId = {{ selected_member_id | tojson }};
+    const costumeId = {{ selected_costume_id | tojson }};
+    if (memberId !== null) memberTS.setValue(String(memberId));
+    if (costumeId !== null) costumeTS.setValue(String(costumeId));
   });
-
-  const costumeTS = new TomSelect(costumeEl, {
-    create: false,
-    maxItems: 1,
-    placeholder: "衣装を選択",
-  });
-
-  memberTS.clearOptions();
-  memberTS.addOption({ value: "", text: "全て" });
-
-  members.forEach(m => {
-    memberTS.addOption({ value: m, text: m });
-  });
-
-  memberTS.refreshOptions(false);
-
-  if (selectedMember) {
-    memberTS.setValue(selectedMember);
-  }
-
-  costumeTS.clearOptions();
-  costumeTS.addOption({ value: "", text: "全て" });
-
-  initialCostumes.forEach(c => {
-    costumeTS.addOption({ value: c, text: c });
-  });
-
-  costumeTS.refreshOptions(false);
-
-  if (selectedCostume) {
-    costumeTS.setValue(selectedCostume);
-  }
-
-  memberTS.on("change", function (member) {
-
-    costumeTS.clear();
-    costumeTS.clearOptions();
-    costumeTS.addOption({ value: "", text: "全て" });
-
-    if (!member) {
-      costumeTS.refreshOptions(false);
-      return;
-    }
-
-    fetch(`/get_costumes?group={{ group_key }}&member=${encodeURIComponent(member)}`)
-      .then(res => res.json())
-      .then(data => {
-
-        data.costumes.forEach(c => {
-          costumeTS.addOption({ value: c, text: c });
-        });
-
-        costumeTS.refreshOptions(false);
-      })
-      .catch(err => {
-        console.error("衣装取得失敗", err);
-      });
-  });
-
-});
 </script>
 
 {% endblock %}

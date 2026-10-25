@@ -47,5 +47,17 @@
     {% endfor %}
   </div>
 
+  {% if pagination and pagination.pages > 1 %}
+  <nav aria-label="写真一覧のページ" class="d-flex justify-content-between my-3">
+    {% if pagination.has_prev %}
+    <a href="{{ url_for('share.shared_stats', group_key=group_key, public_uuid=share_uuid, page=pagination.prev_num) }}">前のページ</a>
+    {% else %}<span></span>{% endif %}
+    <span>{{ pagination.page }} / {{ pagination.pages }}</span>
+    {% if pagination.has_next %}
+    <a href="{{ url_for('share.shared_stats', group_key=group_key, public_uuid=share_uuid, page=pagination.next_num) }}">次のページ</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+
 </div>
 {% endblock %}

@@ -1,0 +1,378 @@
+{
+  "baseline_commit": "d73b17fa53a205270a2619af8c7089b71d5a878c",
+  "measured_date_jst": "2026-10-25",
+  "before": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "sqlite": "3.49.1",
+    "samples": 3,
+    "fixture": {
+      "members": 50,
+      "types_per_costume": 6,
+      "positive_ownership_percent": 60,
+      "zero_ownership_percent": 10,
+      "quantities": "1..4",
+      "classified_numeric_db_mappings": true
+    },
+    "results": [
+      {
+        "photos": 10000,
+        "action": "stats",
+        "samples_ms": [
+          160.28169996570796,
+          137.54830008838326,
+          130.00900007318705
+        ],
+        "median_ms": 137.54830008838326,
+        "max_ms": 160.28169996570796,
+        "query_counts": [
+          6,
+          6,
+          6
+        ],
+        "python_peak_mib": 6.586881637573242,
+        "process_peak_rss_mib": 93.17578125,
+        "response_bytes": 85385
+      },
+      {
+        "photos": 10000,
+        "action": "member",
+        "samples_ms": [
+          8.308999938890338,
+          6.185499951243401,
+          5.998499924317002
+        ],
+        "median_ms": 6.185499951243401,
+        "max_ms": 8.308999938890338,
+        "query_counts": [
+          3,
+          3,
+          3
+        ],
+        "python_peak_mib": 0.1955556869506836,
+        "process_peak_rss_mib": 75.015625,
+        "response_bytes": 4241
+      },
+      {
+        "photos": 10000,
+        "action": "shared",
+        "samples_ms": [
+          412.72580006625503,
+          364.32849999982864,
+          376.4760000631213
+        ],
+        "median_ms": 376.4760000631213,
+        "max_ms": 412.72580006625503,
+        "query_counts": [
+          8,
+          8,
+          8
+        ],
+        "python_peak_mib": 27.847558975219727,
+        "process_peak_rss_mib": 123.7578125,
+        "response_bytes": 5953051
+      },
+      {
+        "photos": 50000,
+        "action": "stats",
+        "samples_ms": [
+          775.6762999342754,
+          750.5563000449911,
+          880.1386998966336
+        ],
+        "median_ms": 775.6762999342754,
+        "max_ms": 880.1386998966336,
+        "query_counts": [
+          6,
+          6,
+          6
+        ],
+        "python_peak_mib": 31.23996639251709,
+        "process_peak_rss_mib": 147.9296875,
+        "response_bytes": 115206
+      },
+      {
+        "photos": 50000,
+        "action": "member",
+        "samples_ms": [
+          17.633300041779876,
+          16.80730003863573,
+          22.833800059743226
+        ],
+        "median_ms": 17.633300041779876,
+        "max_ms": 22.833800059743226,
+        "query_counts": [
+          3,
+          3,
+          3
+        ],
+        "python_peak_mib": 0.8340377807617188,
+        "process_peak_rss_mib": 78.75390625,
+        "response_bytes": 20934
+      },
+      {
+        "photos": 50000,
+        "action": "shared",
+        "samples_ms": [
+          2038.0756000522524,
+          2271.3347000535578,
+          1989.3298000097275
+        ],
+        "median_ms": 2038.0756000522524,
+        "max_ms": 2271.3347000535578,
+        "query_counts": [
+          8,
+          8,
+          8
+        ],
+        "python_peak_mib": 138.7604637145996,
+        "process_peak_rss_mib": 326.1796875,
+        "response_bytes": 29871983
+      },
+      {
+        "photos": 100000,
+        "action": "stats",
+        "samples_ms": [
+          1987.987200031057,
+          1626.7055999487638,
+          1541.5990001056343
+        ],
+        "median_ms": 1626.7055999487638,
+        "max_ms": 1987.987200031057,
+        "query_counts": [
+          6,
+          6,
+          6
+        ],
+        "python_peak_mib": 63.08284950256348,
+        "process_peak_rss_mib": 219.5390625,
+        "response_bytes": 152616
+      },
+      {
+        "photos": 100000,
+        "action": "member",
+        "samples_ms": [
+          44.70770002808422,
+          44.38490001484752,
+          35.29160004109144
+        ],
+        "median_ms": 44.38490001484752,
+        "max_ms": 44.70770002808422,
+        "query_counts": [
+          3,
+          3,
+          3
+        ],
+        "python_peak_mib": 1.651656150817871,
+        "process_peak_rss_mib": 81.1015625,
+        "response_bytes": 41976
+      },
+      {
+        "photos": 100000,
+        "action": "shared",
+        "samples_ms": [
+          4070.6357000162825,
+          4100.56369996164,
+          3997.928100056015
+        ],
+        "median_ms": 4070.6357000162825,
+        "max_ms": 4100.56369996164,
+        "query_counts": [
+          8,
+          8,
+          8
+        ],
+        "python_peak_mib": 277.6487035751343,
+        "process_peak_rss_mib": 575.27734375,
+        "response_bytes": 59818796
+      }
+    ]
+  },
+  "after": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "sqlite": "3.49.1",
+    "samples": 3,
+    "fixture": {
+      "members": 50,
+      "types_per_costume": 6,
+      "positive_ownership_percent": 60,
+      "zero_ownership_percent": 10,
+      "quantities": "1..4",
+      "classified_numeric_db_mappings": true
+    },
+    "results": [
+      {
+        "photos": 10000,
+        "action": "stats",
+        "samples_ms": [
+          36.88939998392016,
+          36.846699891611934,
+          36.54260002076626
+        ],
+        "median_ms": 36.846699891611934,
+        "max_ms": 36.88939998392016,
+        "query_counts": [
+          7,
+          7,
+          7
+        ],
+        "python_peak_mib": 1.240565299987793,
+        "process_peak_rss_mib": 79.62109375,
+        "response_bytes": 89898
+      },
+      {
+        "photos": 10000,
+        "action": "member",
+        "samples_ms": [
+          3.2515000784769654,
+          3.0483000446110964,
+          2.9854000313207507
+        ],
+        "median_ms": 3.0483000446110964,
+        "max_ms": 3.2515000784769654,
+        "query_counts": [
+          4,
+          4,
+          4
+        ],
+        "python_peak_mib": 0.08919334411621094,
+        "process_peak_rss_mib": 74.8203125,
+        "response_bytes": 4785
+      },
+      {
+        "photos": 10000,
+        "action": "shared",
+        "samples_ms": [
+          40.1136000873521,
+          43.28190011437982,
+          41.90079995896667
+        ],
+        "median_ms": 41.90079995896667,
+        "max_ms": 43.28190011437982,
+        "query_counts": [
+          10,
+          10,
+          10
+        ],
+        "python_peak_mib": 1.2452316284179688,
+        "process_peak_rss_mib": 80.5390625,
+        "response_bytes": 77696
+      },
+      {
+        "photos": 50000,
+        "action": "stats",
+        "samples_ms": [
+          167.57699998561293,
+          157.59359998628497,
+          157.31099992990494
+        ],
+        "median_ms": 157.59359998628497,
+        "max_ms": 167.57699998561293,
+        "query_counts": [
+          7,
+          7,
+          7
+        ],
+        "python_peak_mib": 5.056039810180664,
+        "process_peak_rss_mib": 90.96484375,
+        "response_bytes": 119719
+      },
+      {
+        "photos": 50000,
+        "action": "member",
+        "samples_ms": [
+          5.557199940085411,
+          5.410299985669553,
+          6.174799986183643
+        ],
+        "median_ms": 5.557199940085411,
+        "max_ms": 6.174799986183643,
+        "query_counts": [
+          4,
+          4,
+          4
+        ],
+        "python_peak_mib": 0.27687835693359375,
+        "process_peak_rss_mib": 76.48046875,
+        "response_bytes": 23606
+      },
+      {
+        "photos": 50000,
+        "action": "shared",
+        "samples_ms": [
+          183.49510000552982,
+          179.48799999430776,
+          176.4808000298217
+        ],
+        "median_ms": 179.48799999430776,
+        "max_ms": 183.49510000552982,
+        "query_counts": [
+          10,
+          10,
+          10
+        ],
+        "python_peak_mib": 5.05979061126709,
+        "process_peak_rss_mib": 91.1484375,
+        "response_bytes": 107428
+      },
+      {
+        "photos": 100000,
+        "action": "stats",
+        "samples_ms": [
+          396.93259994965047,
+          395.42830002028495,
+          389.862300013192
+        ],
+        "median_ms": 395.42830002028495,
+        "max_ms": 396.93259994965047,
+        "query_counts": [
+          7,
+          7,
+          7
+        ],
+        "python_peak_mib": 10.104525566101074,
+        "process_peak_rss_mib": 100.7109375,
+        "response_bytes": 157129
+      },
+      {
+        "photos": 100000,
+        "action": "member",
+        "samples_ms": [
+          10.494999936781824,
+          10.27179998345673,
+          10.079599916934967
+        ],
+        "median_ms": 10.27179998345673,
+        "max_ms": 10.494999936781824,
+        "query_counts": [
+          4,
+          4,
+          4
+        ],
+        "python_peak_mib": 0.5394191741943359,
+        "process_peak_rss_mib": 77.87890625,
+        "response_bytes": 47320
+      },
+      {
+        "photos": 100000,
+        "action": "shared",
+        "samples_ms": [
+          430.4559000302106,
+          431.57649994827807,
+          424.5527000166476
+        ],
+        "median_ms": 430.4559000302106,
+        "max_ms": 431.57649994827807,
+        "query_counts": [
+          10,
+          10,
+          10
+        ],
+        "python_peak_mib": 10.1082763671875,
+        "process_peak_rss_mib": 100.99609375,
+        "response_bytes": 144840
+      }
+    ]
+  }
+}
